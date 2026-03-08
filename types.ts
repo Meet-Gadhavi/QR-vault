@@ -1,0 +1,79 @@
+export enum PlanType {
+  FREE = 'FREE',
+  STARTER = 'STARTER',
+  PRO = 'PRO'
+}
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  plan: PlanType;
+  storageUsed: number; // in bytes
+  storageLimit: number; // in bytes
+  subscriptionExpiryDate?: string; // ISO Date string
+}
+
+export enum FileType {
+  IMAGE = 'IMAGE',
+  PDF = 'PDF',
+  ZIP = 'ZIP',
+  LINK = 'LINK',
+  OTHER = 'OTHER'
+}
+
+export interface VaultFile {
+  id: string;
+  name: string;
+  size: number; // bytes
+  type: FileType;
+  url: string; // Mock url
+  mimeType: string;
+}
+
+export enum AccessLevel {
+  PUBLIC = 'PUBLIC',
+  RESTRICTED = 'RESTRICTED'
+}
+
+export enum RequestStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED'
+}
+
+export interface AccessRequest {
+  id: string;
+  email: string;
+  status: RequestStatus;
+  requestedAt: string;
+}
+
+export interface Vault {
+  id: string;
+  userId: string;
+  name: string;
+  createdAt: string;
+  files: VaultFile[];
+  views: number;
+  active: boolean;
+  accessLevel: AccessLevel;
+  requests: AccessRequest[];
+  userPlan?: PlanType;
+}
+
+export interface Invoice {
+  id: string;
+  userId: string;
+  date: string;
+  plan: string;
+  amount: number;
+  expiry: string;
+  timestamp: number;
+}
+
+export const PLAN_LIMITS = {
+  [PlanType.FREE]: 1 * 1024 * 1024 * 1024, // 1GB
+  [PlanType.STARTER]: 10 * 1024 * 1024 * 1024, // 10GB
+  [PlanType.PRO]: 20 * 1024 * 1024 * 1024, // 20GB
+};

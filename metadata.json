@@ -1,0 +1,5 @@
+{
+  "name": "QR Vault",
+  "description": "A modern SaaS platform to upload files, generate a single QR code, and share securely with auto-categorization.",
+  "requestFramePermissions": []
+}
