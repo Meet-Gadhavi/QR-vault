@@ -23,11 +23,15 @@ if (typeof window !== 'undefined') {
     window.matchMedia = (query) => {
       const mql = originalMatchMedia(query);
       if (mql && typeof mql === 'object') {
-        if (!mql.addListener) {
-          mql.addListener = (listener: any) => mql.addEventListener('change', listener);
+        if (typeof mql.addListener === 'undefined') {
+          mql.addListener = (listener: any) => {
+            if (mql.addEventListener) mql.addEventListener('change', listener);
+          };
         }
-        if (!mql.removeListener) {
-          mql.removeListener = (listener: any) => mql.removeEventListener('change', listener);
+        if (typeof mql.removeListener === 'undefined') {
+          mql.removeListener = (listener: any) => {
+            if (mql.removeEventListener) mql.removeEventListener('change', listener);
+          };
         }
         return mql;
       }
