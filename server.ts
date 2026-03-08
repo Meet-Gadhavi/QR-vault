@@ -541,7 +541,7 @@ async function startServer() {
     app.use(express.static('dist'));
 
     // SPA Fallback for BrowserRouter
-    app.get('*', (req, res) => {
+    app.get(/.*/, (req, res) => {
       res.sendFile(path.join(__dirname, 'dist', 'index.html'));
     });
   }
