@@ -569,7 +569,7 @@ export const Dashboard: React.FC = () => {
   const fetchGoogleDriveFiles = async (tokens: any) => {
     setIsFetchingDrive(true);
     try {
-      const apiBase = import.meta.env.VITE_API_URL || '';
+      const apiBase = import.meta.env.VITE_API_URL || window.location.origin;
       const response = await fetch(`${apiBase}/api/google-drive/list`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

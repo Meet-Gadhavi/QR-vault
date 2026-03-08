@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { mockService } from '../services/mockService';
-import { Vault, User, PlanType, VaultFile, FileType, PLAN_LIMITS, AccessLevel, AccessRequest, RequestStatus, Invoice } from '../types';
+import { mockService } from './services/mockService';
+import { Vault, User, PlanType, VaultFile, FileType, PLAN_LIMITS, AccessLevel, AccessRequest, RequestStatus, Invoice } from './types';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import QRCode from 'react-qr-code';
 import { UploadCloud, File as FileIcon, Link as LinkIcon, Trash2, ExternalLink, Plus, X, Loader2, Eye, HardDrive, QrCode, Copy, Check, MoreVertical, Edit2, Search, Filter, ArrowUpDown, Download, Zap, ChevronDown, Lock, Users, Shield, UserCheck, UserX, Clock, ShieldCheck } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { VaultModals } from '../components/VaultModals';
+import { useAuth } from './contexts/AuthContext';
+import { VaultModals } from './components/VaultModals';
 
 type SortOption = 'date-newest' | 'date-oldest' | 'name-asc' | 'name-desc' | 'size-desc' | 'size-asc';
 type FilterTime = 'all' | '10-days' | '30-days';
@@ -296,7 +296,7 @@ export const Dashboard: React.FC = () => {
       result = result.filter(v => new Date(v.createdAt) >= cutoff);
     }
 
-    const getVaultSize = (v: Vault) => v.files.reduce((acc, f) => acc + f.size, 0);
+    const getVaultSize = (v: Vault) => v.files.reduce((acc: number, f: VaultFile) => acc + f.size, 0);
 
     result.sort((a, b) => {
       switch (sortOption) {
@@ -372,7 +372,7 @@ export const Dashboard: React.FC = () => {
     // Refresh local data for modal
     const updatedVaults = await mockService.getVaults(appUser.id);
     setVaults(updatedVaults);
-    const updatedVault = updatedVaults.find(v => v.id === vaultId);
+    const updatedVault = updatedVaults.find((v: Vault) => v.id === vaultId);
     if (updatedVault) setManagingVault(updatedVault);
   };
 
@@ -470,7 +470,7 @@ export const Dashboard: React.FC = () => {
       if (success && googleTokens) {
         try {
           const updatedVaults = await mockService.getVaults(appUser.id);
-          const latestVault = updatedVaults.sort((a, b) =>
+          const latestVault = updatedVaults.sort((a: Vault, b: Vault) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
           )[0];
           if (latestVault) {
@@ -637,7 +637,7 @@ export const Dashboard: React.FC = () => {
   const fetchGoogleDriveFiles = async (tokens: any) => {
     setIsFetchingDrive(true);
     try {
-      const apiBase = import.meta.env.VITE_API_URL || '';
+      const apiBase = import.meta.env.VITE_API_URL || window.location.origin;
       const response = await fetch(`${apiBase}/api/google-drive/list`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -723,7 +723,7 @@ export const Dashboard: React.FC = () => {
   };
 
   const getPendingRequestCount = (vault: Vault) => {
-    return (vault.requests || []).filter(r => r.status === RequestStatus.PENDING).length;
+    return (vault.requests || []).filter((r: AccessRequest) => r.status === RequestStatus.PENDING).length;
   };
 
   const storageUsedDisplay = (isPaidPlan && googleTokens) ? driveStorageUsed : (appUser?.storageUsed || 0);
@@ -991,7 +991,7 @@ export const Dashboard: React.FC = () => {
                     <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
                       <span>{vault.files.length} Files</span>
                       <span className="w-1 h-1 bg-gray-300 rounded-full" />
-                      <span>{formatBytes(vault.files.reduce((acc, f) => acc + f.size, 0))}</span>
+                      <span>{formatBytes(vault.files.reduce((acc: number, f: VaultFile) => acc + f.size, 0))}</span>
                     </div>
 
                     <div className="flex items-center justify-between pt-4 border-t border-gray-50">

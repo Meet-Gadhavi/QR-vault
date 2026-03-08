@@ -12,17 +12,17 @@ if (typeof window !== 'undefined') {
       matches: false,
       media: query,
       onchange: null,
-      addListener: () => {},
-      removeListener: () => {},
-      addEventListener: () => {},
-      removeEventListener: () => {},
+      addListener: () => { },
+      removeListener: () => { },
+      addEventListener: () => { },
+      removeEventListener: () => { },
       dispatchEvent: () => false,
     } as any);
   } else {
     const originalMatchMedia = window.matchMedia;
     window.matchMedia = (query) => {
       const mql = originalMatchMedia(query);
-      if (mql) {
+      if (mql && typeof mql === 'object') {
         if (!mql.addListener) {
           mql.addListener = (listener: any) => mql.addEventListener('change', listener);
         }
@@ -35,10 +35,11 @@ if (typeof window !== 'undefined') {
         matches: false,
         media: query,
         onchange: null,
-        addListener: () => {},
-        removeListener: () => {},
-        addEventListener: () => {},
-        removeEventListener: () => {},
+
+        addListener: () => { },
+        removeListener: () => { },
+        addEventListener: () => { },
+        removeEventListener: () => { },
         dispatchEvent: () => false,
       } as any;
     };
