@@ -32,6 +32,17 @@ export const Payment: React.FC = () => {
         }
     }, [plan, navigate, isAuthenticated]);
 
+    useEffect(() => {
+        const scriptId = 'razorpay-checkout-js';
+        if (!document.getElementById(scriptId)) {
+            const script = document.createElement('script');
+            script.id = scriptId;
+            script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+            script.async = true;
+            document.body.appendChild(script);
+        }
+    }, []);
+
     const planName = plan === PlanType.STARTER ? 'Plus' : 'Pro';
 
     const handlePayment = async () => {
@@ -43,41 +54,98 @@ export const Payment: React.FC = () => {
         setLoading(true);
 
         try {
-            // Cancel any existing plan and upgrade
-            const expiryDate = new Date();
-            expiryDate.setMonth(expiryDate.getMonth() + 1); // 1 month subscription
+            const isDev = window.location.hostname === 'localhost';
+            const apiBase = import.meta.env.VITE_API_URL || (isDev ? 'http://localhost:3000' : 'https://qr-vault-2008.onrender.com');
+            const amount = prices[plan];
 
-            await mockService.upgradeSubscription(userId, plan, expiryDate.toISOString());
-
-            // Build invoice data
-            const now = new Date();
-            const invoiceId = `INV-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
-
-            const invoice = {
-                id: invoiceId,
-                date: now.toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }),
-                plan: planName,
-                amount: prices[plan],
-                email: userEmail || 'N/A',
-                expiry: expiryDate.toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }),
-                timestamp: now.getTime(),
-            };
-
-            setInvoiceData(invoice);
-
-            // Save invoice to Supabase for dashboard history
-            await mockService.saveInvoice({
-                ...invoice,
-                userId: userId
+            // 1. Create Order
+            const orderRes = await fetch(`${apiBase}/api/create-order`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount, currency: 'INR', receipt: `rcpt_${userId}_${Date.now()}` })
             });
 
-            setPaymentDone(true);
-        } catch (err) {
+            if (!orderRes.ok) throw new Error('Failed to create order fetch');
+            const orderData = await orderRes.json();
+            if (orderData.error) throw new Error(orderData.error);
+
+            // 2. Initialize Razorpay Checkout
+            const options = {
+                key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_live_SEru7tZ3y0x3sl',
+                amount: orderData.amount,
+                currency: orderData.currency,
+                name: 'QR Vault',
+                description: `Upgrade to ${planName} Plan`,
+                order_id: orderData.id,
+                prefill: {
+                    email: userEmail || ''
+                },
+                theme: {
+                    color: '#7c3aed'
+                },
+                handler: async function (response: any) {
+                    try {
+                        setLoading(true);
+                        // 3. Verify Payment
+                        const verifyRes = await fetch(`${apiBase}/api/verify-payment`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_signature: response.razorpay_signature
+                            })
+                        });
+
+                        const verifyData = await verifyRes.json();
+
+                        if (verifyData.status === 'success') {
+                            // 4. Upgrade Subscription on success
+                            const expiryDate = new Date();
+                            expiryDate.setMonth(expiryDate.getMonth() + 1);
+
+                            await mockService.upgradeSubscription(userId, plan, expiryDate.toISOString());
+
+                            const now = new Date();
+                            const invoiceId = `INV-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+
+                            const invoice = {
+                                id: invoiceId,
+                                date: now.toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }),
+                                plan: planName,
+                                amount: prices[plan],
+                                email: userEmail || 'N/A',
+                                expiry: expiryDate.toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }),
+                                timestamp: now.getTime(),
+                            };
+
+                            setInvoiceData(invoice);
+                            await mockService.saveInvoice({ ...invoice, userId });
+                            setPaymentDone(true);
+                        } else {
+                            alert('Payment verification failed.');
+                        }
+                    } catch (err) {
+                        console.error('Verification error:', err);
+                        alert('Something went wrong during payment verification.');
+                    } finally {
+                        setLoading(false);
+                    }
+                }
+            };
+
+            const rzp = new (window as any).Razorpay(options);
+            rzp.on('payment.failed', function (response: any) {
+                alert(`Payment failed: ${response.error.description || 'Unknown error'}`);
+                setLoading(false);
+            });
+            rzp.open();
+        } catch (err: any) {
             console.error('Payment error:', err);
-            alert('Something went wrong. Please try again.');
-        } finally {
+            alert(`Something went wrong initiating payment: ${err.message || 'Please try again.'}`);
             setLoading(false);
         }
+        // Deliberately not setting loading(false) here if Razorpay opens, it's handled by Razorpay callbacks.
     };
 
     const downloadInvoicePdf = () => {
