@@ -65,7 +65,15 @@ export const Payment: React.FC = () => {
                 body: JSON.stringify({ amount, currency: 'INR', receipt: `rcpt_${userId}_${Date.now()}` })
             });
 
-            if (!orderRes.ok) throw new Error('Failed to create order fetch');
+            if (!orderRes.ok) {
+                const errText = await orderRes.text();
+                let errObj;
+                try {
+                    errObj = JSON.parse(errText);
+                } catch (e) { }
+                const errorMsg = errObj?.error || errText || 'Failed to create order fetch';
+                throw new Error(`Server Error: ${errorMsg}`);
+            }
             const orderData = await orderRes.json();
             if (orderData.error) throw new Error(orderData.error);
 

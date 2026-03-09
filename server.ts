@@ -50,7 +50,7 @@ const getOAuth2Client = () => {
   return new google.auth.OAuth2(
     clientId,
     clientSecret,
-    `${appUrl.replace(/\/$/, '')}/api/google/callback`
+    `${appUrl}/api/google/callback`
   );
 };
 
