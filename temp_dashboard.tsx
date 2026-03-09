@@ -95,9 +95,9 @@ export const Dashboard: React.FC = () => {
     }
 
     const handleMessage = (event: MessageEvent) => {
-      // Validate origin is from AI Studio preview or localhost
+      // Validate origin is from an allowed backend URL
       const origin = event.origin;
-      if (!origin.endsWith('.run.app') && !origin.includes('localhost')) {
+      if (!origin.endsWith('.run.app') && !origin.endsWith('.onrender.com') && !origin.includes('localhost')) {
         return;
       }
       if (event.data?.type === 'GOOGLE_AUTH_SUCCESS') {
