@@ -313,10 +313,9 @@ export const Dashboard: React.FC = () => {
   };
 
   const uploadFileToDrive = async (file: File, folderId: string) => {
-    const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    let apiBase = isDev ? 'http://localhost:3000' : 'https://qr-backend-r441.onrender.com';
-    if (import.meta.env.VITE_API_URL && !import.meta.env.VITE_API_URL.includes('localhost')) {
-      apiBase = import.meta.env.VITE_API_URL;
+    let apiBase = import.meta.env.VITE_API_URL || 'https://qr-backend-r441.onrender.com';
+    if (apiBase.includes('localhost') && !window.location.hostname.includes('localhost')) {
+      apiBase = 'https://qr-backend-r441.onrender.com';
     }
     const formData = new FormData();
     formData.append('file', file);
@@ -342,10 +341,9 @@ export const Dashboard: React.FC = () => {
 
     setIsSubmitting(true);
     let success = false;
-    const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    let apiBase = isDev ? 'http://localhost:3000' : 'https://qr-backend-r441.onrender.com';
-    if (import.meta.env.VITE_API_URL && !import.meta.env.VITE_API_URL.includes('localhost')) {
-      apiBase = import.meta.env.VITE_API_URL;
+    let apiBase = import.meta.env.VITE_API_URL || 'https://qr-backend-r441.onrender.com';
+    if (apiBase.includes('localhost') && !window.location.hostname.includes('localhost')) {
+      apiBase = 'https://qr-backend-r441.onrender.com';
     }
 
     try {
@@ -540,10 +538,9 @@ export const Dashboard: React.FC = () => {
   const handleConnectGoogleDrive = async () => {
     try {
       console.log('Connecting to Google Drive...');
-      const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      let apiBase = isDev ? 'http://localhost:3000' : 'https://qr-backend-r441.onrender.com';
-      if (import.meta.env.VITE_API_URL && !import.meta.env.VITE_API_URL.includes('localhost')) {
-        apiBase = import.meta.env.VITE_API_URL;
+      let apiBase = import.meta.env.VITE_API_URL || 'https://qr-backend-r441.onrender.com';
+      if (apiBase.includes('localhost') && !window.location.hostname.includes('localhost')) {
+        apiBase = 'https://qr-backend-r441.onrender.com';
       }
       console.log('apiBase:', apiBase);
       const response = await fetch(`${apiBase}/api/google/auth`);
@@ -581,10 +578,9 @@ export const Dashboard: React.FC = () => {
   const fetchGoogleDriveFiles = async (tokens: any) => {
     setIsFetchingDrive(true);
     try {
-      const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      let apiBase = isDev ? 'http://localhost:3000' : 'https://qr-backend-r441.onrender.com';
-      if (import.meta.env.VITE_API_URL && !import.meta.env.VITE_API_URL.includes('localhost')) {
-        apiBase = import.meta.env.VITE_API_URL;
+      let apiBase = import.meta.env.VITE_API_URL || 'https://qr-backend-r441.onrender.com';
+      if (apiBase.includes('localhost') && !window.location.hostname.includes('localhost')) {
+        apiBase = 'https://qr-backend-r441.onrender.com';
       }
       const response = await fetch(`${apiBase}/api/google-drive/list`, {
         method: 'POST',
@@ -617,10 +613,9 @@ export const Dashboard: React.FC = () => {
 
   const fetchDriveStorageUsage = async (tokens: any) => {
     try {
-      const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      let apiBase = isDev ? 'http://localhost:3000' : 'https://qr-backend-r441.onrender.com';
-      if (import.meta.env.VITE_API_URL && !import.meta.env.VITE_API_URL.includes('localhost')) {
-        apiBase = import.meta.env.VITE_API_URL;
+      let apiBase = import.meta.env.VITE_API_URL || 'https://qr-backend-r441.onrender.com';
+      if (apiBase.includes('localhost') && !window.location.hostname.includes('localhost')) {
+        apiBase = 'https://qr-backend-r441.onrender.com';
       }
       const res = await fetch(`${apiBase}/api/google-drive/storage-usage`, {
         method: 'POST',
@@ -641,10 +636,9 @@ export const Dashboard: React.FC = () => {
 
   const saveVaultToDrive = async (vault: Vault) => {
     if (!googleTokens) return;
-    const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    let apiBase = isDev ? 'http://localhost:3000' : 'https://qr-backend-r441.onrender.com';
-    if (import.meta.env.VITE_API_URL && !import.meta.env.VITE_API_URL.includes('localhost')) {
-      apiBase = import.meta.env.VITE_API_URL;
+    let apiBase = import.meta.env.VITE_API_URL || 'https://qr-backend-r441.onrender.com';
+    if (apiBase.includes('localhost') && !window.location.hostname.includes('localhost')) {
+      apiBase = 'https://qr-backend-r441.onrender.com';
     }
 
     try {
