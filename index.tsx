@@ -3,51 +3,40 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 
-// Polyfill for matchMedia and its deprecated addListener/removeListener methods
-// This fixes errors in some environments (like sandboxed iframes) where matchMedia
-// might be missing or incomplete, which causes issues in libraries like Recharts or Supabase.
 if (typeof window !== 'undefined') {
-  if (!window.matchMedia) {
-    window.matchMedia = (query) => ({
-      matches: false,
-      media: query,
-      onchange: null,
-      addListener: () => { },
-      removeListener: () => { },
-      addEventListener: () => { },
-      removeEventListener: () => { },
-      dispatchEvent: () => false,
-    } as any);
-  } else {
-    const originalMatchMedia = window.matchMedia;
-    window.matchMedia = (query) => {
-      const mql = originalMatchMedia(query);
-      if (mql && typeof mql === 'object') {
-        if (typeof mql.addListener === 'undefined') {
-          mql.addListener = (listener: any) => {
-            if (mql.addEventListener) mql.addEventListener('change', listener);
-          };
-        }
-        if (typeof mql.removeListener === 'undefined') {
-          mql.removeListener = (listener: any) => {
-            if (mql.removeEventListener) mql.removeEventListener('change', listener);
-          };
-        }
-        return mql;
-      }
-      return {
-        matches: false,
-        media: query,
-        onchange: null,
+  const originalMatchMedia = window.matchMedia;
+  window.matchMedia = (query) => {
+    let mql: any = null;
+    if (originalMatchMedia) {
+      try {
+        mql = originalMatchMedia(query);
+      } catch (e) { }
+    }
 
-        addListener: () => { },
-        removeListener: () => { },
-        addEventListener: () => { },
-        removeEventListener: () => { },
-        dispatchEvent: () => false,
-      } as any;
-    };
-  }
+    return {
+      matches: mql ? !!mql.matches : false,
+      media: mql ? mql.media : query,
+      onchange: mql ? mql.onchange : null,
+      addListener: (listener: any) => {
+        if (mql?.addListener) mql.addListener(listener);
+        else if (mql?.addEventListener) mql.addEventListener('change', listener);
+      },
+      removeListener: (listener: any) => {
+        if (mql?.removeListener) mql.removeListener(listener);
+        else if (mql?.removeEventListener) mql.removeEventListener('change', listener);
+      },
+      addEventListener: (type: string, listener: any) => {
+        if (mql?.addEventListener) mql.addEventListener(type, listener);
+      },
+      removeEventListener: (type: string, listener: any) => {
+        if (mql?.removeEventListener) mql.removeEventListener(type, listener);
+      },
+      dispatchEvent: (event: Event) => {
+        if (mql?.dispatchEvent) return mql.dispatchEvent(event);
+        return false;
+      },
+    } as any;
+  };
 }
 
 const rootElement = document.getElementById('root');
