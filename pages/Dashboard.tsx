@@ -313,10 +313,7 @@ export const Dashboard: React.FC = () => {
   };
 
   const uploadFileToDrive = async (file: File, folderId: string) => {
-    let apiBase = import.meta.env.VITE_API_URL || 'https://qr-backend-r441.onrender.com';
-    if (apiBase.includes('localhost') && !window.location.hostname.includes('localhost')) {
-      apiBase = 'https://qr-backend-r441.onrender.com';
-    }
+    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000';
     const formData = new FormData();
     formData.append('file', file);
     formData.append('tokens', JSON.stringify(googleTokens));
@@ -341,10 +338,7 @@ export const Dashboard: React.FC = () => {
 
     setIsSubmitting(true);
     let success = false;
-    let apiBase = import.meta.env.VITE_API_URL || 'https://qr-backend-r441.onrender.com';
-    if (apiBase.includes('localhost') && !window.location.hostname.includes('localhost')) {
-      apiBase = 'https://qr-backend-r441.onrender.com';
-    }
+    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
     try {
       let finalFiles: (File | any)[] = [...selectedFiles];
@@ -538,10 +532,7 @@ export const Dashboard: React.FC = () => {
   const handleConnectGoogleDrive = async () => {
     try {
       console.log('Connecting to Google Drive...');
-      let apiBase = import.meta.env.VITE_API_URL || 'https://qr-backend-r441.onrender.com';
-      if (apiBase.includes('localhost') && !window.location.hostname.includes('localhost')) {
-        apiBase = 'https://qr-backend-r441.onrender.com';
-      }
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000';
       console.log('apiBase:', apiBase);
       const response = await fetch(`${apiBase}/api/google/auth`);
 
@@ -578,10 +569,7 @@ export const Dashboard: React.FC = () => {
   const fetchGoogleDriveFiles = async (tokens: any) => {
     setIsFetchingDrive(true);
     try {
-      let apiBase = import.meta.env.VITE_API_URL || 'https://qr-backend-r441.onrender.com';
-      if (apiBase.includes('localhost') && !window.location.hostname.includes('localhost')) {
-        apiBase = 'https://qr-backend-r441.onrender.com';
-      }
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000';
       const response = await fetch(`${apiBase}/api/google-drive/list`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -613,10 +601,7 @@ export const Dashboard: React.FC = () => {
 
   const fetchDriveStorageUsage = async (tokens: any) => {
     try {
-      let apiBase = import.meta.env.VITE_API_URL || 'https://qr-backend-r441.onrender.com';
-      if (apiBase.includes('localhost') && !window.location.hostname.includes('localhost')) {
-        apiBase = 'https://qr-backend-r441.onrender.com';
-      }
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000';
       const res = await fetch(`${apiBase}/api/google-drive/storage-usage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -636,10 +621,7 @@ export const Dashboard: React.FC = () => {
 
   const saveVaultToDrive = async (vault: Vault) => {
     if (!googleTokens) return;
-    let apiBase = import.meta.env.VITE_API_URL || 'https://qr-backend-r441.onrender.com';
-    if (apiBase.includes('localhost') && !window.location.hostname.includes('localhost')) {
-      apiBase = 'https://qr-backend-r441.onrender.com';
-    }
+    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
     try {
       console.log('[Drive Sync] Ensuring QRVM folder...');
