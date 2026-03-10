@@ -541,6 +541,9 @@ app.use('/api', (req, res) => {
 
 // Vite Middleware
 async function startServer() {
+  // Always serve public files (like robots.txt, sitemap.xml)
+  app.use(express.static('public'));
+
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
       server: { middlewareMode: true },
