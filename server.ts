@@ -2,6 +2,8 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
+import crypto from 'crypto';
+import Razorpay from 'razorpay';
 import { createServer as createViteServer } from 'vite';
 import { google } from 'googleapis';
 import { fileURLToPath } from 'url';
@@ -470,6 +472,59 @@ apiRouter.post(['/google-drive/save-vault', '/google-drive/save-vault/'], async 
 // Health Check
 apiRouter.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Razorpay Routes
+apiRouter.post('/razorpay/create-order', async (req: Request, res: Response) => {
+  try {
+    const { amount, currency = 'INR', receipt } = req.body;
+
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      return res.status(500).json({ error: 'Razorpay keys not configured' });
+    }
+
+    const razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+
+    const options = {
+      amount: amount * 100, // amount in smallest currency unit (paise)
+      currency,
+      receipt: receipt || `receipt_${Date.now()}`,
+    };
+
+    const order = await razorpay.orders.create(options);
+    res.json(order);
+  } catch (error: any) {
+    console.error('Razorpay create order error:', error);
+    res.status(500).json({ error: 'Failed to create Razorpay order', details: error.message });
+  }
+});
+
+apiRouter.post('/razorpay/verify', async (req: Request, res: Response) => {
+  try {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+    const secret = process.env.RAZORPAY_KEY_SECRET;
+    if (!secret) {
+      return res.status(500).json({ error: 'Razorpay secret not configured' });
+    }
+
+    const generated_signature = crypto
+      .createHmac('sha256', secret)
+      .update(razorpay_order_id + "|" + razorpay_payment_id)
+      .digest('hex');
+
+    if (generated_signature === razorpay_signature) {
+      res.json({ status: 'success', message: 'Payment verified successfully' });
+    } else {
+      res.status(400).json({ status: 'failure', message: 'Invalid payment signature' });
+    }
+  } catch (error: any) {
+    console.error('Razorpay verify error:', error);
+    res.status(500).json({ error: 'Failed to verify payment', details: error.message });
+  }
 });
 
 // Mount API Router
