@@ -4,8 +4,6 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { google } from 'googleapis';
-import Razorpay from 'razorpay';
-import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
 import { Readable } from 'stream';
@@ -26,16 +24,6 @@ app.use(cors({
   credentials: false
 }));
 app.use(express.json());
-
-// Razorpay Setup
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_placeholder',
-  key_secret: process.env.RAZORPAY_KEY_SECRET || 'secret_placeholder',
-});
-
-if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-  console.warn('WARNING: Razorpay Key ID or Secret is missing. Payments will not work.');
-}
 
 // Google OAuth Setup
 const getOAuth2Client = () => {
@@ -476,38 +464,6 @@ apiRouter.post(['/google-drive/save-vault', '/google-drive/save-vault/'], async 
   } catch (error: any) {
     console.error('[Google Drive] Save vault error:', error);
     res.status(500).json({ error: 'Failed to save vault to Drive', details: error.message });
-  }
-});
-
-// Razorpay Order Creation
-apiRouter.post(['/create-order', '/create-order/'], async (req: Request, res: Response) => {
-  const { amount, currency, receipt } = req.body;
-  try {
-    const order = await razorpay.orders.create({
-      amount: amount * 100, // Amount in paise
-      currency: currency || 'INR',
-      receipt: receipt || `receipt_${Date.now()}`,
-    });
-    res.json(order);
-  } catch (error: any) {
-    console.error('Razorpay Order Error:', error);
-    res.status(500).json({ error: error.message || 'Failed to create order' });
-  }
-});
-
-// Razorpay Payment Verification
-apiRouter.post(['/verify-payment', '/verify-payment/'], (req: Request, res: Response) => {
-  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
-  const secret = process.env.RAZORPAY_KEY_SECRET || 'secret_placeholder';
-
-  const hmac = crypto.createHmac('sha256', secret);
-  hmac.update(razorpay_order_id + '|' + razorpay_payment_id);
-  const generated_signature = hmac.digest('hex');
-
-  if (generated_signature === razorpay_signature) {
-    res.json({ status: 'success' });
-  } else {
-    res.status(400).json({ status: 'failure', error: 'Invalid signature' });
   }
 });
 

@@ -18,21 +18,21 @@ if (typeof window !== 'undefined') {
       media: mql ? mql.media : query,
       onchange: mql ? mql.onchange : null,
       addListener: (listener: any) => {
-        if (mql?.addListener) mql.addListener(listener);
-        else if (mql?.addEventListener) mql.addEventListener('change', listener);
+        if (mql && typeof mql.addListener === 'function') mql.addListener(listener);
+        else if (mql && typeof mql.addEventListener === 'function') mql.addEventListener('change', listener);
       },
       removeListener: (listener: any) => {
-        if (mql?.removeListener) mql.removeListener(listener);
-        else if (mql?.removeEventListener) mql.removeEventListener('change', listener);
+        if (mql && typeof mql.removeListener === 'function') mql.removeListener(listener);
+        else if (mql && typeof mql.removeEventListener === 'function') mql.removeEventListener('change', listener);
       },
       addEventListener: (type: string, listener: any) => {
-        if (mql?.addEventListener) mql.addEventListener(type, listener);
+        if (mql && typeof mql.addEventListener === 'function') mql.addEventListener(type, listener);
       },
       removeEventListener: (type: string, listener: any) => {
-        if (mql?.removeEventListener) mql.removeEventListener(type, listener);
+        if (mql && typeof mql.removeEventListener === 'function') mql.removeEventListener(type, listener);
       },
       dispatchEvent: (event: Event) => {
-        if (mql?.dispatchEvent) return mql.dispatchEvent(event);
+        if (mql && typeof mql.dispatchEvent === 'function') return mql.dispatchEvent(event);
         return false;
       },
     } as any;

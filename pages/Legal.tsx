@@ -44,7 +44,7 @@ export const Privacy: React.FC = () => (
         </div>
         <div>
           <h3 className="font-semibold text-gray-800">Payment Information</h3>
-          <p>When you purchase a subscription, payment processing is handled securely by Razorpay. QR Vault does not store your full card details or sensitive financial information.</p>
+          <p>When you purchase a subscription, payment processing is handled securely. QR Vault does not store your full card details or sensitive financial information.</p>
         </div>
       </div>
     </section>
@@ -82,7 +82,6 @@ export const Privacy: React.FC = () => (
         <li>Google OAuth – for secure login</li>
         <li>Google Drive – optional file storage integration</li>
         <li>Google AdSense – advertisement services</li>
-        <li>Razorpay – payment processing</li>
       </ul>
       <p className="mt-2 text-sm italic">These services may collect limited data according to their own privacy policies.</p>
     </section>
@@ -162,7 +161,7 @@ export const Terms: React.FC = () => (
       <p>Subscriptions may:</p>
       <ul className="list-disc ml-5">
         <li>Renew periodically</li>
-        <li>Require payment through Razorpay</li>
+        <li>Require payment</li>
         <li>Be canceled by the user at any time</li>
       </ul>
       <p className="mt-2">Features and pricing may change without prior notice.</p>
@@ -215,7 +214,7 @@ export const RefundPolicy: React.FC = () => (
 
     <section>
       <h2 className="text-xl font-bold text-gray-900 mb-3">4. Refund Processing</h2>
-      <p>Approved refunds are processed through Razorpay and may take 5–10 business days to appear in the original payment method.</p>
+      <p>Approved refunds may take 5–10 business days to appear in the original payment method.</p>
     </section>
   </LegalLayout>
 );

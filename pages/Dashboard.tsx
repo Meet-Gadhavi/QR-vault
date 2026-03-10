@@ -97,11 +97,8 @@ export const Dashboard: React.FC = () => {
     }
 
     const handleMessage = (event: MessageEvent) => {
-      // Validate origin is from AI Studio preview or localhost
-      const origin = event.origin;
-      if (!origin.endsWith('.run.app') && !origin.includes('localhost')) {
-        return;
-      }
+      // Be more permissible for cross-domain auth if the message type is explicitly our auth success message.
+      // Netlify frontend domain might be receiving message from Render backend domain.
       if (event.data?.type === 'GOOGLE_AUTH_SUCCESS') {
         const tokens = event.data.tokens;
         setGoogleTokens(tokens);
