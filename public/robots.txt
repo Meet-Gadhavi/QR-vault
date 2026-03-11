@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://qr-vault-2008.onrender.com/sitemap.xml
+Sitemap: https://qrvault-6322008.netlify.app/sitemap.xml

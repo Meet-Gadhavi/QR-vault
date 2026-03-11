@@ -541,8 +541,16 @@ app.use('/api', (req, res) => {
 
 // Vite Middleware
 async function startServer() {
-  // Always serve public files (like robots.txt, sitemap.xml)
-  app.use(express.static('public'));
+  // Serve static files in production (if built)
+  app.use(express.static('dist'));
+
+  // robots.txt and sitemap.xml explicitly
+  app.get('/robots.txt', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'robots.txt'));
+  });
+  app.get('/sitemap.xml', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'sitemap.xml'));
+  });
 
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
