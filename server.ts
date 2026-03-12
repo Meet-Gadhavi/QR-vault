@@ -544,12 +544,19 @@ async function startServer() {
   // Serve static files in production (if built)
   app.use(express.static('dist'));
 
-  // robots.txt and sitemap.xml explicitly
+  // Explicitly serve robots.txt and sitemap.xml from public in dev or dist in prod
   app.get('/robots.txt', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'robots.txt'));
+    const filePath = process.env.NODE_ENV === 'production' 
+      ? path.join(__dirname, 'dist', 'robots.txt')
+      : path.join(__dirname, 'public', 'robots.txt');
+    res.sendFile(filePath);
   });
+
   app.get('/sitemap.xml', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'sitemap.xml'));
+    const filePath = process.env.NODE_ENV === 'production' 
+      ? path.join(__dirname, 'dist', 'sitemap.xml')
+      : path.join(__dirname, 'public', 'sitemap.xml');
+    res.sendFile(filePath);
   });
 
   if (process.env.NODE_ENV !== 'production') {
