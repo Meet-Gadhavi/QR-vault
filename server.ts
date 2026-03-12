@@ -541,22 +541,24 @@ app.use('/api', (req, res) => {
 
 // Vite Middleware
 async function startServer() {
-  // Serve static files in production (if built)
-  app.use(express.static('dist'));
-
-  // Explicitly serve robots.txt and sitemap.xml from public in dev or dist in prod
+  // 1. Explicitly serve SEO files FIRST with absolute paths
+  // This prevents SPA fallback (index.html) from intercepting these requests
   app.get('/robots.txt', (req, res) => {
-    const filePath = process.env.NODE_ENV === 'production' 
+    const robotsPath = process.env.NODE_ENV === 'production'
       ? path.join(__dirname, 'dist', 'robots.txt')
       : path.join(__dirname, 'public', 'robots.txt');
-    res.sendFile(filePath);
+    
+    console.log(`[SEO] Serving robots.txt from: ${robotsPath}`);
+    res.sendFile(robotsPath);
   });
 
   app.get('/sitemap.xml', (req, res) => {
-    const filePath = process.env.NODE_ENV === 'production' 
+    const sitemapPath = process.env.NODE_ENV === 'production'
       ? path.join(__dirname, 'dist', 'sitemap.xml')
       : path.join(__dirname, 'public', 'sitemap.xml');
-    res.sendFile(filePath);
+      
+    console.log(`[SEO] Serving sitemap.xml from: ${sitemapPath}`);
+    res.sendFile(sitemapPath);
   });
 
   if (process.env.NODE_ENV !== 'production') {
@@ -566,12 +568,13 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    // Serve static files in production (if built)
-    app.use(express.static('dist'));
+    // 2. Serve static files with absolute path
+    const distPath = path.join(__dirname, 'dist');
+    app.use(express.static(distPath));
 
-    // SPA Fallback for BrowserRouter
+    // 3. SPA Fallback (only for routes that didn't match files or SEO routes)
     app.get(/.*/, (req, res) => {
-      res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+      res.sendFile(path.join(distPath, 'index.html'));
     });
   }
 
