@@ -725,7 +725,7 @@ async function startServer() {
       if (err) {
         console.error(`[SEO] Error serving robots.txt:`, err);
         // Fallback or send simple plain text if file missing
-        res.status(200).send('User-agent: *\nDisallow:\n\nSitemap: https://qr-vault-2008.onrender.com/sitemap.xml');
+        res.status(200).send('User-agent: *\nAllow: /\n\nSitemap: https://qr-vault-2008.onrender.com/sitemap.xml');
       }
     });
   });

@@ -1,4 +1,4 @@
 User-agent: *
-Disallow:
+Allow: /
 
 Sitemap: https://qr-vault-2008.onrender.com/sitemap.xml
