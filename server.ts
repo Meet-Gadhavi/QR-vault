@@ -721,11 +721,11 @@ async function startServer() {
       : path.join(__dirname, 'public', 'robots.txt');
     
     console.log(`[SEO] Serving robots.txt from: ${robotsPath}`);
-    res.sendFile(robotsPath, (err) => {
+    res.type('text/plain').sendFile(robotsPath, (err) => {
       if (err) {
         console.error(`[SEO] Error serving robots.txt:`, err);
         // Fallback or send simple plain text if file missing
-        res.status(200).type('text/plain').send('User-agent: *\nAllow: /\n');
+        res.status(200).send('User-agent: *\nDisallow:\n\nSitemap: https://qr-vault-2008.onrender.com/sitemap.xml');
       }
     });
   });
