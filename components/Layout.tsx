@@ -11,6 +11,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
   const isPublicPage = location.pathname.startsWith('/v/');
   const isDashboard = location.pathname === '/dashboard';
+  const isAdminDashboard = location.pathname === '/Admindashboard';
 
   const handleLogout = () => {
     logout();
@@ -18,7 +19,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     setIsMenuOpen(false);
   };
 
-  if (isPublicPage) {
+  if (isPublicPage || isAdminDashboard) {
     return <main className="min-h-screen bg-gray-50">{children}</main>;
   }
 

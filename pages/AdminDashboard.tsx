@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Users, 
   CreditCard, 
@@ -19,6 +19,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { AdminAuth } from './AdminAuth';
+import { useNotification } from '../contexts/NotificationContext';
 
 // Types
 interface Stats {
@@ -64,9 +65,16 @@ export const AdminDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'home' | 'users' | 'transactions' | 'logs'>('home');
   const [stats, setStats] = useState<Stats | null>(null);
   const [logs, setLogs] = useState<Log[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [notification, setNotification] = useState<{ title: string; message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedUser, setSelectedUser] = useState<any | null>(null);
+  const [revenuePeriod, setRevenuePeriod] = useState<'3M' | '6M' | '12M'>('6M');
+  const { toast } = useNotification();
 
+  const showNotify = (title: string, message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    toast(title, message, type);
+  };
   const fetchStats = async (password: string) => {
     try {
       setLoading(true);
@@ -100,20 +108,37 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
+  const fetchUsers = async () => {
+    try {
+      const res = await fetch('/api/admin/users', {
+        headers: { 'x-admin-password': adminPassword }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUsers(data);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   useEffect(() => {
     if (isAuthenticated) {
       const interval = setInterval(() => {
         if (activeTab === 'home') fetchStats(adminPassword);
         if (activeTab === 'logs') fetchLogs();
+        if (activeTab === 'users') fetchUsers();
       }, 5000);
       return () => clearInterval(interval);
     }
   }, [isAuthenticated, activeTab, adminPassword]);
 
-  const showNotify = (title: string, message: string, type: 'success' | 'error' | 'info' = 'info') => {
-    setNotification({ title, message, type });
-    setTimeout(() => setNotification(null), 5000);
-  };
+  const filteredUsers = useMemo(() => {
+    return users.filter(u => 
+      u.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      u.email.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [users, searchTerm]);
 
   if (!isAuthenticated) {
     return <AdminAuth onAuthenticated={(pw) => fetchStats(pw)} />;
@@ -236,17 +261,22 @@ export const AdminDashboard: React.FC = () => {
                     <p className="text-sm text-gray-500">Monthly revenue growth from subscriptions</p>
                   </div>
                   <div className="flex bg-gray-50 p-1 rounded-xl">
-                    {['3M', '6M', '12M'].map((p) => (
-                      <button key={p} className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${p === '6M' ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>
+                    {(['3M', '6M', '12M'] as const).map((p) => (
+                      <button 
+                        key={p} 
+                        onClick={() => setRevenuePeriod(p)}
+                        className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${revenuePeriod === p ? 'bg-white text-primary-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                      >
                         {p}
                       </button>
                     ))}
                   </div>
                 </div>
                 <div className="h-[300px] w-full">
-                  {/* Mock implementation of Recharts using charts-base or custom div */}
                   <div className="flex items-end justify-between h-full pt-10 px-4">
-                    {stats.revenue.last6Months.map((val, i) => (
+                    {(revenuePeriod === '3M' ? stats.revenue.last3Months : 
+                      revenuePeriod === '12M' ? stats.revenue.last12Months : 
+                      stats.revenue.last6Months).map((val, i) => (
                        <div key={i} className="flex flex-col items-center gap-3 w-full group">
                           <div className="relative w-12 flex items-end justify-center rounded-t-lg bg-primary-100 group-hover:bg-primary-200 transition-all duration-500" style={{ height: `${(val / 25000) * 100}%` }}>
                              <div className="absolute -top-10 opacity-0 group-hover:opacity-100 bg-gray-900 text-white text-[10px] font-bold px-2 py-1 rounded transition-all">₹{val.toLocaleString()}</div>
@@ -300,7 +330,13 @@ export const AdminDashboard: React.FC = () => {
             <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4">
               <div className="relative w-full sm:max-w-xs">
                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                 <input type="text" placeholder="Search users by name or email..." className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all text-sm" />
+                 <input 
+                   type="text" 
+                   placeholder="Search users by name or email..." 
+                   value={searchTerm}
+                   onChange={(e) => setSearchTerm(e.target.value)}
+                   className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all text-sm" 
+                 />
               </div>
               <div className="flex items-center gap-3 w-full sm:w-auto">
                  <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-all">
@@ -320,11 +356,13 @@ export const AdminDashboard: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {[
-                    { id: 1, name: 'Ankita Sharma', email: 'ankita@example.com', plan: 'PRO', used: '12.4 GB', quota: '20 GB', status: 'Active' },
-                    { id: 2, name: 'Rahul V.', email: 'rahul@qrvault.in', plan: 'STARTER', used: '4.2 GB', quota: '10 GB', status: 'Trial' },
-                    { id: 3, name: 'Meet Gadhavi', email: 'admin@meet.dev', plan: 'PRO', used: '8.1 GB', quota: '50 GB', status: 'Active' },
-                  ].map((u) => (
+                  {filteredUsers.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-6 py-10 text-center text-gray-400 italic text-sm">
+                        No users match your search...
+                      </td>
+                    </tr>
+                  ) : filteredUsers.map((u) => (
                     <tr key={u.id} className="hover:bg-gray-50/50 transition-colors group">
                       <td className="px-6 py-4">
                         <div>
@@ -333,7 +371,7 @@ export const AdminDashboard: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`px-2 py-1 rounded-lg text-[10px] font-black tracking-tighter uppercase ${u.plan === 'PRO' ? 'bg-primary-100 text-primary-700' : 'bg-gray-100 text-gray-600'}`}>
+                        <span className={`px-2 py-1 rounded-lg text-[10px] font-black tracking-tighter uppercase ${u.plan === 'PRO' ? 'bg-primary-100 text-primary-700' : u.plan === 'STARTER' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
                           {u.plan}
                         </span>
                       </td>
@@ -341,22 +379,23 @@ export const AdminDashboard: React.FC = () => {
                         <div className="w-24">
                           <div className="flex justify-between items-center mb-1 text-[10px] font-bold text-gray-400">
                               <span>{u.used}</span>
+                              <span>{u.quota}</span>
                           </div>
                           <div className="w-full bg-gray-100 rounded-full h-1">
-                              <div className="bg-primary-500 h-full rounded-full" style={{ width: '60%' }}></div>
+                              <div className="bg-primary-500 h-full rounded-full" style={{ width: `${Math.min(100, (parseFloat(u.used) / parseFloat(u.quota)) * 100)}%` }}></div>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-1.5">
-                           <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                           <div className={`w-1.5 h-1.5 rounded-full ${u.status === 'Active' ? 'bg-green-500' : 'bg-orange-500'}`}></div>
                            <span className="text-xs font-medium text-gray-600">{u.status}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right">
                         <button 
                             className="p-2 text-gray-400 hover:text-primary-600 transition-colors"
-                            onClick={() => showNotify('User Detail', `Opening details for ${u.name}`, 'info')}
+                            onClick={() => setSelectedUser(u)}
                         >
                            <Eye size={18} />
                         </button>
@@ -414,14 +453,51 @@ export const AdminDashboard: React.FC = () => {
         )}
       </main>
 
-      {/* Notifications */}
-      {notification && (
-        <Toast 
-           title={notification.title} 
-           message={notification.message} 
-           type={notification.type} 
-           onClose={() => setNotification(null)} 
-        />
+      {/* User Detail Modal */}
+      {selectedUser && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white rounded-[2rem] p-10 max-w-lg w-full shadow-[0_20px_50px_rgba(0,0,0,0.2)] animate-in zoom-in-95 duration-300 relative overflow-hidden">
+             <div className="absolute top-0 right-0 p-6">
+                <button onClick={() => setSelectedUser(null)} className="p-2 text-gray-400 hover:text-gray-900 transition-colors">
+                   <X size={24} />
+                </button>
+             </div>
+             
+             <div className="flex flex-col items-center mb-8">
+                <div className="w-24 h-24 bg-primary-50 rounded-3xl flex items-center justify-center mb-4 border-2 border-primary-100">
+                   <Users size={40} className="text-primary-600" />
+                </div>
+                <h2 className="text-2xl font-black text-gray-900">{selectedUser.name}</h2>
+                <p className="text-gray-500 font-medium">{selectedUser.email}</p>
+             </div>
+
+             <div className="grid grid-cols-2 gap-4 mb-10">
+                <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                   <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Current Plan</p>
+                   <p className="text-sm font-black text-gray-900">{selectedUser.plan}</p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                   <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Status</p>
+                   <p className={`text-sm font-black ${selectedUser.status === 'Active' ? 'text-green-600' : 'text-orange-600'}`}>{selectedUser.status}</p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                   <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">QR Code Quota</p>
+                   <p className="text-sm font-black text-gray-900">{selectedUser.used} / {selectedUser.quota}</p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                   <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Joined Date</p>
+                   <p className="text-sm font-black text-gray-900">{new Date(selectedUser.created_at).toLocaleDateString()}</p>
+                </div>
+             </div>
+
+             <button 
+                onClick={() => setSelectedUser(null)}
+                className="w-full bg-primary-600 hover:bg-black text-white py-4 rounded-2xl font-black transition-all shadow-xl shadow-primary-200"
+             >
+                Close Profile
+             </button>
+          </div>
+        </div>
       )}
     </div>
   );
