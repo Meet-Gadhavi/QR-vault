@@ -10,6 +10,7 @@ import { Dashboard } from './pages/Dashboard';
 import { PublicView } from './pages/PublicView';
 import { Privacy, Terms, RefundPolicy } from './pages/Legal';
 import { About, Contact, FAQ, Security } from './pages/InfoPages';
+import { AdminDashboard } from './pages/AdminDashboard';
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/faq" element={<FAQ />} />
             <Route path="/security" element={<Security />} />
+            <Route path="/Admindashboard" element={<AdminDashboard />} />
           </Routes>
         </Layout>
       </Router>

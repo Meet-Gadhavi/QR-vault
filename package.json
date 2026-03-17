@@ -25,7 +25,8 @@
     "react-dom": "^18.2.0",
     "react-qr-code": "^2.0.12",
     "react-router-dom": "^6.21.0",
-    "recharts": "^2.10.0",
+    "recharts": "^3.8.0",
+    "tailwind-merge": "^3.5.0",
     "tsx": "^4.21.0"
   },
   "devDependencies": {
