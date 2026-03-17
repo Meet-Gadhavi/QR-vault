@@ -592,29 +592,49 @@ adminRouter.get('/overview', async (req, res) => {
 
     if (iError) throw iError;
 
-    // Group revenue by month for the last 6 months
+    // Group revenue by day for the last 30 days (1M)
+    const last1MonthRevenue = new Array(30).fill(0);
+    const oneDayMs = 24 * 60 * 60 * 1000;
+
+    // Group revenue by month for the last 6 and 12 months
     const last6MonthsRevenue = new Array(6).fill(0);
-    const now = Date.now();
+    const last12MonthsRevenue = new Array(12).fill(0);
     const oneMonthMs = 30 * 24 * 60 * 60 * 1000;
 
+    const now = Date.now();
     invoices.forEach(inv => {
       const ageMs = now - inv.timestamp;
-      const monthIdx = 5 - Math.floor(ageMs / oneMonthMs);
-      if (monthIdx >= 0 && monthIdx < 6) {
-        last6MonthsRevenue[monthIdx] += inv.amount;
+      
+      // 1M calculation
+      const dayIdx = 29 - Math.floor(ageMs / oneDayMs);
+      if (dayIdx >= 0 && dayIdx < 30) {
+        last1MonthRevenue[dayIdx] += inv.amount;
+      }
+
+      // 6M calculation
+      const monthIdx6 = 5 - Math.floor(ageMs / oneMonthMs);
+      if (monthIdx6 >= 0 && monthIdx6 < 6) {
+        last6MonthsRevenue[monthIdx6] += inv.amount;
+      }
+
+      // 12M calculation
+      const monthIdx12 = 11 - Math.floor(ageMs / oneMonthMs);
+      if (monthIdx12 >= 0 && monthIdx12 < 12) {
+        last12MonthsRevenue[monthIdx12] += inv.amount;
       }
     });
 
     res.json({
-      activeUsers: Math.floor(totalUsers * 0.4), // Dynamic mock for "active" users
+      activeUsers: Math.floor(totalUsers * 0.4),
       totalUsers,
       paidUsers: paidUsersCount,
       unpaidUsers: totalUsers - paidUsersCount,
       plans,
       revenue: {
+        last1Month: last1MonthRevenue,
         last3Months: last6MonthsRevenue.slice(3),
         last6Months: last6MonthsRevenue,
-        last12Months: last6MonthsRevenue // Placeholder for 12 months
+        last12Months: last12MonthsRevenue
       },
       health: {
         cpuUsage: Math.floor(Math.random() * 20) + 5,
@@ -632,6 +652,23 @@ adminRouter.get('/overview', async (req, res) => {
 
 adminRouter.get('/logs', (req, res) => {
   res.json(LOG_BUFFER);
+});
+
+adminRouter.get('/users/:userId/invoices', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { data: invoices, error } = await supabase
+      .from('invoices')
+      .select('*')
+      .eq('user_id', userId)
+      .order('timestamp', { ascending: false });
+
+    if (error) throw error;
+    res.json(invoices);
+  } catch (error: any) {
+    console.error('[Admin API] Error fetching user invoices:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 adminRouter.get('/users', async (req, res) => {

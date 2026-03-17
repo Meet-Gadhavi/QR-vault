@@ -11,7 +11,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
   const isPublicPage = location.pathname.startsWith('/v/');
   const isDashboard = location.pathname === '/dashboard';
-  const isAdminDashboard = location.pathname === '/Admindashboard';
+  const isAdminDashboard = location.pathname.toLowerCase() === '/admindashboard';
 
   const handleLogout = () => {
     logout();

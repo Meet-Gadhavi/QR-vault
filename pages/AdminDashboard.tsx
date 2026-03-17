@@ -16,8 +16,20 @@ import {
   Server,
   X,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  History,
+  Download,
+  Receipt
 } from 'lucide-react';
+import { 
+  AreaChart, 
+  Area, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer 
+} from 'recharts';
 import { AdminAuth } from './AdminAuth';
 import { useNotification } from '../contexts/NotificationContext';
 
@@ -28,7 +40,7 @@ interface Stats {
   paidUsers: number;
   unpaidUsers: number;
   plans: { free: number; starter: number; pro: number };
-  revenue: { last3Months: number[]; last6Months: number[]; last12Months: number[] };
+  revenue: { last1Month: number[]; last3Months: number[]; last6Months: number[]; last12Months: number[] };
   health: { cpuUsage: number; memoryUsage: number; uptime: number; loadSpeed: string; concurrentUsers: number };
 }
 
@@ -69,7 +81,9 @@ export const AdminDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
-  const [revenuePeriod, setRevenuePeriod] = useState<'3M' | '6M' | '12M'>('6M');
+  const [revenuePeriod, setRevenuePeriod] = useState<'1M' | '3M' | '6M' | '12M'>('6M');
+  const [selectedUserInvoices, setSelectedUserInvoices] = useState<any[]>([]);
+  const [loadingInvoices, setLoadingInvoices] = useState(false);
   const { toast } = useNotification();
 
   const showNotify = (title: string, message: string, type: 'success' | 'error' | 'info' = 'info') => {
@@ -121,6 +135,31 @@ export const AdminDashboard: React.FC = () => {
       console.error(err);
     }
   };
+
+  const fetchUserInvoices = async (userId: string) => {
+    try {
+      setLoadingInvoices(true);
+      const res = await fetch(`/api/admin/users/${userId}/invoices`, {
+        headers: { 'x-admin-password': adminPassword }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSelectedUserInvoices(data);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingInvoices(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedUser) {
+      fetchUserInvoices(selectedUser.id);
+    } else {
+      setSelectedUserInvoices([]);
+    }
+  }, [selectedUser]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -261,7 +300,7 @@ export const AdminDashboard: React.FC = () => {
                     <p className="text-sm text-gray-500">Monthly revenue growth from subscriptions</p>
                   </div>
                   <div className="flex bg-gray-50 p-1 rounded-xl">
-                    {(['3M', '6M', '12M'] as const).map((p) => (
+                    {(['1M', '3M', '6M', '12M'] as const).map((p) => (
                       <button 
                         key={p} 
                         onClick={() => setRevenuePeriod(p)}
@@ -273,19 +312,59 @@ export const AdminDashboard: React.FC = () => {
                   </div>
                 </div>
                 <div className="h-[300px] w-full">
-                  <div className="flex items-end justify-between h-full pt-10 px-4">
-                    {(revenuePeriod === '3M' ? stats.revenue.last3Months : 
-                      revenuePeriod === '12M' ? stats.revenue.last12Months : 
-                      stats.revenue.last6Months).map((val, i) => (
-                       <div key={i} className="flex flex-col items-center gap-3 w-full group">
-                          <div className="relative w-12 flex items-end justify-center rounded-t-lg bg-primary-100 group-hover:bg-primary-200 transition-all duration-500" style={{ height: `${(val / 25000) * 100}%` }}>
-                             <div className="absolute -top-10 opacity-0 group-hover:opacity-100 bg-gray-900 text-white text-[10px] font-bold px-2 py-1 rounded transition-all">₹{val.toLocaleString()}</div>
-                             <div className="w-full bg-primary-600 rounded-t-lg transition-all" style={{ height: '30%' }}></div>
-                          </div>
-                          <span className="text-[10px] font-bold text-gray-400">Month {i+1}</span>
-                       </div>
-                    ))}
-                  </div>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
+                      data={(revenuePeriod === '1M' ? stats.revenue.last1Month : 
+                             revenuePeriod === '3M' ? stats.revenue.last3Months : 
+                             revenuePeriod === '12M' ? stats.revenue.last12Months : 
+                             stats.revenue.last6Months).map((val, i) => ({
+                        name: revenuePeriod === '1M' ? `Day ${i+1}` : `Month ${i+1}`,
+                        revenue: val
+                      }))}
+                      margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                    >
+                      <defs>
+                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                      <XAxis 
+                        dataKey="name" 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{ fill: '#94a3b8', fontSize: 10 }} 
+                        dy={10}
+                      />
+                      <YAxis 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{ fill: '#94a3b8', fontSize: 10 }}
+                        tickFormatter={(value) => `₹${value / 1000}k`}
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: '#0f172a', 
+                          border: 'none', 
+                          borderRadius: '12px',
+                          color: '#fff',
+                          fontSize: '12px',
+                          fontWeight: 'bold'
+                        }}
+                        itemStyle={{ color: '#fff' }}
+                        cursor={{ stroke: '#8b5cf6', strokeWidth: 2 }}
+                       />
+                      <Area 
+                        type="monotone" 
+                        dataKey="revenue" 
+                        stroke="#8b5cf6" 
+                        strokeWidth={3}
+                        fillOpacity={1} 
+                        fill="url(#colorRevenue)" 
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
 
@@ -490,12 +569,48 @@ export const AdminDashboard: React.FC = () => {
                 </div>
              </div>
 
-             <button 
-                onClick={() => setSelectedUser(null)}
-                className="w-full bg-primary-600 hover:bg-black text-white py-4 rounded-2xl font-black transition-all shadow-xl shadow-primary-200"
-             >
-                Close Profile
-             </button>
+             <div className="bg-gray-50 p-6 rounded-[2rem] border border-gray-100">
+                <div className="flex items-center gap-2 mb-4">
+                   <Receipt size={18} className="text-primary-600" />
+                   <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest">Billing History</h3>
+                </div>
+                
+                <div className="space-y-3 max-h-[200px] overflow-y-auto pr-2 scrollbar-thin">
+                   {loadingInvoices ? (
+                      <div className="py-8 flex flex-col items-center justify-center gap-2 opacity-50">
+                         <RefreshCw className="animate-spin text-primary-600" size={24} />
+                         <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Loading Invoices...</p>
+                      </div>
+                   ) : selectedUserInvoices.length === 0 ? (
+                      <p className="text-xs text-gray-400 italic text-center py-4">No billing records found for this user.</p>
+                   ) : selectedUserInvoices.map((inv, i) => (
+                      <div key={i} className="bg-white p-3 rounded-xl border border-gray-100 flex items-center justify-between group hover:border-primary-200 transition-all">
+                         <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-gray-50 rounded-lg flex items-center justify-center group-hover:bg-primary-50 transition-colors">
+                               <History size={14} className="text-gray-400 group-hover:text-primary-600" />
+                            </div>
+                            <div>
+                               <p className="text-xs font-black text-gray-900">₹{inv.amount}</p>
+                               <p className="text-[10px] text-gray-400 font-medium">{new Date(inv.timestamp).toLocaleDateString()}</p>
+                            </div>
+                         </div>
+                         <div className="flex items-center gap-2">
+                            <span className="text-[8px] font-black uppercase tracking-widest text-green-500 bg-green-50 px-1.5 py-0.5 rounded">Paid</span>
+                            <Download size={14} className="text-gray-300 hover:text-primary-600 cursor-pointer" />
+                         </div>
+                      </div>
+                   ))}
+                </div>
+             </div>
+
+             <div className="mt-8 flex gap-3">
+                <button 
+                  onClick={() => setSelectedUser(null)}
+                  className="flex-grow bg-primary-600 hover:bg-black text-white py-4 rounded-2xl font-black transition-all shadow-xl shadow-primary-200 flex items-center justify-center gap-2"
+                >
+                  Close Profile
+                </button>
+             </div>
           </div>
         </div>
       )}
