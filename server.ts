@@ -273,6 +273,63 @@ apiRouter.post(['/google-drive/storage-usage', '/google-drive/storage-usage/'], 
   }
 });
 
+// Proxy route to handle Google Drive downloads and bypass virus scan warnings for large files
+apiRouter.get('/drive-proxy', async (req: Request, res: Response) => {
+  const { id, name } = req.query;
+  if (!id) return res.status(400).json({ error: 'File ID is required' });
+
+  addLog('DRIVE', `Proxying download for file ID: ${id}`);
+
+  try {
+    const downloadUrl = `https://drive.google.com/uc?export=download&id=${id}`;
+    
+    // Initial fetch to check for confirmation page (common for files > 100MB)
+    let response = await fetch(downloadUrl, { redirect: 'follow' });
+    
+    // Handle large file "confirm" page by extracting the token and retrying
+    if (response.status === 200 && response.headers.get('content-type')?.includes('text/html')) {
+      const text = await response.text();
+      const confirmMatch = text.match(/confirm=([a-zA-Z0-9_]+)/);
+      if (confirmMatch) {
+        const confirmToken = confirmMatch[1];
+        response = await fetch(`${downloadUrl}&confirm=${confirmToken}`, { redirect: 'follow' });
+      } else {
+        // If it's HTML but no confirm token, it might be an error or login page
+        return res.status(403).json({ 
+          error: 'Cannot access Google Drive file.', 
+          details: 'The file might not be public or requires authentication. Ensure it is shared as "Anyone with the link".' 
+        });
+      }
+    }
+
+    if (!response.ok) {
+      throw new Error(`Google Drive returned status ${response.status}`);
+    }
+
+    // Set headers for file download
+    const fileName = (name as string) || 'download';
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(fileName)}"`);
+    res.setHeader('Content-Type', response.headers.get('content-type') || 'application/octet-stream');
+    
+    const contentLength = response.headers.get('content-length');
+    if (contentLength) {
+      res.setHeader('Content-Length', contentLength);
+    }
+
+    // Stream the response body directly to the client
+    if (response.body) {
+      const nodeReadable = Readable.fromWeb(response.body as any);
+      nodeReadable.pipe(res);
+    } else {
+      res.status(500).json({ error: 'Empty response body from Google Drive' });
+    }
+
+  } catch (error: any) {
+    console.error('[Drive Proxy Error]', error);
+    res.status(500).json({ error: 'Failed to proxy Google Drive download', details: error.message });
+  }
+});
+
 // Ensure QRVM folder exists in Google Drive
 apiRouter.post(['/google-drive/ensure-folder', '/google-drive/ensure-folder/'], async (req: Request, res: Response) => {
   const { tokens } = req.body;
