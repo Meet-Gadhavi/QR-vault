@@ -10,8 +10,21 @@ import { fileURLToPath } from 'url';
 import multer from 'multer';
 import { Readable } from 'stream';
 
-const upload = multer({ storage: multer.memoryStorage() });
+// Use diskStorage instead of memoryStorage for better handling of large files (prevents RAM issues)
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, '/tmp'); // Render/Linux temp dir
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  }
+});
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 1024 * 1024 * 1024 } // 1GB limit
+});
 import { createClient } from '@supabase/supabase-js';
+import fs from 'fs';
 
 dotenv.config();
 
@@ -51,7 +64,8 @@ app.use(cors({
   methods: ["GET", "POST", "OPTIONS"],
   credentials: false
 }));
-app.use(express.json());
+app.use(express.json({ limit: '1024mb' }));
+app.use(express.urlencoded({ limit: '1024mb', extended: true }));
 
 // Google OAuth Setup
 const getOAuth2Client = () => {
@@ -319,10 +333,13 @@ apiRouter.post(['/google-drive/upload-file', '/google-drive/upload-file/'], uplo
       },
       media: {
         mimeType: file.mimetype,
-        body: Readable.from(file.buffer),
+        body: fs.createReadStream(file.path),
       },
       fields: 'id, name, webViewLink, size',
     });
+
+    // Cleanup temp file
+    fs.unlinkSync(file.path);
 
     console.log('[Google Drive] File uploaded:', response.data.id);
     res.json(response.data);

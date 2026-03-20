@@ -92,9 +92,10 @@ create policy "Public invoices access" on public.invoices for all using (true) w
 -- =============================================================================
 -- STORAGE BUCKET
 -- =============================================================================
-insert into storage.buckets (id, name, public) 
-values ('vault-files', 'vault-files', true)
-on conflict (id) do nothing;
+-- Create bucket with 5GB file size limit (5368709120 bytes)
+insert into storage.buckets (id, name, public, file_size_limit) 
+values ('vault-files', 'vault-files', true, 5368709120)
+on conflict (id) do update set file_size_limit = 5368709120;
 
 create policy "Public Storage Access" on storage.objects for all 
 using ( bucket_id = 'vault-files' ) 

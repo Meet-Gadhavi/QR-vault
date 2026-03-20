@@ -320,8 +320,19 @@ export const Dashboard: React.FC = () => {
       method: 'POST',
       body: formData,
     });
+    if (!res.ok) {
+        const text = await res.text();
+        let errorMsg = 'Failed to upload file to Drive';
+        try {
+            const errorData = JSON.parse(text);
+            errorMsg = errorData.error || errorMsg;
+        } catch (e) {
+            // If not JSON, use the status text or a generic message
+            errorMsg = `Server error (${res.status}): ${res.statusText || 'Connection lost'}`;
+        }
+        throw new Error(errorMsg);
+    }
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Failed to upload file to Drive');
     return data; // { id, name, webViewLink, size }
   };
 
