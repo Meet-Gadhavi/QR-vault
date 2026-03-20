@@ -104,7 +104,9 @@ export const PublicView: React.FC = () => {
     // Extract file ID from /d/ID/ or ?id=ID
     const match = file.url.match(/\/d\/([^/|?]+)/) || file.url.match(/[?&]id=([^&]+)/);
     if (match && match[1]) {
-      return `/api/drive-proxy?id=${match[1]}&name=${encodeURIComponent(file.name)}`;
+      // Use absolute origin to ensure we hit the API correctly regardless of routing
+      const base = window.location.origin;
+      return `${base}/api/drive-proxy?id=${match[1]}&name=${encodeURIComponent(file.name)}`;
     }
     return null;
   };

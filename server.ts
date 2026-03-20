@@ -274,7 +274,7 @@ apiRouter.post(['/google-drive/storage-usage', '/google-drive/storage-usage/'], 
 });
 
 // Proxy route to handle Google Drive downloads and bypass virus scan warnings for large files
-apiRouter.get('/drive-proxy', async (req: Request, res: Response) => {
+apiRouter.get(['/drive-proxy', '/drive-proxy/'], async (req: Request, res: Response) => {
   const { id, name } = req.query;
   if (!id) return res.status(400).json({ error: 'File ID is required' });
 
@@ -292,23 +292,32 @@ apiRouter.get('/drive-proxy', async (req: Request, res: Response) => {
       const confirmMatch = text.match(/confirm=([a-zA-Z0-9_]+)/);
       if (confirmMatch) {
         const confirmToken = confirmMatch[1];
+        addLog('DRIVE', `Large file detected for ${id}, using confirm token: ${confirmToken}`);
         response = await fetch(`${downloadUrl}&confirm=${confirmToken}`, { redirect: 'follow' });
-      } else {
-        // If it's HTML but no confirm token, it might be an error or login page
+      } else if (text.includes('google.com/ServiceLogin')) {
+        addLog('ERROR', `Google Drive file ${id} is NOT public. Redirected to login.`);
         return res.status(403).json({ 
-          error: 'Cannot access Google Drive file.', 
-          details: 'The file might not be public or requires authentication. Ensure it is shared as "Anyone with the link".' 
+          error: 'Access Denied', 
+          details: 'This Google Drive file is not public. Please set sharing to "Anyone with the link can view" in Google Drive.' 
+        });
+      } else {
+        addLog('ERROR', `Google Drive returned unexpected HTML for ${id}`);
+        return res.status(404).json({ 
+          error: 'File not available', 
+          details: 'Google Drive did not provide a download link. Ensure the file is shared correctly.' 
         });
       }
     }
 
     if (!response.ok) {
+      addLog('ERROR', `Google Drive returned status ${response.status} for ${id}`);
       throw new Error(`Google Drive returned status ${response.status}`);
     }
 
     // Set headers for file download
     const fileName = (name as string) || 'download';
-    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(fileName)}"`);
+    // Use standard Content-Disposition for compatibility
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(fileName)}"; filename*=UTF-8''${encodeURIComponent(fileName)}`);
     res.setHeader('Content-Type', response.headers.get('content-type') || 'application/octet-stream');
     
     const contentLength = response.headers.get('content-length');
@@ -318,14 +327,29 @@ apiRouter.get('/drive-proxy', async (req: Request, res: Response) => {
 
     // Stream the response body directly to the client
     if (response.body) {
-      const nodeReadable = Readable.fromWeb(response.body as any);
-      nodeReadable.pipe(res);
+      // Node 18 fetch body is a Web Stream. Readable.fromWeb handles backpressure and is standard in Node 18+.
+      if ((Readable as any).fromWeb) {
+        (Readable as any).fromWeb(response.body).pipe(res);
+      } else {
+        // Fallback for environments where fromWeb might not be exposed on Readable directly
+        const reader = response.body.getReader();
+        const stream = new Readable({
+          async read() {
+            try {
+              const { done, value } = await reader.read();
+              if (done) this.push(null);
+              else this.push(Buffer.from(value));
+            } catch (err) { this.destroy(err as any); }
+          }
+        });
+        stream.pipe(res);
+      }
     } else {
       res.status(500).json({ error: 'Empty response body from Google Drive' });
     }
 
   } catch (error: any) {
-    console.error('[Drive Proxy Error]', error);
+    addLog('ERROR', `Drive Proxy Error for ${id}: ${error.message}`);
     res.status(500).json({ error: 'Failed to proxy Google Drive download', details: error.message });
   }
 });
