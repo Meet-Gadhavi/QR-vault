@@ -435,9 +435,43 @@ export const Dashboard: React.FC = () => {
       return;
     }
 
+    const vaultToDelete = vaults.find(v => v.id === id);
+    if (!vaultToDelete) return;
+
     if (confirm('Are you sure? This will delete the QR code and all files permanently.')) {
       try {
+        // 1. If Google Drive is connected, delete the folder from Drive
+        if (googleTokens) {
+          const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+          
+          // First, get the QRVM folder ID
+          const ensureRes = await fetch(`${apiBase}/api/google-drive/ensure-folder`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tokens: googleTokens }),
+          });
+          const folderData = await ensureRes.json();
+          
+          if (ensureRes.ok && folderData.folderId) {
+            await fetch(`${apiBase}/api/google-drive/delete-vault`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                tokens: googleTokens,
+                folderId: folderData.folderId,
+                vaultName: vaultToDelete.name
+              }),
+            });
+          }
+        }
+
+        // 2. Delete from Supabase (handled inside deleteVault) and DB
         await mockService.deleteVault(appUser.id, id);
+
+        // 3. Refresh Drive storage usage if connected
+        if (googleTokens) {
+          await fetchDriveStorageUsage(googleTokens);
+        }
       } catch (error: any) {
         alert(error.message || "Could not delete vault. Please try again.");
       } finally {

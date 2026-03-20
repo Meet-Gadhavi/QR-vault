@@ -163,11 +163,8 @@ export const PublicView: React.FC = () => {
       // Download all files in vault (ignoring filtered tab view) that are not links
       const downloadableFiles = vault.files.filter(f => f.type !== FileType.LINK);
 
-      const gDriveFiles = downloadableFiles.filter(f => f.url.includes('drive.google.com'));
-      const directFiles = downloadableFiles.filter(f => !f.url.includes('drive.google.com'));
-
-      if (directFiles.length === 0 && gDriveFiles.length > 0) {
-        alert("Google Drive files cannot be included in a ZIP due to browser security restrictions. Please download them individually.");
+      if (downloadableFiles.length === 0) {
+        alert("No files to download.");
         setIsDownloadingAll(false);
         return;
       }
@@ -179,20 +176,24 @@ export const PublicView: React.FC = () => {
       }
 
       // Fetch all files
-      let skippedCount = gDriveFiles.length;
-      await Promise.all(directFiles.map(async (file) => {
+      await Promise.all(downloadableFiles.map(async (file) => {
         try {
-          const response = await fetch(file.url);
+          let fetchUrl = file.url;
+          const gDriveUrl = getGoogleDriveDownloadUrl(file.url);
+          
+          if (gDriveUrl) {
+            // Use server-side proxy for Google Drive to bypass CORS
+            fetchUrl = `/api/proxy-download?url=${encodeURIComponent(gDriveUrl)}`;
+          }
+
+          const response = await fetch(fetchUrl);
+          if (!response.ok) throw new Error(`Fetch failed: ${response.statusText}`);
           const blob = await response.blob();
           folder?.file(file.name, blob);
         } catch (e) {
           console.error(`Failed to download ${file.name}`, e);
         }
       }));
-
-      if (skippedCount > 0) {
-        alert(`${skippedCount} Google Drive file(s) were skipped in the ZIP and must be downloaded individually.`);
-      }
 
       const content = await zip.generateAsync({ type: "blob" });
       const url = URL.createObjectURL(content);

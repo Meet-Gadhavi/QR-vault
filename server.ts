@@ -522,6 +522,88 @@ apiRouter.post(['/google-drive/save-vault', '/google-drive/save-vault/'], async 
   }
 });
 
+// Delete vault from Google Drive
+apiRouter.post('/google-drive/delete-vault', async (req: Request, res: Response) => {
+  const { tokens, folderId, vaultName } = req.body;
+  
+  if (!tokens || !folderId || !vaultName) {
+    return res.status(400).json({ error: 'tokens, folderId, and vaultName are required' });
+  }
+
+  const oauth2Client = getOAuth2Client();
+  oauth2Client.setCredentials(tokens);
+  const drive = google.drive({ version: 'v3', auth: oauth2Client });
+
+  try {
+    const vaultFolderName = vaultName.replace(/[^a-zA-Z0-9 _-]/g, '_');
+
+    // Find the folder(s) with this name inside the QRVM folder
+    const search = await drive.files.list({
+      q: `name = '${vaultFolderName.replace(/'/g, "\\'")}' and '${folderId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+      fields: 'files(id)',
+    });
+
+    if (search.data.files && search.data.files.length > 0) {
+      for (const f of search.data.files) {
+        await drive.files.delete({ fileId: f.id! });
+      }
+      console.log(`[Google Drive] Deleted vault folder: ${vaultFolderName}`);
+      res.json({ status: 'success', deleted: true });
+    } else {
+      console.log(`[Google Drive] Vault folder not found, skipping delete: ${vaultFolderName}`);
+      res.json({ status: 'success', deleted: false });
+    }
+  } catch (error: any) {
+    console.error('[Google Drive] Delete vault error:', error);
+    res.status(500).json({ error: 'Failed to delete vault folder from Drive', details: error.message });
+  }
+});
+
+// Proxy Download for Bulk ZIP (bypasses CORS in browser)
+apiRouter.get('/proxy-download', async (req: Request, res: Response) => {
+  const { url } = req.query;
+  if (!url || typeof url !== 'string') {
+    return res.status(400).json({ error: 'URL query parameter is required' });
+  }
+
+  try {
+    // Basic security check: only allow Google and Supabase domains
+    const allowedDomains = ['drive.google.com', 'supabase.co', 'googleapis.com'];
+    const urlObj = new URL(url);
+    if (!allowedDomains.some(domain => urlObj.hostname.endsWith(domain))) {
+      return res.status(403).json({ error: 'Domain not authorized for proxy' });
+    }
+
+    const response = await fetch(url);
+    if (!response.ok) {
+      return res.status(response.status).json({ error: `Downstream error: ${response.statusText}` });
+    }
+
+    // Proxy the content type
+    const contentType = response.headers.get('content-type');
+    if (contentType) {
+      res.setHeader('Content-Type', contentType);
+    }
+
+    // Proxy the size if available
+    const contentLength = response.headers.get('content-length');
+    if (contentLength) {
+      res.setHeader('Content-Length', contentLength);
+    }
+
+    // Stream the body
+    if (response.body) {
+      const body = Readable.fromWeb(response.body as any);
+      body.pipe(res);
+    } else {
+      res.status(204).end();
+    }
+  } catch (err: any) {
+    console.error('[Proxy Download] Error:', err);
+    res.status(500).json({ error: 'Proxy download failed', details: err.message });
+  }
+});
+
 // Health Check
 apiRouter.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

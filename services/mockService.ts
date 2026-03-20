@@ -219,7 +219,18 @@ const supabaseImpl = {
     },
 
     deleteVault: async (userId: string, id: string) => {
-        // Cascade delete handles files/requests in DB, but storage files remain unless cleaned up manually or via triggers.
+        // 1. Cleanup Supabase Storage files
+        try {
+            const { data: files, error: listError } = await supabase.storage.from('vault-files').list(id);
+            if (!listError && files && files.length > 0) {
+                const paths = files.map((f: any) => `${id}/${f.name}`);
+                await supabase.storage.from('vault-files').remove(paths);
+            }
+        } catch (storageErr) {
+            console.warn("Storage cleanup failed:", storageErr);
+        }
+
+        // 2. Delete from DB (Cascade delete handles files/requests metadata)
         const { error } = await supabase.from('vaults').delete().eq('id', id);
         if (error) throw new Error(error.message);
     },
