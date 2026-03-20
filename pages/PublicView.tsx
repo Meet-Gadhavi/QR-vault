@@ -99,10 +99,35 @@ export const PublicView: React.FC = () => {
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
   };
 
+  const getGoogleDriveDownloadUrl = (url: string) => {
+    if (!url.includes('drive.google.com')) return null;
+    // Extract file ID from /d/ID/ or ?id=ID
+    const match = url.match(/\/d\/([^/|?]+)/) || url.match(/[?&]id=([^&]+)/);
+    if (match && match[1]) {
+      return `https://drive.google.com/uc?export=download&id=${match[1]}`;
+    }
+    return null;
+  };
+
   const handleSingleDownload = async (file: VaultFile, e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
     if (downloadingFileId) return;
+
+    const gDriveUrl = getGoogleDriveDownloadUrl(file.url);
+    if (gDriveUrl) {
+      // For Google Drive, we cannot use fetch due to CORS.
+      // We trigger a direct download link.
+      const a = document.createElement('a');
+      a.href = gDriveUrl;
+      // We use target="_blank" because Google Drive might show a "scanning for viruses" page for large files
+      a.target = "_blank";
+      a.rel = "noreferrer";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      return;
+    }
 
     setDownloadingFileId(file.id);
     try {
@@ -138,6 +163,15 @@ export const PublicView: React.FC = () => {
       // Download all files in vault (ignoring filtered tab view) that are not links
       const downloadableFiles = vault.files.filter(f => f.type !== FileType.LINK);
 
+      const gDriveFiles = downloadableFiles.filter(f => f.url.includes('drive.google.com'));
+      const directFiles = downloadableFiles.filter(f => !f.url.includes('drive.google.com'));
+
+      if (directFiles.length === 0 && gDriveFiles.length > 0) {
+        alert("Google Drive files cannot be included in a ZIP due to browser security restrictions. Please download them individually.");
+        setIsDownloadingAll(false);
+        return;
+      }
+
       if (downloadableFiles.length === 0) {
         alert("No files to download.");
         setIsDownloadingAll(false);
@@ -145,7 +179,8 @@ export const PublicView: React.FC = () => {
       }
 
       // Fetch all files
-      await Promise.all(downloadableFiles.map(async (file) => {
+      let skippedCount = gDriveFiles.length;
+      await Promise.all(directFiles.map(async (file) => {
         try {
           const response = await fetch(file.url);
           const blob = await response.blob();
@@ -154,6 +189,10 @@ export const PublicView: React.FC = () => {
           console.error(`Failed to download ${file.name}`, e);
         }
       }));
+
+      if (skippedCount > 0) {
+        alert(`${skippedCount} Google Drive file(s) were skipped in the ZIP and must be downloaded individually.`);
+      }
 
       const content = await zip.generateAsync({ type: "blob" });
       const url = URL.createObjectURL(content);
