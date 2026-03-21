@@ -338,6 +338,24 @@ apiRouter.post(['/google-drive/upload-file', '/google-drive/upload-file/'], uplo
       fields: 'id, name, webViewLink, size',
     });
 
+    console.log('[Google Drive] File uploaded:', response.data.id);
+
+    // Make the file public: "anyone with the link can view"
+    try {
+      await drive.permissions.create({
+        fileId: response.data.id!,
+        requestBody: {
+          role: 'reader',
+          type: 'anyone',
+        },
+      });
+      console.log('[Google Drive] Permission set to public for:', response.data.id);
+    } catch (permError: any) {
+      console.warn('[Google Drive] Failed to set public permission:', permError.message);
+      // We don't fail the whole upload if just permission setting fails, 
+      // but it might cause download issues later.
+    }
+
     // Cleanup temp file
     fs.unlinkSync(file.path);
 
@@ -387,6 +405,19 @@ apiRouter.post(['/google-drive/save-vault', '/google-drive/save-vault/'], async 
       });
       vaultFolderId = vaultFolder.data.id!;
       console.log('[Google Drive] Vault folder created:', vaultFolderId);
+
+      // Make the vault folder public (optional but helps ensure children are accessible)
+      try {
+        await drive.permissions.create({
+          fileId: vaultFolderId,
+          requestBody: {
+            role: 'reader',
+            type: 'anyone',
+          },
+        });
+      } catch (e: any) {
+        console.warn('[Google Drive] Folder permission error:', e.message);
+      }
     }
 
     // Upload vault-info.json
@@ -495,7 +526,7 @@ apiRouter.post(['/google-drive/save-vault', '/google-drive/save-vault/'], async 
 
           const { Readable: ReadableStream } = await import('stream');
 
-          await drive.files.create({
+          const uploadedFile = await drive.files.create({
             requestBody: {
               name: fileName,
               mimeType: mimeType,
@@ -508,6 +539,19 @@ apiRouter.post(['/google-drive/save-vault', '/google-drive/save-vault/'], async 
             fields: 'id',
           });
           console.log(`[Google Drive] Uploaded: ${fileName}`);
+
+          // Make the file public
+          try {
+            await drive.permissions.create({
+              fileId: uploadedFile.data.id!,
+              requestBody: {
+                role: 'reader',
+                type: 'anyone',
+              },
+            });
+          } catch (e: any) {
+            console.warn('[Google Drive] File permission error:', e.message);
+          }
         } catch (fileErr: any) {
           console.error(`[Google Drive] Error uploading file ${file.name}:`, fileErr.message);
           // Continue with other files even if one fails
@@ -588,7 +632,12 @@ apiRouter.get('/proxy-download', async (req: Request, res: Response) => {
         response = await fetch(confirmedUrl);
       } else {
         // If we can't find a token but it's HTML, it might be an error or private file
-        return res.status(403).json({ error: 'Failed to bypass Google Drive security check or file is private.' });
+        // We log a bit of the HTML for debugging (to differentiate between login and error)
+        console.warn(`[Proxy Download] GDrive returned HTML but no confirm token. Start of HTML: ${html.substring(0, 200)}`);
+        return res.status(403).json({ 
+          error: 'Google Drive file is not accessible.', 
+          details: 'The file might be private or the owner needs to re-sync permissions. Please ensure the file is shared "Anyone with the link can view".' 
+        });
       }
     }
 
