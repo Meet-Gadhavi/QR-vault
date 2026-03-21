@@ -641,32 +641,33 @@ apiRouter.get('/proxy-download', async (req: Request, res: Response) => {
       const html = await response.text();
       
       // Look for the "confirm" token in the GDrive warning page
-      // It can be in a href like /uc?id=...&confirm=XXX
-      // or in a form action/input
-      const confirmMatch = html.match(/confirm=([a-zA-Z0-9_-]+)/);
+      // Broader regex to catch different formats (confirm=XXX, &amp;confirm=XXX, name="confirm" value="XXX")
+      const confirmMatch = 
+        html.match(/confirm=([^&"'\s>]+)/i) || 
+        html.match(/name="confirm"\s+value="([^"]+)"/i) ||
+        html.match(/value="([^"]+)"\s+name="confirm"/i);
+
       if (confirmMatch && confirmMatch[1]) {
         // Construct the confirmed URL. Ensure we use the uc?export=download format.
-        const fileIdMatch = url.match(/[?&]id=([^&]+)/);
+        const fileIdMatch = url.match(/[?&]id=([^&]+)/) || url.match(/\/d\/([^/|?]+)/);
         const fileId = fileIdMatch ? fileIdMatch[1] : '';
         const confirmedUrl = `https://drive.google.com/uc?export=download&id=${fileId}&confirm=${confirmMatch[1]}`;
         
         console.log(`[Proxy Download] GDrive warning detected, retrying with confirm token: ${confirmMatch[1]}`);
         response = await fetch(confirmedUrl);
-      } else if (html.includes('class="goog-inline-block jfk-button jfk-button-action"')) {
-         // This is a button that might have the confirm link hidden in JS, 
-         // but usually the confirm token is in the HTML.
-         // If we still can't find it, we might be hitting a rate limit or a more complex warning.
-         console.warn(`[Proxy Download] GDrive warning page detected but no confirm token found.`);
+      } else if (html.includes('id="uc-download-link"') || html.includes('confirm=')) {
+         // If we see evidence of a confirm link but regex failed, log a bit more of the HTML
+         console.warn(`[Proxy Download] GDrive warning detected but regex failed. HTML snippet: ${html.substring(html.indexOf('confirm'), html.indexOf('confirm') + 100)}`);
          return res.status(403).json({ 
            error: 'Google Drive security check failed.', 
-           details: 'Google Drive is requiring a manual confirmation that this proxy cannot bypass. Please download the file directly or ensure it is shared properly.' 
+           details: 'A security check was found but the proxy could not automatically bypass it. Please share the file "Anyone with the link can view".' 
          });
       } else {
         // If we can't find a token but it's HTML, it might be an error or private file
-        console.warn(`[Proxy Download] GDrive returned HTML but no confirm token. Start of HTML: ${html.substring(0, 200)}`);
+        console.warn(`[Proxy Download] GDrive returned HTML (likely login or error). Start of HTML: ${html.substring(0, 300)}`);
         return res.status(403).json({ 
           error: 'Google Drive file is not accessible.', 
-          details: 'The file might be private or the owner needs to re-sync permissions. Please ensure the file is shared "Anyone with the link can view".' 
+          details: 'The file might be private or the owner needs to re-sync permissions. Please ensure the file is shared "Anyone with the link can view" and NOT restricted.' 
         });
       }
     }
