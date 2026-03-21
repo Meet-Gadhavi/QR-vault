@@ -169,12 +169,6 @@ export const PublicView: React.FC = () => {
         return;
       }
 
-      if (downloadableFiles.length === 0) {
-        alert("No files to download.");
-        setIsDownloadingAll(false);
-        return;
-      }
-
       // Fetch all files
       await Promise.all(downloadableFiles.map(async (file) => {
         try {
@@ -183,7 +177,8 @@ export const PublicView: React.FC = () => {
           
           if (gDriveUrl) {
             // Use server-side proxy for Google Drive to bypass CORS
-            fetchUrl = `/api/proxy-download?url=${encodeURIComponent(gDriveUrl)}`;
+            // Pass filename to proxy so it can set Content-Disposition
+            fetchUrl = `/api/proxy-download?url=${encodeURIComponent(gDriveUrl)}&filename=${encodeURIComponent(file.name)}`;
           }
 
           const response = await fetch(fetchUrl);

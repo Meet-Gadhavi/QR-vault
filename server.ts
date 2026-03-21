@@ -561,7 +561,7 @@ apiRouter.post('/google-drive/delete-vault', async (req: Request, res: Response)
 
 // Proxy Download for Bulk ZIP (bypasses CORS in browser)
 apiRouter.get('/proxy-download', async (req: Request, res: Response) => {
-  const { url } = req.query;
+  const { url, filename } = req.query;
   if (!url || typeof url !== 'string') {
     return res.status(400).json({ error: 'URL query parameter is required' });
   }
@@ -574,21 +574,45 @@ apiRouter.get('/proxy-download', async (req: Request, res: Response) => {
       return res.status(403).json({ error: 'Domain not authorized for proxy' });
     }
 
-    const response = await fetch(url);
+    let response = await fetch(url);
+    
+    // Check for Google Drive virus scan warning page (HTML response on a download link)
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('text/html') && url.includes('drive.google.com')) {
+      const html = await response.text();
+      // Look for the "confirm" token in the GDrive warning page
+      const confirmMatch = html.match(/confirm=([a-zA-Z0-9_-]+)/);
+      if (confirmMatch && confirmMatch[1]) {
+        const confirmedUrl = `${url}&confirm=${confirmMatch[1]}`;
+        console.log(`[Proxy Download] GDrive warning detected, retrying with confirm token...`);
+        response = await fetch(confirmedUrl);
+      } else {
+        // If we can't find a token but it's HTML, it might be an error or private file
+        return res.status(403).json({ error: 'Failed to bypass Google Drive security check or file is private.' });
+      }
+    }
+
     if (!response.ok) {
       return res.status(response.status).json({ error: `Downstream error: ${response.statusText}` });
     }
 
     // Proxy the content type
-    const contentType = response.headers.get('content-type');
-    if (contentType) {
-      res.setHeader('Content-Type', contentType);
+    const finalContentType = response.headers.get('content-type');
+    if (finalContentType) {
+      res.setHeader('Content-Type', finalContentType);
+    } else {
+       res.setHeader('Content-Type', 'application/octet-stream');
     }
 
     // Proxy the size if available
     const contentLength = response.headers.get('content-length');
     if (contentLength) {
       res.setHeader('Content-Length', contentLength);
+    }
+
+    // Add Content-Disposition if filename is provided
+    if (filename && typeof filename === 'string') {
+      res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
     }
 
     // Stream the body
