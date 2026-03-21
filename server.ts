@@ -610,15 +610,28 @@ apiRouter.get('/proxy-download', async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'URL query parameter is required' });
   }
 
+  console.log(`[Proxy Download] Requesting: ${url} (as ${filename})`);
+
   try {
     // Basic security check: only allow Google and Supabase domains
     const allowedDomains = ['drive.google.com', 'supabase.co', 'googleapis.com'];
     const urlObj = new URL(url);
     if (!allowedDomains.some(domain => urlObj.hostname.endsWith(domain))) {
+      console.warn(`[Proxy Download] Domain not authorized: ${urlObj.hostname}`);
       return res.status(403).json({ error: 'Domain not authorized for proxy' });
     }
 
-    let response = await fetch(url);
+    // For Google Drive, ensure we use the direct download link
+    let finalUrl = url;
+    if (url.includes('drive.google.com') && !url.includes('export=download')) {
+      // Extract file ID from /d/ID/ or ?id=ID
+      const match = url.match(/\/d\/([^/|?]+)/) || url.match(/[?&]id=([^&]+)/);
+      if (match && match[1]) {
+        finalUrl = `https://drive.google.com/uc?export=download&id=${match[1]}`;
+      }
+    }
+
+    let response = await fetch(finalUrl);
     
     // Check for Google Drive virus scan warning page (HTML response on a download link)
     const contentType = response.headers.get('content-type') || '';

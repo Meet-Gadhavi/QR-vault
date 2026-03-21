@@ -170,25 +170,32 @@ export const PublicView: React.FC = () => {
       }
 
       // Fetch all files
+      let successCount = 0;
       await Promise.all(downloadableFiles.map(async (file) => {
         try {
-          let fetchUrl = file.url;
-          const gDriveUrl = getGoogleDriveDownloadUrl(file.url);
+          // Always use proxy for bulk download to avoid CORS issues and handle GDrive warnings
+          const proxyUrl = `/api/proxy-download?url=${encodeURIComponent(file.url)}&filename=${encodeURIComponent(file.name)}`;
           
-          if (gDriveUrl) {
-            // Use server-side proxy for Google Drive to bypass CORS
-            // Pass filename to proxy so it can set Content-Disposition
-            fetchUrl = `/api/proxy-download?url=${encodeURIComponent(gDriveUrl)}&filename=${encodeURIComponent(file.name)}`;
+          const response = await fetch(proxyUrl);
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `Fetch failed: ${response.statusText}`);
           }
-
-          const response = await fetch(fetchUrl);
-          if (!response.ok) throw new Error(`Fetch failed: ${response.statusText}`);
           const blob = await response.blob();
-          folder?.file(file.name, blob);
-        } catch (e) {
-          console.error(`Failed to download ${file.name}`, e);
+          if (blob.size > 0) {
+            folder?.file(file.name, blob);
+            successCount++;
+          }
+        } catch (e: any) {
+          console.error(`Failed to download ${file.name}:`, e.message);
         }
       }));
+
+      if (successCount === 0) {
+        alert("Failed to download any files. Please try downloading them individually.");
+        setIsDownloadingAll(false);
+        return;
+      }
 
       const content = await zip.generateAsync({ type: "blob" });
       const url = URL.createObjectURL(content);
