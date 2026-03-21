@@ -507,50 +507,52 @@ apiRouter.post(['/google-drive/save-vault', '/google-drive/save-vault/'], async 
             fields: 'files(id)',
           });
 
-          // Skip if file already exists
+          // If file exists, we still want to ensure it's public
+          let fileId: string;
           if (existingFile.data.files && existingFile.data.files.length > 0) {
-            console.log(`[Google Drive] File '${fileName}' already exists, skipping`);
-            continue;
+            console.log(`[Google Drive] File '${fileName}' already exists, ensuring public permissions...`);
+            fileId = existingFile.data.files[0].id!;
+          } else {
+            // Download file from Supabase URL and upload to Drive
+            console.log(`[Google Drive] Downloading: ${fileName}`);
+            const fileResponse = await fetch(file.url);
+            if (!fileResponse.ok) {
+              console.error(`[Google Drive] Failed to download ${fileName}: ${fileResponse.status}`);
+              continue;
+            }
+
+            const fileBuffer = Buffer.from(await fileResponse.arrayBuffer());
+            const mimeType = file.mimeType || fileResponse.headers.get('content-type') || 'application/octet-stream';
+
+            const { Readable: ReadableStream } = await import('stream');
+
+            const uploadedFile = await drive.files.create({
+              requestBody: {
+                name: fileName,
+                mimeType: mimeType,
+                parents: [vaultFolderId],
+              },
+              media: {
+                mimeType: mimeType,
+                body: ReadableStream.from([fileBuffer]),
+              },
+              fields: 'id',
+            });
+            console.log(`[Google Drive] Uploaded: ${fileName}`);
+            fileId = uploadedFile.data.id!;
           }
 
-          // Download file from Supabase URL
-          console.log(`[Google Drive] Downloading: ${fileName}`);
-          const fileResponse = await fetch(file.url);
-          if (!fileResponse.ok) {
-            console.error(`[Google Drive] Failed to download ${fileName}: ${fileResponse.status}`);
-            continue;
-          }
-
-          const fileBuffer = Buffer.from(await fileResponse.arrayBuffer());
-          const mimeType = file.mimeType || fileResponse.headers.get('content-type') || 'application/octet-stream';
-
-          const { Readable: ReadableStream } = await import('stream');
-
-          const uploadedFile = await drive.files.create({
-            requestBody: {
-              name: fileName,
-              mimeType: mimeType,
-              parents: [vaultFolderId],
-            },
-            media: {
-              mimeType: mimeType,
-              body: ReadableStream.from([fileBuffer]),
-            },
-            fields: 'id',
-          });
-          console.log(`[Google Drive] Uploaded: ${fileName}`);
-
-          // Make the file public
+          // Ensure the file is public (reader/anyone)
           try {
             await drive.permissions.create({
-              fileId: uploadedFile.data.id!,
+              fileId: fileId,
               requestBody: {
                 role: 'reader',
                 type: 'anyone',
               },
             });
           } catch (e: any) {
-            console.warn('[Google Drive] File permission error:', e.message);
+            console.warn(`[Google Drive] File permission error for ${fileName}:`, e.message);
           }
         } catch (fileErr: any) {
           console.error(`[Google Drive] Error uploading file ${file.name}:`, fileErr.message);
@@ -637,15 +639,30 @@ apiRouter.get('/proxy-download', async (req: Request, res: Response) => {
     const contentType = response.headers.get('content-type') || '';
     if (contentType.includes('text/html') && url.includes('drive.google.com')) {
       const html = await response.text();
+      
       // Look for the "confirm" token in the GDrive warning page
+      // It can be in a href like /uc?id=...&confirm=XXX
+      // or in a form action/input
       const confirmMatch = html.match(/confirm=([a-zA-Z0-9_-]+)/);
       if (confirmMatch && confirmMatch[1]) {
-        const confirmedUrl = `${url}&confirm=${confirmMatch[1]}`;
-        console.log(`[Proxy Download] GDrive warning detected, retrying with confirm token...`);
+        // Construct the confirmed URL. Ensure we use the uc?export=download format.
+        const fileIdMatch = url.match(/[?&]id=([^&]+)/);
+        const fileId = fileIdMatch ? fileIdMatch[1] : '';
+        const confirmedUrl = `https://drive.google.com/uc?export=download&id=${fileId}&confirm=${confirmMatch[1]}`;
+        
+        console.log(`[Proxy Download] GDrive warning detected, retrying with confirm token: ${confirmMatch[1]}`);
         response = await fetch(confirmedUrl);
+      } else if (html.includes('class="goog-inline-block jfk-button jfk-button-action"')) {
+         // This is a button that might have the confirm link hidden in JS, 
+         // but usually the confirm token is in the HTML.
+         // If we still can't find it, we might be hitting a rate limit or a more complex warning.
+         console.warn(`[Proxy Download] GDrive warning page detected but no confirm token found.`);
+         return res.status(403).json({ 
+           error: 'Google Drive security check failed.', 
+           details: 'Google Drive is requiring a manual confirmation that this proxy cannot bypass. Please download the file directly or ensure it is shared properly.' 
+         });
       } else {
         // If we can't find a token but it's HTML, it might be an error or private file
-        // We log a bit of the HTML for debugging (to differentiate between login and error)
         console.warn(`[Proxy Download] GDrive returned HTML but no confirm token. Start of HTML: ${html.substring(0, 200)}`);
         return res.status(403).json({ 
           error: 'Google Drive file is not accessible.', 
