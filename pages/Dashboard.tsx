@@ -1390,35 +1390,40 @@ export const Dashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* Upload Progress Bar */}
-            {isSubmitting && (
-              <div className="px-6 pb-2">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs font-semibold text-primary-600 flex items-center gap-1.5">
-                    <Loader2 className="animate-spin w-3 h-3" />
-                    {uploadProgress < 100 ? 'Uploading files...' : 'Finalizing...'}
-                  </span>
-                  <span className="text-xs font-bold text-primary-700">{uploadProgress}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-primary-500 via-primary-400 to-primary-600 transition-all duration-200 ease-out"
-                    style={{ width: `${uploadProgress}%` }}
-                  />
-                </div>
-                <p className="text-[10px] text-gray-400 mt-1">Please don't close this window.</p>
-              </div>
-            )}
 
-            <div className="p-6 border-t border-gray-100 bg-gray-50 rounded-b-2xl flex justify-end gap-3">
-              <button onClick={() => setIsModalOpen(false)} disabled={isSubmitting} className="px-4 py-2 text-gray-600 font-medium hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed">Cancel</button>
-              <button
-                onClick={handleSubmit}
-                disabled={isSubmitting}
-                className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-2 rounded-lg font-medium shadow-sm flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed transition-all"
-              >
-                {isSubmitting ? 'Uploading...' : (modalMode === 'CREATE' ? 'Create Vault' : 'Save Changes')}
-              </button>
+            <div className="border-t border-gray-100 bg-gray-50 rounded-b-2xl">
+              {/* Upload Progress Bar - always visible in footer */}
+              {isSubmitting && (
+                <div className="px-6 pt-4 pb-2">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs font-semibold text-primary-600 flex items-center gap-1.5">
+                      <Loader2 className="animate-spin w-3 h-3" />
+                      {uploadProgress < 100 ? 'Uploading files...' : 'Finalizing...'}
+                    </span>
+                    <span className="text-xs font-bold text-primary-700">{uploadProgress}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-primary-500 via-primary-400 to-primary-600 transition-all duration-200 ease-out"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-gray-400 mt-1">Please don't close this window.</p>
+                </div>
+              )}
+              <div className="p-6 flex justify-end gap-3">
+                <button onClick={() => setIsModalOpen(false)} disabled={isSubmitting} className="px-4 py-2 text-gray-600 font-medium hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed">Cancel</button>
+                <button
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-2 rounded-lg font-medium shadow-sm flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed transition-all"
+                >
+                  {isSubmitting
+                    ? <><Loader2 className="animate-spin w-4 h-4" /> Uploading...</>
+                    : (modalMode === 'CREATE' ? 'Create Vault' : 'Save Changes')
+                  }
+                </button>
+              </div>
             </div>
           </div>
         </div>
