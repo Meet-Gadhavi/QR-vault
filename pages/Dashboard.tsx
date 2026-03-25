@@ -48,7 +48,12 @@ export const Dashboard: React.FC = () => {
   const [deletedFileIds, setDeletedFileIds] = useState<string[]>([]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+
+  // Delete Confirm Modal State
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Drag and Drop State
   const [isDragging, setIsDragging] = useState(false);
@@ -345,8 +350,25 @@ export const Dashboard: React.FC = () => {
     }
 
     setIsSubmitting(true);
+    setUploadProgress(0);
     let success = false;
     const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+    // Estimate total upload size for progress simulation
+    const totalSize = selectedFiles.reduce((acc, f) => acc + f.size, 0);
+    const estimatedMs = Math.max(1500, Math.min(totalSize / 50000 * 1000, 30000)); // 1.5s – 30s
+    let progressInterval: ReturnType<typeof setInterval> | null = null;
+    const startProgress = () => {
+      const start = Date.now();
+      progressInterval = setInterval(() => {
+        const elapsed = Date.now() - start;
+        // Ease-out: fast start, slows near 90%
+        const raw = elapsed / estimatedMs;
+        const eased = 1 - Math.pow(1 - Math.min(raw, 1), 2);
+        setUploadProgress(Math.min(Math.round(eased * 90), 90));
+      }, 80);
+    };
+    startProgress();
 
     try {
       let finalFiles: (File | any)[] = [...selectedFiles];
@@ -398,13 +420,19 @@ export const Dashboard: React.FC = () => {
         await mockService.updateVault(appUser.id, editingVaultId, vaultName, finalFiles, links, deletedFileIds, accessLevel, appUser.email);
       }
       success = true;
+      if (progressInterval) clearInterval(progressInterval);
+      setUploadProgress(100);
+      await new Promise(r => setTimeout(r, 600)); // show 100% briefly
       setIsModalOpen(false);
     } catch (e: any) {
       console.error(e);
+      if (progressInterval) clearInterval(progressInterval);
+      setUploadProgress(0);
       alert(`Note: ${e.message}`);
     } finally {
       await loadData(appUser.id);
       setIsSubmitting(false);
+      setUploadProgress(0);
 
       // Auto-save metadata (and QR) to Google Drive if connected
       if (success && googleTokens) {
@@ -425,7 +453,7 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  const handleDeleteVault = async (id: string, e: React.MouseEvent) => {
+  const handleDeleteVault = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setMenuOpenId(null);
     if (!appUser) return;
@@ -438,45 +466,56 @@ export const Dashboard: React.FC = () => {
     const vaultToDelete = vaults.find(v => v.id === id);
     if (!vaultToDelete) return;
 
-    if (confirm('Are you sure? This will delete the QR code and all files permanently.')) {
-      try {
-        // 1. If Google Drive is connected, delete the folder from Drive
-        if (googleTokens) {
-          const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-          
-          // First, get the QRVM folder ID
-          const ensureRes = await fetch(`${apiBase}/api/google-drive/ensure-folder`, {
+    // Show custom confirm dialog instead of browser confirm()
+    setDeleteConfirmId(id);
+  };
+
+  const confirmDeleteVault = async () => {
+    if (!appUser || !deleteConfirmId) return;
+    const id = deleteConfirmId;
+    const vaultToDelete = vaults.find(v => v.id === id);
+    if (!vaultToDelete) { setDeleteConfirmId(null); return; }
+
+    setIsDeleting(true);
+    try {
+      // 1. If Google Drive is connected, delete the folder from Drive
+      if (googleTokens) {
+        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        
+        // First, get the QRVM folder ID
+        const ensureRes = await fetch(`${apiBase}/api/google-drive/ensure-folder`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tokens: googleTokens }),
+        });
+        const folderData = await ensureRes.json();
+        
+        if (ensureRes.ok && folderData.folderId) {
+          await fetch(`${apiBase}/api/google-drive/delete-vault`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ tokens: googleTokens }),
+            body: JSON.stringify({
+              tokens: googleTokens,
+              folderId: folderData.folderId,
+              vaultName: vaultToDelete.name
+            }),
           });
-          const folderData = await ensureRes.json();
-          
-          if (ensureRes.ok && folderData.folderId) {
-            await fetch(`${apiBase}/api/google-drive/delete-vault`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                tokens: googleTokens,
-                folderId: folderData.folderId,
-                vaultName: vaultToDelete.name
-              }),
-            });
-          }
         }
-
-        // 2. Delete from Supabase (handled inside deleteVault) and DB
-        await mockService.deleteVault(appUser.id, id);
-
-        // 3. Refresh Drive storage usage if connected
-        if (googleTokens) {
-          await fetchDriveStorageUsage(googleTokens);
-        }
-      } catch (error: any) {
-        alert(error.message || "Could not delete vault. Please try again.");
-      } finally {
-        await loadData(appUser.id);
       }
+
+      // 2. Delete from Supabase (handled inside deleteVault) and DB
+      await mockService.deleteVault(appUser.id, id);
+
+      // 3. Refresh Drive storage usage if connected
+      if (googleTokens) {
+        await fetchDriveStorageUsage(googleTokens);
+      }
+    } catch (error: any) {
+      alert(error.message || "Could not delete vault. Please try again.");
+    } finally {
+      setIsDeleting(false);
+      setDeleteConfirmId(null);
+      await loadData(appUser.id);
     }
   };
 
@@ -1351,15 +1390,34 @@ export const Dashboard: React.FC = () => {
               </div>
             </div>
 
+            {/* Upload Progress Bar */}
+            {isSubmitting && (
+              <div className="px-6 pb-2">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-semibold text-primary-600 flex items-center gap-1.5">
+                    <Loader2 className="animate-spin w-3 h-3" />
+                    {uploadProgress < 100 ? 'Uploading files...' : 'Finalizing...'}
+                  </span>
+                  <span className="text-xs font-bold text-primary-700">{uploadProgress}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-primary-500 via-primary-400 to-primary-600 transition-all duration-200 ease-out"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+                <p className="text-[10px] text-gray-400 mt-1">Please don't close this window.</p>
+              </div>
+            )}
+
             <div className="p-6 border-t border-gray-100 bg-gray-50 rounded-b-2xl flex justify-end gap-3">
-              <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-gray-600 font-medium hover:text-gray-900">Cancel</button>
+              <button onClick={() => setIsModalOpen(false)} disabled={isSubmitting} className="px-4 py-2 text-gray-600 font-medium hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed">Cancel</button>
               <button
                 onClick={handleSubmit}
                 disabled={isSubmitting}
                 className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-2 rounded-lg font-medium shadow-sm flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed transition-all"
               >
-                {isSubmitting && <Loader2 className="animate-spin w-4 h-4" />}
-                {isSubmitting ? 'Saving...' : (modalMode === 'CREATE' ? 'Create Vault' : 'Save Changes')}
+                {isSubmitting ? 'Uploading...' : (modalMode === 'CREATE' ? 'Create Vault' : 'Save Changes')}
               </button>
             </div>
           </div>
@@ -1486,6 +1544,47 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Custom Delete Confirmation Modal */}
+      {deleteConfirmId && (() => {
+        const vaultToDelete = vaults.find(v => v.id === deleteConfirmId);
+        return (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-in fade-in duration-200">
+            <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl animate-in zoom-in-95 duration-200">
+              <div className="p-6 flex flex-col items-center text-center">
+                <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mb-4">
+                  <Trash2 className="w-8 h-8 text-red-500" />
+                </div>
+                <h2 className="text-xl font-bold text-gray-900 mb-2">Delete Vault?</h2>
+                <p className="text-gray-500 text-sm mb-1">
+                  Are you sure you want to delete
+                </p>
+                <p className="font-semibold text-gray-900 mb-4 truncate max-w-full">&#8220;{vaultToDelete?.name}&#8221;</p>
+                <p className="text-xs text-red-500 bg-red-50 rounded-lg px-3 py-2 mb-6">
+                  This will permanently delete the QR code and all files. This action cannot be undone.
+                </p>
+                <div className="flex gap-3 w-full">
+                  <button
+                    onClick={() => setDeleteConfirmId(null)}
+                    disabled={isDeleting}
+                    className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-all disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmDeleteVault}
+                    disabled={isDeleting}
+                    className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-70"
+                  >
+                    {isDeleting ? <Loader2 className="animate-spin w-4 h-4" /> : <Trash2 className="w-4 h-4" />}
+                    {isDeleting ? 'Deleting...' : 'Yes, Delete'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
     </div>
   );
