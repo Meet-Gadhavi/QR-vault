@@ -963,6 +963,16 @@ export const Dashboard: React.FC = () => {
                 <div className="text-xs text-gray-400">of {formatBytes(appUser.storageLimit)} used</div>
               </div>
             </div>
+            
+            {appUser.plan === PlanType.FREE && (
+              <button 
+                onClick={() => setActiveTab('deleted')}
+                className="mt-4 text-xs font-bold text-primary-600 hover:text-primary-700 flex items-center justify-center gap-1.5 py-2 bg-primary-50 rounded-xl border border-primary-100 transition-all hover:bg-primary-100"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                View Deletion History
+              </button>
+            )}
           </div>
         </div>
 
