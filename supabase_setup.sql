@@ -163,3 +163,19 @@ create policy "Public invoices access" on public.invoices for all using (true) w
 --   storage_limit = 1073741824
 --   subscription_expiry_date = NULL
 -- =============================================================================
+
+-- =============================================================================
+-- 6. DELETED VAULT LOGS
+-- Stores history of auto-deleted vaults (for the 24h free tier limit transparency)
+-- =============================================================================
+create table if not exists public.deleted_vault_logs (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references public.profiles(id) on delete cascade not null,
+  vault_name text not null,
+  original_vault_id uuid,
+  created_at timestamp with time zone,
+  deleted_at timestamp with time zone default now()
+);
+
+alter table public.deleted_vault_logs enable row level security;
+create policy "Public deleted_vault_logs access" on public.deleted_vault_logs for all using (true) with check (true);

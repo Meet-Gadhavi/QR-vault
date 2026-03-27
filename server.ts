@@ -914,6 +914,113 @@ app.use('/api', (req, res) => {
   });
 });
 
+// =============================================================================
+// BACKGROUND CLEANUP JOB
+// =============================================================================
+// Deletes vaults older than 24h for users on the FREE plan.
+// Runs every hour.
+// =============================================================================
+const cleanupFreeVaults = async () => {
+  try {
+    const now = new Date();
+    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+
+    console.log(`[Cleanup] Starting free plan cleanup (older than ${twentyFourHoursAgo})...`);
+
+    // 1. Find all vaults belonging to FREE users created > 24h ago
+    // We use inner join on profiles to filter by plan
+    const { data: oldVaults, error: fetchError } = await supabase
+      .from('vaults')
+      .select(`
+        id, 
+        user_id,
+        name,
+        created_at,
+        profiles!inner ( plan )
+      `)
+      .eq('profiles.plan', 'FREE')
+      .lt('created_at', twentyFourHoursAgo);
+
+    if (fetchError) {
+      console.error('[Cleanup] Error fetching old vaults:', fetchError.message);
+      return;
+    }
+
+    if (!oldVaults || oldVaults.length === 0) {
+      return;
+    }
+
+    console.log(`[Cleanup] Found ${oldVaults.length} expired vaults from free users.`);
+
+    for (const vault of oldVaults) {
+      try {
+        // 2. Get files associated with this vault to clean up storage
+        const { data: files, error: filesError } = await supabase
+          .from('files')
+          .select('url')
+          .eq('vault_id', vault.id);
+
+        if (!filesError && files && files.length > 0) {
+          // Extract file paths from Supabase storage URLs
+          // URL format: .../storage/v1/object/public/vault-files/USER_ID/FILE_NAME
+          const pathsToDelete = files
+            .map(f => {
+              if (f.url && f.url.includes('/storage/v1/object/public/vault-files/')) {
+                const parts = f.url.split('/vault-files/');
+                return parts.length > 1 ? parts[1] : null;
+              }
+              return null;
+            })
+            .filter(Boolean) as string[];
+
+          if (pathsToDelete.length > 0) {
+            const { error: storageError } = await supabase.storage
+              .from('vault-files')
+              .remove(pathsToDelete);
+            
+            if (storageError) {
+              console.warn(`[Cleanup] Failed to delete some files from storage for vault ${vault.id}:`, storageError.message);
+            } else {
+              console.log(`[Cleanup] Deleted ${pathsToDelete.length} files from storage for vault ${vault.id}`);
+            }
+          }
+        }
+
+        // 2.5 Log the deletion for user transparency
+        await supabase.from('deleted_vault_logs').insert({
+          user_id: vault.user_id,
+          vault_name: vault.name,
+          original_vault_id: vault.id,
+          created_at: vault.created_at
+        });
+
+        // 3. Delete vault from database
+        // Foreign key cascade will handle deletion from 'files' and 'access_requests' tables
+        const { error: deleteError } = await supabase
+          .from('vaults')
+          .delete()
+          .eq('id', vault.id);
+
+        if (deleteError) {
+          console.error(`[Cleanup] Failed to delete vault ${vault.id} from DB:`, deleteError.message);
+        } else {
+          console.log(`[Cleanup] Successfully deleted expired vault ${vault.id}`);
+        }
+      } catch (vaultErr: any) {
+        console.error(`[Cleanup] Unexpected error processing vault ${vault.id}:`, vaultErr.message);
+      }
+    }
+    
+    addLog('SYSTEM', `Cleanup completed: Removed ${oldVaults.length} expired free-tier vaults.`);
+  } catch (error: any) {
+    console.error('[Cleanup] Fatal error in background job:', error.message);
+  }
+};
+
+// Initial run and then every hour
+cleanupFreeVaults();
+setInterval(cleanupFreeVaults, 60 * 60 * 1000);
+
 // Vite Middleware
 async function startServer() {
   // 1. Explicitly serve SEO files FIRST with absolute paths

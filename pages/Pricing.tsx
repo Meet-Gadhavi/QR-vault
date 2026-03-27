@@ -11,8 +11,14 @@ const planData = [
     name: 'Free',
     price: '₹0',
     period: '/forever',
-    features: ['1 GB Secure Storage', 'Unlimited QR Scans', 'Standard Speed', 'Email Support'],
-    cta: 'Get Started',
+    features: [
+      '1 GB Secure Storage',
+      'Unlimited QR Scans',
+      'Auto-delete after 24 hours',
+      'Community Support'
+    ],
+    highlight: 'Ideal for quick, temporary sharing.',
+    cta: 'Start for Free',
     primary: false,
     link: '/login'
   },
@@ -22,10 +28,18 @@ const planData = [
     price: '₹99',
     originalPrice: '₹199',
     period: '/month',
-    features: ['10 GB Secure Storage', 'Unlimited QR Vaults', 'Priority Speed', 'Basic Analytics', 'No Ads'],
-    cta: 'Choose Plus',
+    features: [
+      '10 GB Secure Storage',
+      'Permanent Storage (No Deletion)',
+      'Unlimited QR Vaults',
+      'Priority Speed & Performance',
+      'Detailed Scan Analytics',
+      'Ad-Free Experience'
+    ],
+    highlight: 'Best for personal projects & small files.',
+    cta: 'Upgrade to Plus',
     primary: true,
-    tag: 'Limited Time Offer',
+    tag: 'Most Popular',
     link: `/payment?plan=${PlanType.STARTER}`
   },
   {
@@ -34,8 +48,16 @@ const planData = [
     price: '₹199',
     originalPrice: '₹299',
     period: '/month',
-    features: ['20 GB Secure Storage', 'Advanced File Management', 'Fastest Global CDN', 'Premium 24/7 Support', 'Custom Branding'],
-    cta: 'Go Pro',
+    features: [
+      '20 GB Secure Storage',
+      'Full File Control & Lifecycle',
+      'Password Protected Vaults',
+      'Fastest Global Delivery',
+      'Custom Branding & Logo',
+      '24/7 Premium Support'
+    ],
+    highlight: 'Maximum storage for professionals.',
+    cta: 'Go Pro Now',
     primary: false,
     link: `/payment?plan=${PlanType.PRO}`
   }
@@ -106,7 +128,6 @@ export const Pricing: React.FC = () => {
       return { disabled: true, isCurrentPlan: true, showExpiry: planId !== PlanType.FREE, needsCancel: false };
     }
 
-    // If user has a paid plan and is looking at a different plan
     if (hasPaidPlan && planId !== userPlan) {
       return { disabled: true, isCurrentPlan: false, showExpiry: false, needsCancel: true, currentPlanName };
     }
@@ -116,99 +137,136 @@ export const Pricing: React.FC = () => {
 
   return (
     <>
-      <div className="py-24 bg-gray-50 min-h-[calc(100vh-64px)]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h1 className="text-4xl font-extrabold text-gray-900 mb-4">Simple, Transparent Pricing</h1>
-            <p className="text-xl text-gray-600">Choose the plan that fits your storage needs.</p>
+      <div className="py-24 bg-gray-50 min-h-[calc(100vh-64px)] relative overflow-hidden">
+        {/* Decorative Blobs */}
+        <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-[500px] h-[500px] bg-primary-100/50 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-primary-100/50 rounded-full blur-3xl" />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center max-w-3xl mx-auto mb-20 animate-fade-in-up">
+            <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 mb-6 tracking-tight">
+              Powerful Plans for <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-primary-400">Total Control</span>
+            </h1>
+            <p className="text-xl text-gray-600 leading-relaxed">
+              Secure your digital assets with the vault that fits your lifestyle. 
+              Upgrade anytime to unlock permanent storage and premium features.
+            </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {planData.map((plan) => {
+          <div className="grid lg:grid-cols-3 gap-8 items-stretch">
+            {planData.map((plan, idx) => {
               const state = getButtonState(plan.id);
+              const isFree = plan.id === PlanType.FREE;
 
               return (
-                <div key={plan.name} className={`relative rounded-2xl shadow-xl border flex flex-col ${state.isCurrentPlan && plan.id !== PlanType.FREE
-                  ? 'bg-green-50 border-green-300'
-                  : plan.primary && !state.isCurrentPlan
-                    ? 'bg-white border-primary-500 scale-105 z-10'
-                    : 'bg-white border-gray-100'
-                  }`}>
-                  {plan.tag && !state.isCurrentPlan && (
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary-600 text-white px-4 py-1 rounded-full text-sm font-bold tracking-wide uppercase">
+                <div 
+                  key={plan.name} 
+                  className={`group relative rounded-3xl transition-all duration-300 flex flex-col animate-fade-in-up-delay-${idx} ${
+                    plan.primary 
+                      ? 'bg-white border-2 border-primary-500 shadow-2xl shadow-primary-200/50 scale-105 z-10' 
+                      : 'bg-white/80 backdrop-blur-sm border border-gray-200 hover:border-gray-300 hover:shadow-xl'
+                  }`}
+                >
+                  {plan.tag && (
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-primary-600 to-primary-500 text-white px-6 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase shadow-lg z-20">
                       {plan.tag}
                     </div>
                   )}
 
-                  {state.isCurrentPlan && plan.id !== PlanType.FREE && (
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-green-500 text-white px-4 py-1 rounded-full text-sm font-bold tracking-wide uppercase">
-                      Your Plan
-                    </div>
-                  )}
-
-                  <div className={`p-8 border-b ${state.isCurrentPlan && plan.id !== PlanType.FREE ? 'border-green-200' : 'border-gray-100'}`}>
-                    <h3 className="text-lg font-medium text-gray-500 uppercase tracking-wide">{plan.name}</h3>
-                    <div className="mt-4 flex flex-col items-center sm:items-start">
-                      {plan.originalPrice && (
-                        <span className="text-sm text-gray-400 line-through mb-1">{plan.originalPrice}</span>
+                  <div className="p-8 sm:p-10">
+                    <div className="flex justify-between items-start mb-6">
+                      <div>
+                        <h3 className="text-2xl font-bold text-gray-900">{plan.name}</h3>
+                        <p className="text-sm text-gray-500 mt-1 font-medium">{plan.highlight}</p>
+                      </div>
+                      {isFree && (
+                        <div className="p-2 bg-amber-50 rounded-lg" title="Temporary Storage">
+                          <Clock className="w-5 h-5 text-amber-600" />
+                        </div>
                       )}
-                      <div className="flex items-baseline">
-                        <span className="text-4xl font-extrabold text-gray-900">{plan.price}</span>
-                        <span className="ml-1 text-xl text-gray-500">{plan.period}</span>
+                    </div>
+
+                    <div className="mb-8">
+                      {plan.originalPrice && (
+                        <span className="text-sm text-gray-400 line-through block mb-1">{plan.originalPrice}</span>
+                      )}
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-5xl font-black text-gray-900 tracking-tight">{plan.price}</span>
+                        <span className="text-gray-500 font-medium">{plan.period}</span>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="p-8 flex-1 flex flex-col">
-                    <ul className="space-y-4 flex-1">
+                    <ul className="space-y-4 mb-10">
                       {plan.features.map((feature) => (
-                        <li key={feature} className="flex items-start">
-                          <Check className={`h-5 w-5 ${state.isCurrentPlan ? 'text-green-500' : 'text-primary-500'} mr-3 flex-shrink-0`} />
-                          <span className="text-gray-600">{feature}</span>
+                        <li key={feature} className="flex items-start gap-3">
+                          <div className={`mt-1 flex-shrink-0 p-0.5 rounded-full ${
+                            feature.includes('delete') ? 'bg-amber-100' : 'bg-primary-50'
+                          }`}>
+                            {feature.includes('delete') ? (
+                              <AlertTriangle className="h-3 w-3 text-amber-600" />
+                            ) : (
+                              <Check className="h-3 w-3 text-primary-600" />
+                            )}
+                          </div>
+                          <span className={`text-sm leading-tight ${
+                            feature.includes('delete') ? 'text-amber-700 font-semibold' : 'text-gray-600'
+                          }`}>
+                            {feature}
+                          </span>
                         </li>
                       ))}
                     </ul>
 
-                    {state.isCurrentPlan && state.showExpiry && planExpiry ? (
-                      <div className="mt-8 space-y-2">
-                        <div className="w-full py-3 px-6 bg-green-100 border border-green-300 rounded-lg text-center">
-                          <div className="flex items-center justify-center gap-2 text-green-700 font-semibold text-sm">
-                            <Clock className="w-4 h-4" />
-                            {formatExpiry(planExpiry)}
+                    <div className="mt-auto">
+                      {state.isCurrentPlan && state.showExpiry && planExpiry ? (
+                        <div className="space-y-3">
+                          <div className="w-full py-4 px-6 bg-green-50 border border-green-100 rounded-2xl text-center">
+                            <div className="flex items-center justify-center gap-2 text-green-700 font-bold text-sm">
+                              <Clock className="w-4 h-4" />
+                              {formatExpiry(planExpiry)}
+                            </div>
                           </div>
+                          <button
+                            onClick={handleCancel}
+                            disabled={cancelling}
+                            className="w-full py-3 text-red-500 hover:text-red-700 font-bold text-sm transition-all hover:tracking-wide flex items-center justify-center gap-2"
+                          >
+                            <XCircle className="w-4 h-4" />
+                            {cancelling ? 'Cancelling...' : 'Cancel Subscription'}
+                          </button>
                         </div>
-                        <button
-                          onClick={handleCancel}
-                          disabled={cancelling}
-                          className="w-full py-2.5 px-6 bg-white border border-red-200 text-red-500 hover:bg-red-50 hover:border-red-300 rounded-lg text-center text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                      ) : state.isCurrentPlan ? (
+                        <div className="w-full py-4 bg-green-500 text-white rounded-2xl text-center font-bold shadow-lg shadow-green-200 cursor-default">
+                          Your Active Plan
+                        </div>
+                      ) : state.needsCancel ? (
+                        <div className="w-full py-4 bg-gray-100 text-gray-500 rounded-2xl text-center text-xs font-bold leading-relaxed px-4">
+                          Cancel your {state.currentPlanName} plan before switching
+                        </div>
+                      ) : (
+                        <Link
+                          to={plan.link}
+                          className={`group/btn relative w-full inline-flex items-center justify-center py-4 px-8 font-bold text-lg transition-all duration-300 rounded-2xl overflow-hidden ${
+                            plan.primary
+                              ? 'bg-primary-600 text-white hover:bg-primary-700 shadow-xl shadow-primary-200'
+                              : 'bg-white border-2 border-primary-500 text-primary-600 hover:bg-primary-50'
+                          }`}
                         >
-                          <XCircle className="w-4 h-4" />
-                          {cancelling ? 'Cancelling...' : 'Cancel Subscription'}
-                        </button>
-                      </div>
-                    ) : state.isCurrentPlan ? (
-                      <div className="mt-8 block w-full py-3 px-6 bg-green-100 text-green-700 rounded-lg text-center font-semibold cursor-default">
-                        Active Plan
-                      </div>
-                    ) : state.needsCancel ? (
-                      <div className="mt-8 block w-full py-3 px-6 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg text-center text-sm font-medium">
-                        Cancel your {(state as any).currentPlanName} subscription first
-                      </div>
-                    ) : (
-                      <Link
-                        to={plan.link}
-                        className={`mt-8 block w-full py-3 px-6 border border-transparent rounded-lg text-center font-semibold ${plan.primary
-                          ? 'bg-primary-600 text-white hover:bg-primary-700 shadow-lg shadow-primary-200'
-                          : 'bg-primary-50 text-primary-700 hover:bg-primary-100'
-                          } transition-colors`}
-                      >
-                        {plan.cta}
-                      </Link>
-                    )}
+                          <span className="relative z-10">{plan.cta}</span>
+                        </Link>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
             })}
+          </div>
+
+          {/* Detailed Comparison Link */}
+          <div className="mt-20 text-center animate-fade-in-up-delay-2">
+            <p className="text-gray-500 text-sm font-medium">
+              Need more storage for enterprise? <a href="mailto:support@qrvault.com" className="text-primary-600 hover:underline">Contact our sales team</a>
+            </p>
           </div>
         </div>
       </div>

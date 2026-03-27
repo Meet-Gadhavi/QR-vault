@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
+import { useParams, useLocation, Link } from 'react-router-dom';
 import { mockService } from '../services/mockService';
+import { supabase } from '../services/supabaseClient';
 import { Vault, FileType, VaultFile, AccessLevel, RequestStatus, PlanType } from '../types';
 import { Download, ExternalLink, FileText, Image as ImageIcon, Box, Loader2, ShieldCheck, AlertCircle, Eye, Link as LinkIcon, Info, X, File, Lock, Send, Clock, Zap } from 'lucide-react';
 import JSZip from 'jszip';
@@ -28,12 +29,31 @@ export const PublicView: React.FC = () => {
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null);
 
+  const [isExpired, setIsExpired] = useState(false);
+  const [expiredVaultName, setExpiredVaultName] = useState<string | null>(null);
+
   useEffect(() => {
     if (id) {
-      mockService.getVaultById(id).then(v => {
+      mockService.getVaultById(id).then(async (v) => {
         if (v) {
           setVault(v);
           checkAccess(v);
+        } else {
+          // Check if it was recently deleted (24h limit)
+          try {
+            const { data: log } = await supabase
+              .from('deleted_vault_logs')
+              .select('vault_name')
+              .eq('original_vault_id', id)
+              .single();
+            
+            if (log) {
+              setIsExpired(true);
+              setExpiredVaultName(log.vault_name);
+            }
+          } catch (err) {
+            console.warn("Not found in deletion logs either");
+          }
         }
         setLoading(false);
       });
@@ -216,6 +236,41 @@ export const PublicView: React.FC = () => {
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary-600 w-8 h-8" /></div>;
+
+  if (isExpired) return (
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-gray-50 relative overflow-hidden">
+        {/* Background decoration */}
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+          <div className="absolute top-10 left-10 w-64 h-64 bg-amber-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30"></div>
+          <div className="absolute bottom-10 right-10 w-64 h-64 bg-primary-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30"></div>
+        </div>
+
+      <div className="bg-white p-10 rounded-3xl shadow-xl border border-gray-100 max-w-md w-full relative z-10">
+        <div className="w-20 h-20 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">
+          <Clock className="w-10 h-10 text-amber-500 animate-pulse" />
+        </div>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Vault Expired</h1>
+        <p className="font-semibold text-primary-600 mb-6 truncate px-4">&#8220;{expiredVaultName}&#8221;</p>
+        
+        <div className="bg-amber-50 text-amber-800 p-5 rounded-2xl text-sm mb-8 border border-amber-100 leading-relaxed font-medium">
+          <div className="flex items-center gap-2 mb-2 text-amber-700">
+            <AlertCircle className="w-4 h-4" />
+            <span className="font-bold uppercase tracking-wider text-[10px]">Free Tier Limit</span>
+          </div>
+          This vault has been automatically deleted after 24 hours of availability as per our storage policy for free users.
+        </div>
+        
+        <div className="space-y-4">
+          <Link to="/" className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-6 rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
+            Create Your Own Permanent Vault
+          </Link>
+          <p className="text-xs text-gray-400">
+            Want to keep files forever? <Link to="/pricing" className="text-primary-600 font-bold hover:underline">Check our Pro Plans</Link>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 
   if (!vault) return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-gray-50">

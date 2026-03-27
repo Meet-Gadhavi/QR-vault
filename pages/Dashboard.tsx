@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { mockService } from '../services/mockService';
+import { supabase } from '../services/supabaseClient';
 import { Vault, User, PlanType, VaultFile, FileType, PLAN_LIMITS, AccessLevel, AccessRequest, RequestStatus, Invoice } from '../types';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import QRCode from 'react-qr-code';
-import { UploadCloud, File as FileIcon, Link as LinkIcon, Trash2, ExternalLink, Plus, X, Loader2, Eye, HardDrive, QrCode, Copy, Check, MoreVertical, Edit2, Search, Filter, ArrowUpDown, Download, Zap, ChevronDown, Lock, Users, Shield, UserCheck, UserX, Clock, ShieldCheck } from 'lucide-react';
+import { UploadCloud, File as FileIcon, Link as LinkIcon, Trash2, ExternalLink, Plus, X, Loader2, Eye, HardDrive, QrCode, Copy, Check, MoreVertical, Edit2, Search, Filter, ArrowUpDown, Download, Zap, ChevronDown, Lock, Users, Shield, UserCheck, UserX, Clock, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 type SortOption = 'date-newest' | 'date-oldest' | 'name-asc' | 'name-desc' | 'size-desc' | 'size-asc';
@@ -13,6 +14,50 @@ type FilterTime = 'all' | '10-days' | '30-days';
 const GoogleDriveImg = ({ className }: { className?: string }) => (
   <img src="/GD.png" alt="Google Drive" className={className} />
 );
+
+type DeletedVaultLog = {
+  id: string;
+  vault_name: string;
+  created_at: string;
+  deleted_at: string;
+};
+
+const VaultTimer: React.FC<{ createdAt: string }> = ({ createdAt }) => {
+  const [timeLeft, setTimeLeft] = useState<string>('');
+
+  useEffect(() => {
+    const calculateTime = () => {
+      const created = new Date(createdAt).getTime();
+      const expires = created + 24 * 60 * 60 * 1000;
+      const now = new Date().getTime();
+      const diff = expires - now;
+
+      if (diff <= 0) {
+        setTimeLeft('Expired');
+        return;
+      }
+
+      const h = Math.floor(diff / (1000 * 60 * 60));
+      const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const s = Math.floor((diff % (1000 * 60)) / 1000);
+
+      setTimeLeft(`${h}h ${m}m ${s}s`);
+    };
+
+    calculateTime();
+    const timer = setInterval(calculateTime, 1000);
+    return () => clearInterval(timer);
+  }, [createdAt]);
+
+  if (timeLeft === 'Expired') return <span className="text-red-500 font-bold">Expired</span>;
+
+  return (
+    <div className="flex items-center gap-1.5 text-amber-600 font-mono text-xs bg-amber-50 px-2 py-1 rounded-md border border-amber-100 shadow-sm animate-pulse">
+      <Clock className="w-3 h-3" />
+      <span className="font-bold">Valid for: {timeLeft}</span>
+    </div>
+  );
+};
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -71,8 +116,9 @@ export const Dashboard: React.FC = () => {
   const [driveStorageUsed, setDriveStorageUsed] = useState(0);
   const [driveQuota, setDriveQuota] = useState<{ usage: number, limit: number } | null>(null);
 
-  // New Free Limit Modal
   const [isFreeLimitModalOpen, setIsFreeLimitModalOpen] = useState(false);
+  const [deletedLogs, setDeletedLogs] = useState<DeletedVaultLog[]>([]);
+  const [activeTab, setActiveTab] = useState<'vaults' | 'deleted'>('vaults');
 
   useEffect(() => {
     // Immediate redirect if not authenticated
@@ -185,6 +231,21 @@ export const Dashboard: React.FC = () => {
         setInvoices(invs);
       } catch (err) {
         console.warn("Failed to fetch invoices (table might be missing)", err);
+      }
+      // Fetch Deleted Logs
+      try {
+        const { data: logs, error: logsError } = await supabase
+          .from('deleted_vault_logs')
+          .select('*')
+          .eq('user_id', uid)
+          .order('deleted_at', { ascending: false })
+          .limit(5);
+
+        if (!logsError && logs) {
+          setDeletedLogs(logs as DeletedVaultLog[]);
+        }
+      } catch (err) {
+        console.warn("Failed to fetch deleted logs", err);
       }
     } catch (e) {
       console.error("Critical failure in loadData", e);
@@ -1115,133 +1176,222 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Vaults List */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Your Vaults ({filteredVaults.length})</h2>
-
-          {filteredVaults.length === 0 ? (
-            <div className="text-center py-20 bg-white rounded-2xl border-2 border-dashed border-gray-200">
-              <UploadCloud className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900">No vaults found</h3>
-              <p className="text-gray-500 mb-6">Try adjusting your filters or search terms.</p>
-              {vaults.length === 0 && (
-                <button
-                  onClick={openCreateModal}
-                  className={`font-medium hover:underline ${isOverLimit ? 'text-gray-400 cursor-not-allowed' : 'text-primary-600'}`}
-                  disabled={isOverLimit}
-                >
-                  Create Vault
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredVaults.map(vault => (
-                <div key={vault.id} className="relative bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow p-5 flex flex-col">
-
-                  {/* Card Header & 3-Dot Menu */}
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex gap-2">
-                      <div className="bg-primary-50 p-2 rounded-lg">
-                        <QrCode className="w-6 h-6 text-primary-600" />
-                      </div>
-                      {getPendingRequestCount(vault) > 0 && (
-                        <button
-                          onClick={(e) => openManageAccess(vault, e)}
-                          className="bg-red-100 text-red-600 px-2 rounded-lg text-xs font-bold flex items-center animate-pulse"
-                          title="Pending Access Requests"
-                        >
-                          {getPendingRequestCount(vault)} Requests
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="relative">
-                      <button
-                        onClick={(e) => toggleMenu(e, vault.id)}
-                        className={`p-2 rounded-full hover:bg-gray-100 transition-colors ${menuOpenId === vault.id ? 'bg-gray-100 text-gray-900' : 'text-gray-400'}`}
-                      >
-                        <MoreVertical className="w-5 h-5" />
-                      </button>
-
-                      {/* Dropdown Menu */}
-                      {menuOpenId === vault.id && (
-                        <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-30 overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top-right">
-                          <button
-                            onClick={(e) => openEditModal(vault, e)}
-                            disabled={isOverLimit}
-                            className={`w-full text-left px-4 py-3 text-sm flex items-center gap-2 ${isOverLimit ? 'text-gray-400 cursor-not-allowed bg-gray-50' : 'text-gray-700 hover:bg-gray-50'}`}
-                          >
-                            {isOverLimit ? <Lock className="w-4 h-4" /> : <Edit2 className="w-4 h-4 text-gray-500" />} Edit Vault
-                          </button>
-                          <button
-                            onClick={(e) => openManageAccess(vault, e)}
-                            className="w-full text-left px-4 py-3 text-sm flex items-center gap-2 text-gray-700 hover:bg-gray-50"
-                          >
-                            <Users className="w-4 h-4 text-gray-500" /> Manage Access
-                          </button>
-                          <div className="h-px bg-gray-100"></div>
-                          <button
-                            onClick={(e) => handleDeleteVault(vault.id, e)}
-                            disabled={isOverLimit}
-                            className={`w-full text-left px-4 py-3 text-sm flex items-center gap-2 ${isOverLimit ? 'text-gray-400 cursor-not-allowed bg-gray-50' : 'text-red-600 hover:bg-red-50'}`}
-                          >
-                            {isOverLimit ? <Lock className="w-4 h-4" /> : <Trash2 className="w-4 h-4" />} Delete
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <h3 className="font-bold text-gray-900 truncate pr-8">{vault.name}</h3>
-                  <div className="text-sm text-gray-500 mt-1 mb-4">
-                    <div className="flex items-center gap-2">
-                      <span>{new Date(vault.createdAt).toLocaleDateString()}</span>
-                      <span>•</span>
-                      {vault.accessLevel === AccessLevel.RESTRICTED ?
-                        <span className="flex items-center gap-1 text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded text-xs font-medium"><Shield className="w-3 h-3" /> Restricted</span>
-                        :
-                        <span className="flex items-center gap-1 text-green-600 bg-green-50 px-1.5 py-0.5 rounded text-xs font-medium"><Users className="w-3 h-3" /> Public</span>
-                      }
-                    </div>
-                    <div className="mt-1 text-xs text-gray-400 flex items-center gap-2">
-                      <span>{vault.files.length} files • {formatBytes(vault.files.reduce((acc, f) => acc + f.size, 0))}</span>
-                      <span>•</span>
-                      <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {vault.views}</span>
-                    </div>
-                  </div>
-
-                  <div className="mt-auto pt-4 border-t border-gray-50 flex gap-2">
-                    <button
-                      onClick={() => setViewQrVault(vault)}
-                      className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-primary-50 text-primary-600 rounded-xl text-sm font-semibold hover:bg-primary-100 transition-all border border-primary-100 cursor-pointer"
-                    >
-                      <QrCode className="w-4 h-4" /> View QR
-                    </button>
-                    <Link
-                      to={`/v/${vault.id}`}
-                      className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-semibold hover:bg-gray-800 transition-all shadow-md active:scale-95"
-                    >
-                      <ExternalLink className="w-4 h-4" /> Open
-                    </Link>
-                  </div>
-                </div>
-              ))}
-
-              {/* Ad Placeholders for Free/Plus users */}
-              {(appUser.plan === PlanType.FREE || appUser.plan === PlanType.STARTER) && (
-                <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl p-6 flex flex-col items-center justify-center text-center min-h-[220px] group hover:border-primary-200 transition-colors">
-                  <div className="bg-white p-3 rounded-2xl shadow-sm mb-4 text-primary-600 group-hover:scale-110 transition-transform">
-                    <Zap className="w-6 h-6" />
-                  </div>
-                  <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Advertisement</p>
-                  <p className="text-xs text-gray-500 mt-2 max-w-[160px]">Upgrade to <span className="text-primary-600 font-bold">PRO</span> to remove advertisements and unlock 20GB storage!</p>
-                  <Link to="/pricing" className="mt-4 text-xs font-bold text-primary-600 hover:underline">Upgrade Now</Link>
-                </div>
-              )}
-            </div>
-          )}
+        {/* Tab Navigation */}
+        <div className="flex items-center gap-6 border-b border-gray-200 mb-8">
+          <button
+            onClick={() => setActiveTab('vaults')}
+            className={`pb-4 text-sm font-bold transition-all relative ${activeTab === 'vaults' ? 'text-primary-600' : 'text-gray-400 hover:text-gray-600'}`}
+          >
+            Active Vaults
+            {activeTab === 'vaults' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-600 rounded-t-full" />}
+          </button>
+          <button
+            onClick={() => setActiveTab('deleted')}
+            className={`pb-4 text-sm font-bold transition-all relative flex items-center gap-2 ${activeTab === 'deleted' ? 'text-primary-600' : 'text-gray-400 hover:text-gray-600'}`}
+          >
+            Recently Deleted
+            {deletedLogs.length > 0 && <span className="bg-primary-100 text-primary-600 text-[10px] px-1.5 py-0.5 rounded-full">{deletedLogs.length}</span>}
+            {activeTab === 'deleted' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-600 rounded-t-full" />}
+          </button>
         </div>
+
+        {/* Vaults List */}
+        {activeTab === 'vaults' ? (
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Your Vaults ({filteredVaults.length})</h2>
+
+            {filteredVaults.length === 0 ? (
+              <div className="text-center py-20 bg-white rounded-2xl border-2 border-dashed border-gray-200">
+                <UploadCloud className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900">No vaults found</h3>
+                <p className="text-gray-500 mb-6">Try adjusting your filters or search terms.</p>
+                {vaults.length === 0 && (
+                  <button
+                    onClick={openCreateModal}
+                    className={`font-medium hover:underline ${isOverLimit ? 'text-gray-400 cursor-not-allowed' : 'text-primary-600'}`}
+                    disabled={isOverLimit}
+                  >
+                    Create Vault
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredVaults.map(vault => (
+                  <div key={vault.id} className="relative bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow p-5 flex flex-col">
+                    {/* Card Header & 3-Dot Menu */}
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex flex-col gap-2">
+                        <div className="flex gap-2">
+                          <div className="bg-primary-50 p-2 rounded-lg">
+                            <QrCode className="w-6 h-6 text-primary-600" />
+                          </div>
+                          {getPendingRequestCount(vault) > 0 && (
+                            <button
+                              onClick={(e) => openManageAccess(vault, e)}
+                              className="bg-red-100 text-red-600 px-2 rounded-lg text-xs font-bold flex items-center animate-pulse"
+                              title="Pending Access Requests"
+                            >
+                              {getPendingRequestCount(vault)} Requests
+                            </button>
+                          )}
+                        </div>
+                        {/* 24h Deletion Timer for Free Users */}
+                        {appUser.plan === PlanType.FREE && (
+                          <VaultTimer createdAt={vault.createdAt} />
+                        )}
+                      </div>
+
+                      <div className="relative">
+                        <button
+                          onClick={(e) => toggleMenu(e, vault.id)}
+                          className={`p-2 rounded-full hover:bg-gray-100 transition-colors ${menuOpenId === vault.id ? 'bg-gray-100 text-gray-900' : 'text-gray-400'}`}
+                        >
+                          <MoreVertical className="w-5 h-5" />
+                        </button>
+
+                        {/* Dropdown Menu */}
+                        {menuOpenId === vault.id && (
+                          <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-30 overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top-right">
+                            <button
+                              onClick={(e) => openEditModal(vault, e)}
+                              disabled={isOverLimit}
+                              className={`w-full text-left px-4 py-3 text-sm flex items-center gap-2 ${isOverLimit ? 'text-gray-400 cursor-not-allowed bg-gray-50' : 'text-gray-700 hover:bg-gray-50'}`}
+                            >
+                              {isOverLimit ? <Lock className="w-4 h-4" /> : <Edit2 className="w-4 h-4 text-gray-500" />} Edit Vault
+                            </button>
+                            <button
+                              onClick={(e) => openManageAccess(vault, e)}
+                              className="w-full text-left px-4 py-3 text-sm flex items-center gap-2 text-gray-700 hover:bg-gray-50"
+                            >
+                              <Users className="w-4 h-4 text-gray-500" /> Manage Access
+                            </button>
+                            <div className="h-px bg-gray-100"></div>
+                            <button
+                              onClick={(e) => handleDeleteVault(vault.id, e)}
+                              disabled={isOverLimit}
+                              className={`w-full text-left px-4 py-3 text-sm flex items-center gap-2 ${isOverLimit ? 'text-gray-400 cursor-not-allowed bg-gray-50' : 'text-red-600 hover:bg-red-50'}`}
+                            >
+                              {isOverLimit ? <Lock className="w-4 h-4" /> : <Trash2 className="w-4 h-4" />} Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <h3 className="font-bold text-gray-900 truncate pr-8">{vault.name}</h3>
+                    <div className="text-sm text-gray-500 mt-1 mb-4">
+                      <div className="flex items-center gap-2">
+                        <span>{new Date(vault.createdAt).toLocaleDateString()}</span>
+                        <span>•</span>
+                        {vault.accessLevel === AccessLevel.RESTRICTED ? (
+                          <span className="flex items-center gap-1 text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded text-xs font-medium"><Shield className="w-3 h-3" /> Restricted</span>
+                        ) : (
+                          <span className="flex items-center gap-1 text-green-600 bg-green-50 px-1.5 py-0.5 rounded text-xs font-medium"><Users className="w-3 h-3" /> Public</span>
+                        )}
+                      </div>
+                      <div className="mt-1 text-xs text-gray-400 flex items-center gap-2">
+                        <span>{vault.files.length} files • {formatBytes(vault.files.reduce((acc, f) => acc + f.size, 0))}</span>
+                        <span>•</span>
+                        <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {vault.views}</span>
+                      </div>
+                      {appUser.plan === PlanType.FREE && (
+                        <Link 
+                          to="/pricing" 
+                          className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-primary-600 hover:text-primary-700 bg-primary-50 hover:bg-primary-100 px-2.5 py-1.5 rounded-lg transition-colors border border-primary-100 w-fit"
+                        >
+                          <Zap className="w-3 h-3" /> 
+                          Upgrade to Keep Permanent
+                        </Link>
+                      )}
+                    </div>
+
+                    <div className="mt-auto pt-4 border-t border-gray-50 flex gap-2">
+                      <button
+                        onClick={() => setViewQrVault(vault)}
+                        className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-primary-50 text-primary-600 rounded-xl text-sm font-semibold hover:bg-primary-100 transition-all border border-primary-100 cursor-pointer"
+                      >
+                        <QrCode className="w-4 h-4" /> View QR
+                      </button>
+                      <Link
+                        to={`/v/${vault.id}`}
+                        className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-semibold hover:bg-gray-800 transition-all shadow-md active:scale-95"
+                      >
+                        <ExternalLink className="w-4 h-4" /> Open
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Ad Placeholders for Free/Plus users */}
+                {(appUser.plan === PlanType.FREE || appUser.plan === PlanType.STARTER) && (
+                  <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl p-6 flex flex-col items-center justify-center text-center min-h-[220px] group hover:border-primary-200 transition-colors">
+                    <div className="bg-white p-3 rounded-2xl shadow-sm mb-4 text-primary-600 group-hover:scale-110 transition-transform">
+                      <Zap className="w-6 h-6" />
+                    </div>
+                    <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Advertisement</p>
+                    <p className="text-xs text-gray-500 mt-2 max-w-[160px]">Upgrade to <span className="text-primary-600 font-bold">PRO</span> to remove advertisements and unlock 20GB storage!</p>
+                    <Link to="/pricing" className="mt-4 text-xs font-bold text-primary-600 hover:underline">Upgrade Now</Link>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Recently Deleted Logs Tab */
+          <div className="animate-in fade-in duration-300">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-gray-50 bg-gray-50/50 flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-gray-900">Deletion History</h3>
+                  <p className="text-xs text-gray-500 mt-1">Vaults auto-removed after 24 hours (Free Tier limit).</p>
+                </div>
+                <Link to="/pricing" className="text-xs font-bold text-primary-600 hover:underline flex items-center gap-1 uppercase tracking-wider">
+                  Stop Auto-Deletion <ExternalLink className="w-3 h-3" />
+                </Link>
+              </div>
+
+              <div className="divide-y divide-gray-50">
+                {deletedLogs.length === 0 ? (
+                  <div className="p-12 text-center">
+                    <div className="bg-gray-50 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Trash2 className="text-gray-300 w-6 h-6" />
+                    </div>
+                    <p className="text-gray-500 text-sm">No vaults have been auto-deleted yet.</p>
+                  </div>
+                ) : (
+                  deletedLogs.map((log) => (
+                    <div key={log.id} className="p-4 sm:p-6 flex items-center justify-between hover:bg-gray-50/50 transition-colors">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center text-red-500 font-bold">
+                          #
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-gray-900 text-sm">{log.vault_name}</h4>
+                          <p className="text-xs text-gray-500">Created: {new Date(log.created_at).toLocaleString()}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs font-bold text-red-500 uppercase tracking-wider">Auto-Deleted</p>
+                        <p className="text-[10px] text-gray-400">{new Date(log.deleted_at).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {deletedLogs.length > 0 && (
+                <div className="p-4 bg-amber-50 border-t border-amber-100 flex items-center gap-3">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
+                  <p className="text-xs text-amber-700 leading-relaxed font-medium">
+                    Free vaults are automatically deleted after 24 hours to save server space.
+                    <Link to="/pricing" className="ml-1 underline font-bold">Upgrade to Plus</Link> for permanent storage.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
       {/* ... keeping Modals ... */}
       {isModalOpen && (
