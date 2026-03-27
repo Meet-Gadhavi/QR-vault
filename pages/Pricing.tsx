@@ -181,7 +181,7 @@ export const Pricing: React.FC = () => {
                       </div>
                       {isFree && (
                         <div className="p-2 bg-amber-50 rounded-lg" title="Temporary Storage">
-                          <Clock className="w-5 h-5 text-amber-600" />
+                          <XCircle className="w-5 h-5 text-amber-600" />
                         </div>
                       )}
                     </div>
@@ -203,7 +203,7 @@ export const Pricing: React.FC = () => {
                             feature.includes('delete') ? 'bg-amber-100' : 'bg-primary-50'
                           }`}>
                             {feature.includes('delete') ? (
-                              <AlertTriangle className="h-3 w-3 text-amber-600" />
+                              <XCircle className="h-3 w-3 text-amber-600" />
                             ) : (
                               <Check className="h-3 w-3 text-primary-600" />
                             )}

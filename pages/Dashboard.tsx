@@ -207,7 +207,7 @@ export const Dashboard: React.FC = () => {
   }, [appUser]);
 
   const downloadInvoice = (inv: Invoice) => {
-    const invoiceHtml = `<!DOCTYPE html><html><head><title>Invoice - ${inv.id}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;padding:40px;color:#333;background:#fff}.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:40px;border-bottom:3px solid #7c3aed;padding-bottom:20px}.logo{font-size:28px;font-weight:800;color:#7c3aed}.logo span{color:#333}.invoice-info{text-align:right}.invoice-info h2{font-size:22px;color:#333;margin-bottom:4px}.invoice-info p{font-size:13px;color:#888}.details{display:flex;justify-content:space-between;margin-bottom:40px}.details .col h4{font-size:11px;text-transform:uppercase;color:#999;letter-spacing:1px;margin-bottom:8px}.details .col p{font-size:14px;color:#333;margin-bottom:4px}table{width:100%;border-collapse:collapse;margin-bottom:30px}th{background:#f5f3ff;color:#7c3aed;text-align:left;padding:12px 16px;font-size:12px;text-transform:uppercase;letter-spacing:.5px}td{padding:14px 16px;border-bottom:1px solid #eee;font-size:14px}.total-row td{font-weight:700;font-size:16px;border-top:2px solid #7c3aed;border-bottom:none}.footer{text-align:center;margin-top:40px;padding-top:20px;border-top:1px solid #eee;color:#999;font-size:12px}.paid-stamp{display:inline-block;border:3px solid #22c55e;color:#22c55e;padding:4px 20px;border-radius:8px;font-size:18px;font-weight:800;text-transform:uppercase;transform:rotate(-5deg);margin-left:20px}</style></head><body><div class="header"><div><div class="logo"><span>QR</span> Vault</div><p style="font-size:13px;color:#888;margin-top:4px">Secure File Storage & Sharing</p></div><div class="invoice-info"><h2>INVOICE</h2><p>${inv.id}</p><p>${inv.date}</p></div></div><div class="details"><div class="col"><h4>Billed To</h4><p>${appUser?.email || 'N/A'}</p></div><div class="col" style="text-align:right"><h4>Plan Details</h4><p>${inv.plan} Plan - Monthly</p><p>Valid until: ${inv.expiry}</p></div></div><table><thead><tr><th>Description</th><th>Qty</th><th style="text-align:right">Amount</th></tr></thead><tbody><tr><td>${inv.plan} Plan — Monthly Subscription</td><td>1</td><td style="text-align:right">₹${inv.amount}.00</td></tr><tr class="total-row"><td colspan="2">Total</td><td style="text-align:right">₹${inv.amount}.00</td></tr></tbody></table><div style="margin-bottom:30px"><span class="paid-stamp">✓ PAID</span></div><div class="footer"><p>Thank you for your purchase! This is a computer-generated invoice.</p><p style="margin-top:4px">QR Vault — Created by Mazelabs</p></div></body></html>`;
+    const invoiceHtml = `<!DOCTYPE html><html><head><title>Invoice - ${inv.id}</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;padding:40px;color:#333;background:#fff}.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:40px;border-bottom:3px solid #7c3aed;padding-bottom:20px}.logo{font-size:28px;font-weight:800;color:#7c3aed}.logo span{color:#333}.invoice-info{text-align:right}.invoice-info h2{font-size:22px;color:#333;margin-bottom:4px}.invoice-info p{font-size:13px;color:#888}.details{display:flex;justify-content:space-between;margin-bottom:40px}.details .col h4{font-size:11px;text-transform:uppercase;color:#999;letter-spacing:1px;margin-bottom:8px}.details .col p{font-size:14px;color:#333;margin-bottom:4px}table{width:100%;border-collapse:collapse;margin-bottom:30px}th{background:#f5f3ff;color:#7c3aed;text-align:left;padding:12px 16px;font-size:12px;text-transform:uppercase;letter-spacing:.5px}td{padding:14px 16px;border-bottom:1px solid #eee;font-size:14px}.total-row td{font-weight:700;font-size:16px;border-top:2px solid #7c3aed;border-bottom:none}.footer{text-align:center;margin-top:40px;padding-top:20px;border-top:1px solid #eee;color:#999;font-size:12px}.paid-stamp{display:inline-block;border:3px solid #22c55e;color:#22c55e;padding:4px 20px;border-radius:8px;font-size:18px;font-weight:800;text-transform:uppercase;transform:rotate(-5deg);margin-left:20px}</style></head><body><div class="header"><div><div class="logo"><span>QR</span> Vault</div><p style="font-size:13px;color:#888;margin-top:4px">Secure File Storage & Sharing</p></div><div class="invoice-info"><h2>INVOICE</h2><p>${inv.id}</p><p>${inv.date}</p></div></div><div class="details"><div class="col"><h4>Billed To</h4><p>${appUser?.email || 'N/A'}</p></div><div class="col" style="text-align:right"><h4>Plan Details</h4><p>${inv.plan} Plan - Monthly</p><p>Valid until: ${inv.expiry}</p></div></div><table><thead><tr><th>Description</th><th>Qty</th><th style="text-align:right">Amount</th></tr></thead><tbody><tr><td>${inv.plan} Plan — Monthly Subscription</td><td>1</td><td style="text-align:right">₹${inv.amount}.00</td></tr><tr class="total-row"><td colspan="2">Total</td><td style="text-align:right">₹${inv.amount}.00</td></tr></tbody></table><div style="margin-bottom:30px"><span class="paid-stamp">✓ PAID</span></div><div class="footer"><p>Thank you for your purchase! This is a computer-generated invoice.</p><p style="margin-top:4px">QR Vault — Secure File Storage & Sharing</p></div></body></html>`;
     const w = window.open('', '_blank');
     if (w) { w.document.write(invoiceHtml); w.document.close(); setTimeout(() => w.print(), 500); }
   };
@@ -818,17 +818,7 @@ export const Dashboard: React.FC = () => {
   return (
     <div className="bg-gray-50 min-h-screen pb-12 relative">
 
-      {/* Mazelabs Sticky Bar */}
-      <a
-        href="https://webhub-63.netlify.app/"
-        target="_blank"
-        rel="noreferrer"
-        className="bg-black hover:bg-gray-900 transition-colors w-full py-2.5 flex items-center justify-center gap-2 sticky top-16 z-50 text-sm shadow-lg border-b border-gray-800"
-      >
-        <span className="text-gray-400 font-medium">Created By</span>
-        <span className="text-white font-bold tracking-wide flex items-center">Maze<span className="text-yellow-400">labs</span></span>
-        <ExternalLink className="w-3 h-3 text-gray-500" />
-      </a>
+
 
       {/* Over Limit Banner */}
       {isOverLimit && (
@@ -928,52 +918,7 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
-            <div className="flex items-center gap-2 text-gray-900 font-semibold mb-2">
-              {isPaidPlan && googleTokens ? (
-                <GoogleDriveImg className="w-5 h-5" />
-              ) : (
-                <HardDrive className={`w-5 h-5 ${isOverLimit ? 'text-red-500' : 'text-gray-400'}`} />
-              )}
-              {isPaidPlan && googleTokens ? 'Drive Storage' : 'Storage Usage'}
-            </div>
-            <div className="flex items-center h-32">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={data}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={30}
-                    outerRadius={45}
-                    fill="#8884d8"
-                    paddingAngle={5}
-                    dataKey="value"
-                    startAngle={90}
-                    endAngle={-270}
-                  >
-                    {data.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="text-right">
-                <div className={`text-2xl font-bold ${isOverLimit ? 'text-red-600' : 'text-gray-900'}`}>{formatBytes(storageUsedDisplay)}</div>
-                <div className="text-xs text-gray-400">of {formatBytes(appUser.storageLimit)} used</div>
-              </div>
-            </div>
-            
-            {appUser.plan === PlanType.FREE && (
-              <button 
-                onClick={() => setActiveTab('deleted')}
-                className="mt-4 text-xs font-bold text-primary-600 hover:text-primary-700 flex items-center justify-center gap-1.5 py-2 bg-primary-50 rounded-xl border border-primary-100 transition-all hover:bg-primary-100"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                View Deletion History
-              </button>
-            )}
-          </div>
+
         </div>
 
         {/* Invoice History */}
@@ -1186,29 +1131,9 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="flex items-center gap-6 border-b border-gray-200 mb-8">
-          <button
-            onClick={() => setActiveTab('vaults')}
-            className={`pb-4 text-sm font-bold transition-all relative ${activeTab === 'vaults' ? 'text-primary-600' : 'text-gray-400 hover:text-gray-600'}`}
-          >
-            Active Vaults
-            {activeTab === 'vaults' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-600 rounded-t-full" />}
-          </button>
-          <button
-            onClick={() => setActiveTab('deleted')}
-            className={`pb-4 text-sm font-bold transition-all relative flex items-center gap-2 ${activeTab === 'deleted' ? 'text-primary-600' : 'text-gray-400 hover:text-gray-600'}`}
-          >
-            Recently Deleted
-            {deletedLogs.length > 0 && <span className="bg-primary-100 text-primary-600 text-[10px] px-1.5 py-0.5 rounded-full">{deletedLogs.length}</span>}
-            {activeTab === 'deleted' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-600 rounded-t-full" />}
-          </button>
-        </div>
-
         {/* Vaults List */}
-        {activeTab === 'vaults' ? (
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Your Vaults ({filteredVaults.length})</h2>
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Your Vaults ({filteredVaults.length})</h2>
 
             {filteredVaults.length === 0 ? (
               <div className="text-center py-20 bg-white rounded-2xl border-2 border-dashed border-gray-200">
@@ -1346,62 +1271,7 @@ export const Dashboard: React.FC = () => {
                 )}
               </div>
             )}
-          </div>
-        ) : (
-          /* Recently Deleted Logs Tab */
-          <div className="animate-in fade-in duration-300">
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="p-6 border-b border-gray-50 bg-gray-50/50 flex items-center justify-between">
-                <div>
-                  <h3 className="font-bold text-gray-900">Deletion History</h3>
-                  <p className="text-xs text-gray-500 mt-1">Vaults auto-removed after 24 hours (Free Tier limit).</p>
-                </div>
-                <Link to="/pricing" className="text-xs font-bold text-primary-600 hover:underline flex items-center gap-1 uppercase tracking-wider">
-                  Stop Auto-Deletion <ExternalLink className="w-3 h-3" />
-                </Link>
-              </div>
-
-              <div className="divide-y divide-gray-50">
-                {deletedLogs.length === 0 ? (
-                  <div className="p-12 text-center">
-                    <div className="bg-gray-50 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Trash2 className="text-gray-300 w-6 h-6" />
-                    </div>
-                    <p className="text-gray-500 text-sm">No vaults have been auto-deleted yet.</p>
-                  </div>
-                ) : (
-                  deletedLogs.map((log) => (
-                    <div key={log.id} className="p-4 sm:p-6 flex items-center justify-between hover:bg-gray-50/50 transition-colors">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center text-red-500 font-bold">
-                          #
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-gray-900 text-sm">{log.vault_name}</h4>
-                          <p className="text-xs text-gray-500">Created: {new Date(log.created_at).toLocaleString()}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs font-bold text-red-500 uppercase tracking-wider">Auto-Deleted</p>
-                        <p className="text-[10px] text-gray-400">{new Date(log.deleted_at).toLocaleDateString()}</p>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              {deletedLogs.length > 0 && (
-                <div className="p-4 bg-amber-50 border-t border-amber-100 flex items-center gap-3">
-                  <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
-                  <p className="text-xs text-amber-700 leading-relaxed font-medium">
-                    Free vaults are automatically deleted after 24 hours to save server space.
-                    <Link to="/pricing" className="ml-1 underline font-bold">Upgrade to Plus</Link> for permanent storage.
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        </div>
       </div>
       {/* ... keeping Modals ... */}
       {isModalOpen && (

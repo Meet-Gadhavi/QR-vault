@@ -236,7 +236,7 @@ export const Payment: React.FC = () => {
 
         <div class="footer">
           <p>Thank you for your purchase! This is a computer-generated invoice.</p>
-          <p style="margin-top: 4px;">QR Vault — Created by Mazelabs</p>
+          <p style="margin-top: 4px;">QR Vault — Secure File Storage & Sharing</p>
         </div>
       </body>
       </html>
