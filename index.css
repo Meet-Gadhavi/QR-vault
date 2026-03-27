@@ -22,6 +22,40 @@
   }
 }
 
+@layer utilities {
+  .animate-shine {
+    animation: shine 4s linear infinite;
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .animate-float-delayed {
+    animation: float 3s ease-in-out 1.5s infinite;
+  }
+
+  .animate-fade-in-up {
+    animation: fadeInUp 0.8s ease-out forwards;
+  }
+
+  .animate-fade-in-up-delay-1 {
+    animation: fadeInUp 0.8s ease-out 0.2s forwards;
+  }
+
+  .animate-fade-in-up-delay-2 {
+    animation: fadeInUp 0.8s ease-out 0.4s forwards;
+  }
+
+  .animate-blob {
+    animation: blob 7s infinite;
+  }
+
+  .animate-fade-out {
+    animation: fadeOut 0.3s ease-in forwards;
+  }
+}
+
 @keyframes shine {
   0% { background-position: 200% center; }
   100% { background-position: -200% center; }
@@ -44,39 +78,8 @@
   100% { transform: translate(0px, 0px) scale(1); }
 }
 
-.animate-shine {
-  animation: shine 4s linear infinite;
-}
-
-.animate-float {
-  animation: float 3s ease-in-out infinite;
-}
-
-.animate-float-delayed {
-  animation: float 3s ease-in-out 1.5s infinite;
-}
-
-.animate-fade-in-up {
-  animation: fadeInUp 0.8s ease-out forwards;
-}
-
-.animate-fade-in-up-delay-1 {
-  animation: fadeInUp 0.8s ease-out 0.2s forwards;
-}
-
-.animate-fade-in-up-delay-2 {
-  animation: fadeInUp 0.8s ease-out 0.4s forwards;
-}
-
-.animate-blob {
-  animation: blob 7s infinite;
-}
-
 @keyframes fadeOut {
   0% { opacity: 1; transform: scale(1); }
   100% { opacity: 0; transform: scale(0.9); }
 }
 
-.animate-fade-out {
-  animation: fadeOut 0.3s ease-in forwards;
-}
