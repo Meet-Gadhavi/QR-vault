@@ -918,7 +918,42 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
 
-
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
+            <div className="flex items-center gap-2 text-gray-900 font-semibold mb-2">
+              {isPaidPlan && googleTokens ? (
+                <GoogleDriveImg className="w-5 h-5" />
+              ) : (
+                <HardDrive className={`w-5 h-5 ${isOverLimit ? 'text-red-500' : 'text-gray-400'}`} />
+              )}
+              {isPaidPlan && googleTokens ? 'Drive Storage' : 'Storage Usage'}
+            </div>
+            <div className="flex items-center h-32">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={data}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={30}
+                    outerRadius={45}
+                    fill="#8884d8"
+                    paddingAngle={5}
+                    dataKey="value"
+                    startAngle={90}
+                    endAngle={-270}
+                  >
+                    {data.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="text-right">
+                <div className={`text-2xl font-bold ${isOverLimit ? 'text-red-600' : 'text-gray-900'}`}>{formatBytes(storageUsedDisplay)}</div>
+                <div className="text-xs text-gray-400">of {formatBytes(appUser.storageLimit)} used</div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Invoice History */}
