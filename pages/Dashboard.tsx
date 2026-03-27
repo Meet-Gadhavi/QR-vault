@@ -1166,8 +1166,28 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
 
+        {/* Tab Navigation */}
+        <div className="flex items-center gap-6 border-b border-gray-200 mb-8">
+          <button
+            onClick={() => setActiveTab('vaults')}
+            className={`pb-4 text-sm font-bold transition-all relative ${activeTab === 'vaults' ? 'text-primary-600' : 'text-gray-400 hover:text-gray-600'}`}
+          >
+            Active Vaults
+            {activeTab === 'vaults' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-600 rounded-t-full" />}
+          </button>
+          <button
+            onClick={() => setActiveTab('deleted')}
+            className={`pb-4 text-sm font-bold transition-all relative flex items-center gap-2 ${activeTab === 'deleted' ? 'text-primary-600' : 'text-gray-400 hover:text-gray-600'}`}
+          >
+            Recently Deleted
+            {deletedLogs.length > 0 && <span className="bg-primary-100 text-primary-600 text-[10px] px-1.5 py-0.5 rounded-full">{deletedLogs.length}</span>}
+            {activeTab === 'deleted' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-600 rounded-t-full" />}
+          </button>
+        </div>
+
         {/* Vaults List */}
-        <div className="space-y-4">
+        {activeTab === 'vaults' ? (
+          <div className="space-y-4">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Your Vaults ({filteredVaults.length})</h2>
 
             {filteredVaults.length === 0 ? (
@@ -1306,7 +1326,62 @@ export const Dashboard: React.FC = () => {
                 )}
               </div>
             )}
-        </div>
+          </div>
+        ) : (
+          /* Recently Deleted Logs Tab */
+          <div className="animate-in fade-in duration-300">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-gray-50 bg-gray-50/50 flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-gray-900">Deletion History</h3>
+                  <p className="text-xs text-gray-500 mt-1">Vaults auto-removed after 24 hours (Free Tier limit).</p>
+                </div>
+                <Link to="/pricing" className="text-xs font-bold text-primary-600 hover:underline flex items-center gap-1 uppercase tracking-wider">
+                  Stop Auto-Deletion <ExternalLink className="w-3 h-3" />
+                </Link>
+              </div>
+
+              <div className="divide-y divide-gray-50">
+                {deletedLogs.length === 0 ? (
+                  <div className="p-12 text-center">
+                    <div className="bg-gray-50 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Trash2 className="text-gray-300 w-6 h-6" />
+                    </div>
+                    <p className="text-gray-500 text-sm">No vaults have been auto-deleted yet.</p>
+                  </div>
+                ) : (
+                  deletedLogs.map((log) => (
+                    <div key={log.id} className="p-4 sm:p-6 flex items-center justify-between hover:bg-gray-50/50 transition-colors">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center text-red-500 font-bold">
+                          #
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-gray-900 text-sm">{log.vault_name}</h4>
+                          <p className="text-xs text-gray-500">Created: {new Date(log.created_at).toLocaleString()}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs font-bold text-red-500 uppercase tracking-wider">Auto-Deleted</p>
+                        <p className="text-[10px] text-gray-400">{new Date(log.deleted_at).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {deletedLogs.length > 0 && (
+                <div className="p-4 bg-amber-50 border-t border-amber-100 flex items-center gap-3">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
+                  <p className="text-xs text-amber-700 leading-relaxed font-medium">
+                    Free vaults are automatically deleted after 24 hours to save server space.
+                    <Link to="/pricing" className="ml-1 underline font-bold">Upgrade to Plus</Link> for permanent storage.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
       {/* ... keeping Modals ... */}
       {isModalOpen && (
