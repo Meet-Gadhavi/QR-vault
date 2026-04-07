@@ -1419,13 +1419,22 @@ export const Dashboard: React.FC = () => {
 
                       <h3 className="font-bold text-gray-900 truncate pr-8">{vault.name}</h3>
                       <div className="text-sm text-gray-500 mt-1 mb-4">
-                        <div className="flex items-center gap-2">
-                          <span>{new Date(vault.createdAt).toLocaleDateString()}</span>
-                          <span>•</span>
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-1.5 text-gray-400">
+                            <Clock className="w-3.5 h-3.5" />
+                            <span>{new Date(vault.createdAt).toLocaleDateString()}</span>
+                          </div>
+                          <span className="text-gray-200">|</span>
+                          <div className="flex items-center gap-1.5 text-primary-600 font-bold whitespace-nowrap">
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>{vault.views}/{vault.maxViews || (vault.userPlan === PlanType.FREE ? 85 : 500)}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 mt-2">
                           {vault.accessLevel === AccessLevel.RESTRICTED ? (
-                            <span className="flex items-center gap-1 text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded text-xs font-medium"><Shield className="w-3 h-3" /> Restricted</span>
+                            <span className="flex items-center gap-1 text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tight"><Shield className="w-3 h-3" /> Restricted</span>
                           ) : (
-                            <span className="flex items-center gap-1 text-green-600 bg-green-50 px-1.5 py-0.5 rounded text-xs font-medium"><Users className="w-3 h-3" /> Public</span>
+                            <span className="flex items-center gap-1 text-green-600 bg-green-50 px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tight"><Users className="w-3 h-3" /> Public</span>
                           )}
                         </div>
                         <div className="mt-1 text-xs text-gray-400 flex items-center gap-2">
