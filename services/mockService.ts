@@ -236,9 +236,63 @@ const supabaseImpl = {
             console.warn("Storage cleanup failed:", storageErr);
         }
 
-        // 2. Delete from DB (Cascade delete handles files/requests metadata)
+        // 2. Delete from DB (Cascade delete handles files/requests/reports metadata)
         const { error } = await supabase.from('vaults').delete().eq('id', id);
         if (error) throw new Error(error.message);
+    },
+
+    recoverVault: async (userId: string, vaultName: string, driveFiles: any[]) => {
+        // 1. Create Vault Record
+        const { data: vault, error: vError } = await supabase.from('vaults').insert({
+            user_id: userId,
+            name: vaultName,
+            access_level: AccessLevel.PUBLIC,
+            created_at: new Date().toISOString(),
+            views: 0,
+            active: true
+        }).select().single();
+
+        if (vError) throw new Error(`Recovery failed: ${vError.message}`);
+
+        // 2. Insert Files from Drive metadata
+        for (const f of driveFiles) {
+            const fType = f.mimeType?.startsWith('image/') ? FileType.IMAGE : 
+                         (f.mimeType === 'application/pdf' ? FileType.PDF : FileType.OTHER);
+            
+            await supabase.from('files').insert({
+                vault_id: vault.id,
+                name: f.name,
+                size: f.size || 0,
+                type: fType,
+                mime_type: f.mimeType || 'application/octet-stream',
+                url: f.webViewLink
+            });
+        }
+
+        // 3. Delete from Deletion Logs (clean up history)
+        await supabase.from('deleted_vault_logs').delete().eq('user_id', userId).eq('vault_name', vaultName);
+
+        return (await supabaseImpl.getVaultById(vault.id)) as Vault;
+    },
+
+    getVaultReports: async (vaultId: string): Promise<Report[]> => {
+        const { data, error } = await supabase
+            .from('reports')
+            .select('*')
+            .eq('vault_id', vaultId)
+            .order('created_at', { ascending: false });
+        
+        if (error) return [];
+        return (data || []).map((r: any) => ({
+            id: r.id,
+            vaultId: r.vault_id,
+            fileId: r.file_id,
+            reasonVirus: r.reason_virus,
+            reasonContent: r.reason_content,
+            customMessage: r.custom_message,
+            expiresAt: r.expires_at,
+            createdAt: r.created_at
+        }));
     },
 
     requestAccess: async (vaultId: string, email: string) => {

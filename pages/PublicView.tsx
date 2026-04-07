@@ -32,6 +32,14 @@ export const PublicView: React.FC = () => {
   const [isExpired, setIsExpired] = useState(false);
   const [expiredVaultName, setExpiredVaultName] = useState<string | null>(null);
 
+  // Reporting State
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [reportReasonVirus, setReportReasonVirus] = useState(false);
+  const [reportReasonContent, setReportReasonContent] = useState(false);
+  const [reportMessage, setReportMessage] = useState('');
+  const [reportFileId, setReportFileId] = useState<string | null>(null);
+  const [isReporting, setIsReporting] = useState(false);
+
   useEffect(() => {
     if (id) {
       mockService.getVaultById(id).then(async (v) => {
@@ -39,7 +47,7 @@ export const PublicView: React.FC = () => {
           setVault(v);
           checkAccess(v);
         } else {
-          // Check if it was recently deleted (24h limit)
+          // Check if it was recently deleted
           try {
             const { data: log } = await supabase
               .from('deleted_vault_logs')
@@ -63,13 +71,11 @@ export const PublicView: React.FC = () => {
   }, [id]);
 
   const checkAccess = (v: Vault) => {
-    // 1. If public, grant access
     if (!v.accessLevel || v.accessLevel === AccessLevel.PUBLIC) {
       setHasAccess(true);
       return;
     }
 
-    // 2. If restricted, check email in requests
     const storedEmail = localStorage.getItem('qrvault_viewer_email');
     if (storedEmail) {
       setEmailInput(storedEmail);
@@ -89,18 +95,15 @@ export const PublicView: React.FC = () => {
     if (!emailInput || !vault) return;
 
     setRequesting(true);
-    // Save email locally to identify this user
     localStorage.setItem('qrvault_viewer_email', emailInput);
     setViewerEmail(emailInput);
 
     try {
       await mockService.requestAccess(vault.id, emailInput);
-      // Refresh vault to get status
       const v = await mockService.getVaultById(vault.id);
       if (v) {
         setVault(v);
         checkAccess(v);
-        // Manually set status to PENDING if logic didn't catch it immediately (e.g. sync issue)
         if (!hasAccess) setRequestStatus(RequestStatus.PENDING);
       }
     } catch (e) {
@@ -121,7 +124,6 @@ export const PublicView: React.FC = () => {
 
   const getGoogleDriveDownloadUrl = (url: string) => {
     if (!url.includes('drive.google.com')) return null;
-    // Extract file ID from /d/ID/ or ?id=ID
     const match = url.match(/\/d\/([^/|?]+)/) || url.match(/[?&]id=([^&]+)/);
     if (match && match[1]) {
       return `https://drive.google.com/uc?export=download&id=${match[1]}`;
@@ -136,11 +138,8 @@ export const PublicView: React.FC = () => {
 
     const gDriveUrl = getGoogleDriveDownloadUrl(file.url);
     if (gDriveUrl) {
-      // For Google Drive, we cannot use fetch due to CORS.
-      // We trigger a direct download link.
       const a = document.createElement('a');
       a.href = gDriveUrl;
-      // We use target="_blank" because Google Drive might show a "scanning for viruses" page for large files
       a.target = "_blank";
       a.rel = "noreferrer";
       document.body.appendChild(a);
@@ -171,16 +170,11 @@ export const PublicView: React.FC = () => {
 
   const handleBulkDownload = async () => {
     if (!vault || isDownloadingAll) return;
-
     setIsDownloadingAll(true);
-
     try {
       const zip = new JSZip();
-      // Use vault name for folder or root
       const folderName = vault.name.replace(/[^a-z0-9]/gi, '_') || 'vault';
       const folder = zip.folder(folderName);
-
-      // Download all files in vault (ignoring filtered tab view) that are not links
       const downloadableFiles = vault.files.filter(f => f.type !== FileType.LINK);
 
       if (downloadableFiles.length === 0) {
@@ -189,30 +183,24 @@ export const PublicView: React.FC = () => {
         return;
       }
 
-      // Fetch all files
       let successCount = 0;
       await Promise.all(downloadableFiles.map(async (file) => {
         try {
-          // Always use proxy for bulk download to avoid CORS issues and handle GDrive warnings
           const proxyUrl = `/api/proxy-download?url=${encodeURIComponent(file.url)}&filename=${encodeURIComponent(file.name)}`;
-          
           const response = await fetch(proxyUrl);
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error || `Fetch failed: ${response.statusText}`);
-          }
+          if (!response.ok) throw new Error(`Fetch failed`);
           const blob = await response.blob();
           if (blob.size > 0) {
             folder?.file(file.name, blob);
             successCount++;
           }
         } catch (e: any) {
-          console.error(`Failed to download ${file.name}:`, e.message);
+          console.error(`Failed to download ${file.name}`);
         }
       }));
 
       if (successCount === 0) {
-        alert("Failed to download any files. Please try downloading them individually.");
+        alert("Failed to download files.");
         setIsDownloadingAll(false);
         return;
       }
@@ -226,46 +214,96 @@ export const PublicView: React.FC = () => {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-
     } catch (error) {
       console.error("Zip error", error);
-      alert("Failed to create zip file.");
     } finally {
       setIsDownloadingAll(false);
     }
   };
 
+  const handleReportSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!vault || isReporting) return;
+
+    if (!reportReasonVirus && !reportReasonContent && !reportMessage.trim()) {
+      alert("Please provide a reason or a message.");
+      return;
+    }
+
+    setIsReporting(true);
+    try {
+      // Set report expiry to 30 days from now
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 30);
+
+      const { error: logError } = await supabase.from('reports').insert({
+        vault_id: vault.id,
+        file_id: reportFileId,
+        reason_virus: reportReasonVirus,
+        reason_content: reportReasonContent,
+        custom_message: reportMessage,
+        expires_at: expiresAt.toISOString()
+      });
+
+      if (logError) throw logError;
+
+      const { error: updateError } = await supabase.from('vaults')
+        .update({ report_count: (vault.reportCount || 0) + 1 })
+        .eq('id', vault.id);
+
+      if (updateError) throw updateError;
+
+      alert("Thank you for your report. Our system will review this vault.");
+      setIsReportModalOpen(false);
+      setReportReasonVirus(false);
+      setReportReasonContent(false);
+      setReportMessage('');
+      setReportFileId(null);
+    } catch (err: any) {
+      console.error("Report error:", err.message);
+      alert("Failed to send report.");
+    } finally {
+      setIsReporting(false);
+    }
+  };
+
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary-600 w-8 h-8" /></div>;
+
+  const isLocked = vault && vault.lockedUntil && new Date(vault.lockedUntil) > new Date();
+
+  if (isLocked) return (
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-gray-50">
+      <div className="bg-white p-10 rounded-3xl shadow-xl border border-red-100 max-w-md w-full">
+        <div className="w-20 h-20 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
+          <Lock className="w-10 h-10 text-red-500" />
+        </div>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Vault Temporarily Locked</h1>
+        <p className="text-gray-500 mb-6 font-medium">This vault has been blocked due to multiple community reports. Access will be restored once the review period ends.</p>
+        <div className="bg-red-50 text-red-700 p-4 rounded-xl text-sm mb-6 border border-red-100 font-bold uppercase tracking-tight">
+          Locked until: {new Date(vault.lockedUntil!).toLocaleString()}
+        </div>
+        <Link to="/" className="text-primary-600 font-bold hover:underline">Back to Home</Link>
+      </div>
+    </div>
+  );
 
   if (isExpired) return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-gray-50 relative overflow-hidden">
-        {/* Background decoration */}
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-          <div className="absolute top-10 left-10 w-64 h-64 bg-amber-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30"></div>
-          <div className="absolute bottom-10 right-10 w-64 h-64 bg-primary-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30"></div>
-        </div>
-
       <div className="bg-white p-10 rounded-3xl shadow-xl border border-gray-100 max-w-md w-full relative z-10">
         <div className="w-20 h-20 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">
           <Clock className="w-10 h-10 text-amber-500 animate-pulse" />
         </div>
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Vault Expired</h1>
         <p className="font-semibold text-primary-600 mb-6 truncate px-4">&#8220;{expiredVaultName}&#8221;</p>
-        
         <div className="bg-amber-50 text-amber-800 p-5 rounded-2xl text-sm mb-8 border border-amber-100 leading-relaxed font-medium">
-          <div className="flex items-center gap-2 mb-2 text-amber-700">
-            <AlertCircle className="w-4 h-4" />
-            <span className="font-bold uppercase tracking-wider text-[10px]">Free Tier Limit</span>
-          </div>
-          This vault has been automatically deleted after 24 hours of availability as per our storage policy for free users.
+          This vault has been automatically deleted based on our security and storage policy.
         </div>
-        
         <div className="space-y-4">
           <Link to="/" className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-6 rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
-            Create Your Own Permanent Vault
+            Create Your Own Vault
           </Link>
           <p className="text-xs text-gray-400">
-            Want to keep files forever? <Link to="/pricing" className="text-primary-600 font-bold hover:underline">Check our Pro Plans</Link>
+            Want to keep files forever? <Link to="/pricing" className="text-primary-600 font-bold hover:underline">Check Pro Plans</Link>
           </p>
         </div>
       </div>
@@ -282,29 +320,21 @@ export const PublicView: React.FC = () => {
     </div>
   );
 
-  // --- RESTRICTED ACCESS SCREEN ---
   if (!hasAccess) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-gray-50 relative overflow-hidden">
-        {/* Background decoration */}
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-          <div className="absolute top-10 left-10 w-64 h-64 bg-primary-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
-          <div className="absolute bottom-10 right-10 w-64 h-64 bg-orange-100 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
-        </div>
-
         <div className="bg-white p-10 rounded-3xl shadow-xl border border-gray-100 max-w-md w-full relative z-10">
           <div className="w-16 h-16 bg-gray-900 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
             <Lock className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Restricted Access</h1>
-          <p className="text-gray-500 mb-8">This vault is protected by the owner. You need to request access to view the files.</p>
-
+          <p className="text-gray-500 mb-8 font-medium">This vault is protected by the owner. You need to request access to view the files.</p>
           {requestStatus === RequestStatus.PENDING ? (
             <div className="bg-orange-50 border border-orange-100 rounded-xl p-6">
               <Clock className="w-8 h-8 text-orange-500 mx-auto mb-3" />
               <h3 className="font-bold text-gray-900">Request Pending</h3>
               <p className="text-sm text-gray-600 mt-1">We've sent your request to the owner. Please check back later.</p>
-              <p className="text-xs text-gray-400 mt-4">Logged in as: {viewerEmail}</p>
+              <p className="text-xs text-gray-400 mt-4 underline decoration-orange-200">Logged in as: {viewerEmail}</p>
             </div>
           ) : requestStatus === RequestStatus.REJECTED ? (
             <div className="bg-red-50 border border-red-100 rounded-xl p-6">
@@ -315,20 +345,20 @@ export const PublicView: React.FC = () => {
           ) : (
             <form onSubmit={handleRequestAccess} className="space-y-4">
               <div>
-                <label className="block text-left text-sm font-medium text-gray-700 mb-1">Your Email Address</label>
+                <label className="block text-left text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 ml-1">Your Email Address</label>
                 <input
                   type="email"
                   required
                   value={emailInput}
                   onChange={(e) => setEmailInput(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
+                  className="w-full px-4 py-3 border border-gray-100 bg-gray-50 rounded-xl focus:ring-2 focus:ring-primary-500 focus:bg-white outline-none transition-all font-medium"
                   placeholder="name@example.com"
                 />
               </div>
               <button
                 type="submit"
                 disabled={requesting}
-                className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
+                className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 px-4 rounded-xl shadow-lg shadow-primary-100 transition-all active:scale-95 flex items-center justify-center gap-2"
               >
                 {requesting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                 Request Access
@@ -340,8 +370,6 @@ export const PublicView: React.FC = () => {
     );
   }
 
-  // --- CONTENT VIEW ---
-
   const filterFiles = (tab: Tab) => {
     switch (tab) {
       case 'PHOTOS': return vault.files.filter(f => f.type === FileType.IMAGE);
@@ -352,7 +380,6 @@ export const PublicView: React.FC = () => {
   };
 
   const currentFiles = filterFiles(activeTab);
-
   const tabs: { id: Tab; label: string; count: number }[] = [
     { id: 'ALL', label: 'All Files', count: vault.files.length },
     { id: 'PHOTOS', label: 'Photos', count: vault.files.filter(f => f.type === FileType.IMAGE).length },
@@ -361,113 +388,105 @@ export const PublicView: React.FC = () => {
 
   const AdPlaceholder = () => (
     <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl p-6 flex flex-col items-center justify-center text-center min-h-[240px] animate-pulse">
-      <div className="bg-gray-100 p-3 rounded-xl mb-4 text-gray-400">
-        <Zap className="w-8 h-8" />
-      </div>
+      <div className="bg-gray-100 p-3 rounded-xl mb-4 text-gray-400"><Zap className="w-8 h-8" /></div>
       <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Advertisement</p>
       <p className="text-xs text-gray-500 mt-2 max-w-[160px]">Support QR Vault by upgrading your plan today!</p>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-4">
+    <div className="min-h-screen bg-white flex flex-col">
+      <div className="bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-gray-100">
+        <div className="max-w-5xl mx-auto px-4 py-4">
           <div className="flex justify-between items-center mb-4">
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Assets</h1>
-              <div className="flex items-center gap-1 text-xs text-green-600 mt-1">
-                <ShieldCheck className="w-3 h-3" /> Secure Access
+              <h1 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-2">
+                {vault.name}
+              </h1>
+              <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full mt-1 w-fit uppercase tracking-wider">
+                <ShieldCheck className="w-3 h-3" /> Encrypted Vault
               </div>
             </div>
 
-            {/* Download All Button */}
-            {vault.files.some(f => f.type !== FileType.LINK) && (
+            <div className="flex items-center gap-2">
               <button
-                className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium shadow hover:bg-primary-700 transition-colors flex items-center gap-2 disabled:opacity-70 disabled:cursor-wait"
-                onClick={handleBulkDownload}
-                disabled={isDownloadingAll}
+                onClick={() => setIsReportModalOpen(true)}
+                className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                title="Report Vault"
               >
-                {isDownloadingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                <span className="hidden sm:inline">{isDownloadingAll ? 'Zipping...' : 'Download All'}</span>
+                <AlertCircle className="w-5 h-5" />
               </button>
-            )}
+
+              {vault.files.some(f => f.type !== FileType.LINK) && (
+                <button
+                  className="bg-gray-900 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-xl shadow-gray-200 hover:bg-gray-800 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-70"
+                  onClick={handleBulkDownload}
+                  disabled={isDownloadingAll}
+                >
+                  {isDownloadingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  <span>{isDownloadingAll ? 'Zipping...' : 'Download All'}</span>
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* Tabs */}
-          <div className="flex space-x-1 overflow-x-auto no-scrollbar">
+          <div className="flex space-x-1 overflow-x-auto no-scrollbar py-1">
             {tabs.map(tab => (
-              tab.count > 0 || tab.id === 'ALL' ? (
+              (tab.count > 0 || tab.id === 'ALL') && (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`
-                    px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all
+                    px-5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap
                     ${activeTab === tab.id
-                      ? 'bg-gray-900 text-white shadow-md'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      ? 'bg-primary-600 text-white shadow-lg shadow-primary-100'
+                      : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
                     }
                   `}
                 >
-                  {tab.label} <span className={`ml-1 text-xs opacity-70 ${activeTab === tab.id ? 'text-white' : 'text-gray-500'}`}>({tab.count})</span>
+                  {tab.label} <span className="ml-1.5 opacity-50 font-medium">({tab.count})</span>
                 </button>
-              ) : null
+              )
             ))}
           </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-8 flex-1 w-full">
+      <div className="max-w-5xl mx-auto px-4 py-8 flex-1 w-full">
         {currentFiles.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="bg-gray-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Box className="text-gray-400 w-8 h-8" />
-            </div>
-            <h3 className="text-lg font-medium text-gray-900">No files found</h3>
-            <p className="text-gray-500">There are no files in this category.</p>
+          <div className="text-center py-32 bg-gray-50/50 rounded-3xl border border-dashed border-gray-200">
+            <Box className="text-gray-200 w-16 h-16 mx-auto mb-4" />
+            <h3 className="text-lg font-bold text-gray-900">No files found</h3>
+            <p className="text-gray-500 text-sm">There are no files in this category.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {currentFiles.map(file => (
-              <div key={file.id} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-all group relative">
-                {/* ... (existing file card content) */}
-
-                {/* File Preview Area */}
+              <div key={file.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-xl hover:shadow-gray-100 transition-all group relative border-b-4 border-b-gray-50">
                 <div
-                  className="aspect-video bg-gray-100 relative flex items-center justify-center overflow-hidden cursor-pointer"
+                  className="aspect-video bg-gray-50 relative flex items-center justify-center overflow-hidden cursor-pointer"
                   onClick={() => file.type === FileType.IMAGE && setPreviewFile(file)}
                 >
                   {file.type === FileType.IMAGE ? (
                     <>
-                      <img src={file.url} alt={file.name} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
-                        <Eye className="text-white w-8 h-8 drop-shadow-md" />
+                      <img src={file.url} alt={file.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                        <Eye className="text-white w-10 h-10 drop-shadow-lg" />
                       </div>
                     </>
                   ) : file.type === FileType.PDF ? (
-                    <FileText className="w-12 h-12 text-red-400" />
+                    <FileText className="w-12 h-12 text-red-500" />
                   ) : file.type === FileType.LINK ? (
-                    <LinkIcon className="w-12 h-12 text-blue-400" />
+                    <LinkIcon className="w-12 h-12 text-primary-500" />
                   ) : (
-                    <Box className="w-12 h-12 text-gray-400" />
+                    <Box className="w-12 h-12 text-gray-300" />
                   )}
                 </div>
 
-                {/* Info Button - Absolute Positioned */}
-                <button
-                  onClick={(e) => { e.stopPropagation(); setInfoFile(file); }}
-                  className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow-sm text-gray-500 hover:text-primary-600 transition-colors z-10 opacity-0 group-hover:opacity-100"
-                  title="File Info"
-                >
-                  <Info className="w-4 h-4" />
-                </button>
-
-                {/* File Info */}
-                <div className="p-4">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <h3 className="font-medium text-gray-900 truncate flex-1" title={file.name}>{file.name}</h3>
-                    {file.type !== FileType.LINK && <span className="text-xs text-gray-400 whitespace-nowrap">{formatBytes(file.size)}</span>}
+                <div className="p-5">
+                  <div className="flex items-start justify-between gap-2 mb-4">
+                    <h3 className="font-bold text-gray-900 truncate flex-1 text-sm">{file.name}</h3>
+                    {file.type !== FileType.LINK && <span className="text-[10px] font-black text-gray-400 bg-gray-50 px-2 py-0.5 rounded uppercase">{formatBytes(file.size)}</span>}
                   </div>
 
                   {file.type === FileType.LINK ? (
@@ -475,38 +494,32 @@ export const PublicView: React.FC = () => {
                       href={file.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="flex items-center justify-center gap-2 w-full py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors"
+                      className="flex items-center justify-center gap-2 w-full py-3 bg-primary-50 text-primary-700 rounded-xl text-xs font-black hover:bg-primary-100 transition-all active:scale-95"
                     >
-                      Open Link <ExternalLink className="w-3 h-3" />
+                      VISIT LINK <ExternalLink className="w-3 h-3" />
                     </a>
                   ) : (
                     <div className="flex gap-2">
                       <button
                         onClick={(e) => handleSingleDownload(file, e)}
                         disabled={downloadingFileId === file.id}
-                        className="flex-1 flex items-center justify-center gap-2 py-2 bg-gray-50 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors disabled:opacity-50"
+                        className="flex-1 flex items-center justify-center gap-2 py-3 bg-gray-900 text-white rounded-xl text-xs font-black hover:bg-gray-800 transition-all active:scale-95 disabled:opacity-50"
                       >
                         {downloadingFileId === file.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                        Download
+                        DOWNLOAD
                       </button>
-                      {file.type === FileType.PDF && (
-                        <a
-                          href={file.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex items-center justify-center px-3 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100"
-                          title="Preview PDF"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </a>
-                      )}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setInfoFile(file); }}
+                        className="px-4 py-3 bg-gray-50 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-all active:scale-95"
+                        title="File Details"
+                      >
+                        <Info className="w-4 h-4" />
+                      </button>
                     </div>
                   )}
                 </div>
               </div>
             ))}
-
-            {/* Ad Placeholders for Free/Plus owners */}
             {(vault.userPlan === PlanType.FREE || vault.userPlan === PlanType.STARTER) && (
               <>
                 <AdPlaceholder key="ad-1" />
@@ -517,93 +530,91 @@ export const PublicView: React.FC = () => {
         )}
       </div>
 
-      <div className="py-6 text-center border-t border-gray-200 mt-auto bg-white">
-        <p className="text-xs text-gray-400">Securely shared via <span className="font-semibold text-gray-600">QR Vault</span></p>
+      <div className="py-8 text-center border-t border-gray-100 mt-auto bg-gray-50/30">
+        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Securely shared via <span className="text-primary-600">QR Vault</span></p>
       </div>
 
-      {/* Image Preview Modal */}
-      {
-        previewFile && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-in fade-in" onClick={() => setPreviewFile(null)}>
-            <button className="absolute top-4 right-4 text-white/70 hover:text-white" onClick={() => setPreviewFile(null)}>
-              <X className="w-8 h-8" />
-            </button>
-            <img
-              src={previewFile.url}
-              alt={previewFile.name}
-              className="max-w-full max-h-screen object-contain rounded-md shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            />
-            <div className="absolute bottom-8 left-0 right-0 text-center pointer-events-none">
-              <button
-                onClick={(e) => handleSingleDownload(previewFile, e)}
-                className="pointer-events-auto inline-flex items-center gap-2 bg-white text-gray-900 px-6 py-3 rounded-full font-bold shadow-lg hover:scale-105 transition-transform"
-              >
-                <Download className="w-5 h-5" /> Download Original
+      {isReportModalOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in" onClick={() => setIsReportModalOpen(false)}>
+          <div className="bg-white rounded-[2rem] w-full max-w-md p-8 shadow-2xl animate-in zoom-in-95" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-8">
+              <div className="bg-red-50 p-3 rounded-2xl text-red-500"><AlertCircle className="w-6 h-6" /></div>
+              <button onClick={() => setIsReportModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400"><X className="w-6 h-6" /></button>
+            </div>
+            <h3 className="text-2xl font-black text-gray-900 mb-2 tracking-tight">Report Violation</h3>
+            <p className="text-gray-500 mb-8 font-medium">Help us keep the community safe. All reports are reviewed within 24 hours.</p>
+
+            <form onSubmit={handleReportSubmit} className="space-y-4">
+              <label className="flex items-center gap-4 p-4 border-2 border-gray-50 rounded-[1.25rem] hover:border-red-100 hover:bg-red-50/20 transition-all cursor-pointer">
+                <input type="checkbox" className="w-5 h-5 text-red-600 rounded-lg border-gray-200 focus:ring-red-500" checked={reportReasonVirus} onChange={(e) => setReportReasonVirus(e.target.checked)} />
+                <div className="flex flex-col"><span className="text-sm font-black text-gray-900 uppercase tracking-tight">Virus or Malware</span><span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Dangerous potential harmful files</span></div>
+              </label>
+
+              <label className="flex items-center gap-4 p-4 border-2 border-gray-50 rounded-[1.25rem] hover:border-red-100 hover:bg-red-50/20 transition-all cursor-pointer">
+                <input type="checkbox" className="w-5 h-5 text-red-600 rounded-lg border-gray-200 focus:ring-red-500" checked={reportReasonContent} onChange={(e) => setReportReasonContent(e.target.checked)} />
+                <div className="flex flex-col"><span className="text-sm font-black text-gray-900 uppercase tracking-tight">Illegal Content</span><span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Copyright or policy violations</span></div>
+              </label>
+
+              <div className="pt-2">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 ml-1">Select File with Issue</p>
+                <div className="max-h-[150px] overflow-y-auto space-y-2 pr-2 no-scrollbar border-y-2 border-gray-50/50 py-2">
+                  {vault.files.map(file => (
+                    <label key={file.id} className={`flex items-center gap-3 p-3 border-2 rounded-xl cursor-pointer transition-all ${reportFileId === file.id ? 'border-red-500 bg-red-50/30' : 'border-gray-50 hover:bg-gray-50'}`}>
+                      <input type="radio" name="reportFile" className="w-4 h-4 text-red-600" checked={reportFileId === file.id} onChange={() => setReportFileId(file.id)} />
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-xs font-bold text-gray-900 truncate">{file.name}</span>
+                        <span className="text-[9px] text-gray-400 font-medium uppercase">{file.type}</span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <textarea className="w-full p-4 bg-gray-50 border-2 border-transparent rounded-[1.25rem] focus:bg-white focus:border-red-200 transition-all outline-none text-sm font-medium min-h-[120px]" placeholder="Additional details..." value={reportMessage} onChange={(e) => setReportMessage(e.target.value)} />
+              </div>
+
+              <button type="submit" disabled={isReporting} className="w-full py-4 text-xs font-black text-white bg-red-600 hover:bg-red-700 rounded-[1.25rem] shadow-xl shadow-red-100 transition-all active:scale-95 disabled:opacity-50 uppercase tracking-widest">
+                {isReporting ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Confirm Report'}
               </button>
-            </div>
+            </form>
           </div>
-        )
-      }
+        </div>
+      )}
 
-      {/* Info Modal */}
-      {
-        infoFile && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in" onClick={() => setInfoFile(null)}>
-            <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl" onClick={(e) => e.stopPropagation()}>
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-bold text-gray-900">File Details</h3>
-                <button onClick={() => setInfoFile(null)} className="p-1 rounded-full hover:bg-gray-100 text-gray-500"><X className="w-5 h-5" /></button>
-              </div>
+      {previewFile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md p-6" onClick={() => setPreviewFile(null)}>
+          <button className="absolute top-8 right-8 text-white/50 hover:text-white transition-colors" onClick={() => setPreviewFile(null)}><X className="w-10 h-10" /></button>
+          <img src={previewFile.url} alt={previewFile.name} className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl" onClick={(e) => e.stopPropagation()} />
+        </div>
+      )}
 
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 bg-primary-50 rounded-2xl flex items-center justify-center text-primary-600">
-                  {infoFile.type === FileType.IMAGE ? <ImageIcon className="w-8 h-8" /> :
-                    infoFile.type === FileType.PDF ? <FileText className="w-8 h-8" /> :
-                      infoFile.type === FileType.LINK ? <LinkIcon className="w-8 h-8" /> : <File className="w-8 h-8" />}
-                </div>
-                <div className="flex-1 overflow-hidden">
-                  <p className="font-semibold text-gray-900 truncate" title={infoFile.name}>{infoFile.name}</p>
-                  <p className="text-sm text-gray-500">{infoFile.type}</p>
-                </div>
-              </div>
-
-              <div className="space-y-3 bg-gray-50 p-4 rounded-xl border border-gray-100 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Size</span>
-                  <span className="font-medium text-gray-900">{formatBytes(infoFile.size)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">MIME Type</span>
-                  <span className="font-medium text-gray-900 truncate max-w-[150px]" title={infoFile.mimeType}>{infoFile.mimeType}</span>
-                </div>
-              </div>
-
-              <div className="mt-6 flex gap-3">
-                {infoFile.type !== FileType.LINK && (
-                  <button
-                    onClick={(e) => { handleSingleDownload(infoFile, e); setInfoFile(null); }}
-                    className="flex-1 bg-primary-600 text-white py-2.5 rounded-xl font-medium hover:bg-primary-700 transition-colors flex items-center justify-center gap-2"
-                  >
-                    <Download className="w-4 h-4" /> Download
-                  </button>
-                )}
-                {infoFile.type === FileType.LINK && (
-                  <a
-                    href={infoFile.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex-1 bg-primary-600 text-white py-2.5 rounded-xl font-medium hover:bg-primary-700 transition-colors flex items-center justify-center gap-2"
-                  >
-                    <ExternalLink className="w-4 h-4" /> Open Link
-                  </a>
-                )}
-              </div>
+      {infoFile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setInfoFile(null)}>
+          <div className="bg-white rounded-[2.5rem] p-10 w-full max-w-sm shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-8">
+              <h3 className="text-2xl font-black text-gray-900 tracking-tight">Asset Info</h3>
+              <button onClick={() => setInfoFile(null)} className="p-2 rounded-full hover:bg-gray-100 text-gray-400 transition-colors"><X className="w-6 h-6" /></button>
             </div>
+            <div className="flex flex-col items-center text-center mb-8">
+              <div className="w-24 h-24 bg-gray-50 rounded-[2rem] flex items-center justify-center text-gray-900 mb-4 shadow-inner">
+                {infoFile.type === FileType.IMAGE ? <ImageIcon className="w-10 h-10" /> : infoFile.type === FileType.PDF ? <FileText className="w-10 h-10" /> : infoFile.type === FileType.LINK ? <LinkIcon className="w-10 h-10" /> : <File className="w-10 h-10" />}
+              </div>
+              <p className="font-black text-gray-900 text-lg leading-tight uppercase tracking-tight mb-1">{infoFile.name}</p>
+              <p className="text-[10px] font-black text-primary-600 bg-primary-50 px-3 py-1 rounded-full uppercase tracking-widest">{infoFile.type}</p>
+            </div>
+            <div className="space-y-4 bg-gray-50/50 p-6 rounded-[1.5rem] border border-gray-100 mb-8">
+              <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider"><span className="text-gray-400">Total Size</span><span className="text-gray-900">{formatBytes(infoFile.size)}</span></div>
+              <div className="flex justify-between text-[11px] font-bold uppercase tracking-wider"><span className="text-gray-400">Format</span><span className="text-gray-900 truncate max-w-[120px]">{infoFile.mimeType}</span></div>
+            </div>
+            {infoFile.type !== FileType.LINK ? (
+              <button onClick={(e) => { handleSingleDownload(infoFile!, e); setInfoFile(null); }} className="w-full bg-gray-900 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-gray-200 hover:bg-gray-800 transition-all active:scale-95 flex items-center justify-center gap-2"><Download className="w-4 h-4" /> Download</button>
+            ) : (
+              <a href={infoFile.url} target="_blank" rel="noreferrer" className="w-full bg-primary-600 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary-100 hover:bg-primary-700 transition-all active:scale-95 flex items-center justify-center gap-2"><ExternalLink className="w-4 h-4" /> Open Link</a>
+            )}
           </div>
-        )
-      }
-
-    </div >
+        </div>
+      )}
+    </div>
   );
 };

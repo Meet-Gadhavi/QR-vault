@@ -62,6 +62,30 @@ export interface Vault {
   userPlan?: PlanType;
   expiresAt?: string;
   maxViews?: number;
+  reportCount?: number;                            // NEW: Total flags received
+  lockedUntil?: string;                            // NEW: ISO Date for temporary block
+}
+
+export interface Report {
+  id: string;
+  vaultId: string;
+  fileId?: string;                                 // NEW: specific file reported
+  reasonVirus: boolean;
+  reasonContent: boolean;
+  customMessage: string;
+  expiresAt?: string;                              // NEW: report expiry
+  createdAt: string;
+}
+
+export interface DeletedVaultLog {
+  id: string;
+  userId: string;
+  vaultName: string;
+  originalVaultId?: string;
+  views: number;
+  deletionReason?: string;
+  createdAt: string;
+  deletedAt: string;
 }
 
 export interface Invoice {

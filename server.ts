@@ -900,6 +900,41 @@ adminRouter.get('/users', async (req, res) => {
   }
 });
 
+// List files in a vault folder on Google Drive (for recovery)
+apiRouter.post('/google-drive/list-vault-files', async (req: Request, res: Response) => {
+  const { tokens, folderId, vaultName } = req.body;
+  if (!tokens || !folderId || !vaultName) {
+    return res.status(400).json({ error: 'tokens, folderId, and vaultName are required' });
+  }
+
+  const oauth2Client = getOAuth2Client();
+  oauth2Client.setCredentials(tokens);
+  const drive = google.drive({ version: 'v3', auth: oauth2Client });
+
+  try {
+    const vaultFolderName = vaultName.replace(/[^a-zA-Z0-9 _-]/g, '_');
+    const search = await drive.files.list({
+      q: `name = '${vaultFolderName.replace(/'/g, "\\'")}' and '${folderId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+      fields: 'files(id)',
+    });
+
+    if (!search.data.files || search.data.files.length === 0) {
+      return res.status(404).json({ error: 'your data is not still in google data not found yet !!' });
+    }
+
+    const vaultFolderId = search.data.files[0].id!;
+    const filesList = await drive.files.list({
+      q: `'${vaultFolderId}' in parents and trashed = false`,
+      fields: 'files(id, name, mimeType, webViewLink, size)',
+    });
+
+    res.json({ status: 'success', files: filesList.data.files || [] });
+  } catch (error: any) {
+    console.error('[Google Drive] Recovery list error:', error);
+    res.status(500).json({ error: 'Failed to list vault files', details: error.message });
+  }
+});
+
 apiRouter.use('/admin', adminRouter);
 
 // Mount API Router
@@ -917,52 +952,112 @@ app.use('/api', (req, res) => {
 // =============================================================================
 // BACKGROUND CLEANUP JOB
 // =============================================================================
-// Deletes vaults older than 24h for users on the FREE plan.
+// Deletes vaults based on plan-based expiry, scan limits, or expired reports.
 // Runs every hour.
 // =============================================================================
-const cleanupFreeVaults = async () => {
+const processVaultCleanups = async () => {
   try {
     const now = new Date();
-    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+    
+    console.log(`[Cleanup] Starting global cleanup process...`);
 
-    console.log(`[Cleanup] Starting free plan cleanup (older than ${twentyFourHoursAgo})...`);
+    // --- 0. Report Cleanup ---
+    // A. Delete expired reports
+    await supabase.from('reports').delete().lt('expires_at', now.toISOString());
+    
+    // B. Monthly Wipe (1st of month)
+    if (now.getDate() === 1 && now.getHours() === 0) {
+      console.log("[Cleanup] Monthly report reset triggered...");
+      await supabase.from('reports').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    }
 
-    // 1. Find all vaults belonging to FREE users created > 24h ago
-    // We use inner join on profiles to filter by plan
-    const { data: oldVaults, error: fetchError } = await supabase
+    // --- 1. Fetch vaults for expiry check ---
+    const { data: vaults, error: fetchError } = await supabase
       .from('vaults')
       .select(`
         id, 
         user_id,
         name,
         created_at,
-        profiles!inner ( plan )
-      `)
-      .eq('profiles.plan', 'FREE')
-      .lt('created_at', twentyFourHoursAgo);
+        views,
+        active,
+        expires_at,
+        max_views,
+        report_count,
+        locked_until,
+        profiles!inner ( id, plan )
+      `);
 
     if (fetchError) {
-      console.error('[Cleanup] Error fetching old vaults:', fetchError.message);
+      console.error('[Cleanup] Error fetching vaults:', fetchError.message);
       return;
     }
 
-    if (!oldVaults || oldVaults.length === 0) {
+    if (!vaults || vaults.length === 0) {
+      console.log('[Cleanup] No vaults found to process.');
       return;
     }
 
-    console.log(`[Cleanup] Found ${oldVaults.length} expired vaults from free users.`);
+    let deletedCount = 0;
 
-    for (const vault of oldVaults) {
+    for (const vault of vaults) {
+      const plan = (vault.profiles as any)?.plan || 'FREE';
+      const createdAt = new Date(vault.created_at);
+      const ageHours = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60);
+      
+      let shouldDelete = false;
+      let reason = 'Time limit reached';
+
+      // 0. Community Report Enforcement
+      if (vault.report_count >= 10) {
+        shouldDelete = true;
+        reason = 'Violation of user report';
+      } else if (vault.report_count >= 6) {
+        const lockedUntil = new Date(now.getTime() + 20 * 24 * 60 * 60 * 1000).toISOString();
+        if (!vault.locked_until || new Date(vault.locked_until) < new Date(lockedUntil)) {
+            await supabase.from('vaults').update({ locked_until: lockedUntil }).eq('id', vault.id);
+            console.log(`[Cleanup] Locked vault ${vault.id} for 20 days due to 6+ reports.`);
+        }
+      } else if (vault.report_count >= 4) {
+        const lockedUntil = new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000).toISOString();
+        if (!vault.locked_until || new Date(vault.locked_until) < new Date(lockedUntil)) {
+            await supabase.from('vaults').update({ locked_until: lockedUntil }).eq('id', vault.id);
+            console.log(`[Cleanup] Locked vault ${vault.id} for 10 days due to 4+ reports.`);
+        }
+      }
+
+      // A. Automatic Expiry (Plan-based or Custom)
+      if (!shouldDelete) {
+        if (plan === 'FREE' && ageHours >= 24) {
+          shouldDelete = true;
+          reason = 'Plan range limit (Free)';
+        } else if (plan === 'STARTER' && ageHours >= 72) {
+          shouldDelete = true;
+          reason = 'Plan range limit (Plus)';
+        } else if (vault.expires_at && new Date(vault.expires_at) < now) {
+          shouldDelete = true;
+          reason = 'Time limit reached';
+        }
+      }
+      
+      // B. Scan Limit Reached
+      if (!shouldDelete && vault.active === false && vault.max_views && vault.views >= vault.max_views) {
+        shouldDelete = true;
+        reason = 'Scan limit reached';
+      }
+
+      if (!shouldDelete) continue;
+
       try {
-        // 2. Get files associated with this vault to clean up storage
+        console.log(`[Cleanup] Deleting vault: ${vault.name} (ID: ${vault.id}) for reason: ${reason}`);
+
+        // 2. Get files associated with this vault
         const { data: files, error: filesError } = await supabase
           .from('files')
           .select('url')
           .eq('vault_id', vault.id);
 
         if (!filesError && files && files.length > 0) {
-          // Extract file paths from Supabase storage URLs
-          // URL format: .../storage/v1/object/public/vault-files/USER_ID/FILE_NAME
           const pathsToDelete = files
             .map(f => {
               if (f.url && f.url.includes('/storage/v1/object/public/vault-files/')) {
@@ -974,52 +1069,39 @@ const cleanupFreeVaults = async () => {
             .filter(Boolean) as string[];
 
           if (pathsToDelete.length > 0) {
-            const { error: storageError } = await supabase.storage
-              .from('vault-files')
-              .remove(pathsToDelete);
-            
-            if (storageError) {
-              console.warn(`[Cleanup] Failed to delete some files from storage for vault ${vault.id}:`, storageError.message);
-            } else {
-              console.log(`[Cleanup] Deleted ${pathsToDelete.length} files from storage for vault ${vault.id}`);
-            }
+            await supabase.storage.from('vault-files').remove(pathsToDelete);
           }
         }
 
-        // 2.5 Log the deletion for user transparency
+        // 3. Log the deletion for user transparency
         await supabase.from('deleted_vault_logs').insert({
           user_id: vault.user_id,
           vault_name: vault.name,
           original_vault_id: vault.id,
-          created_at: vault.created_at
+          created_at: vault.created_at,
+          views: vault.views || 0,
+          deletion_reason: reason
         });
 
-        // 3. Delete vault from database
-        // Foreign key cascade will handle deletion from 'files' and 'access_requests' tables
-        const { error: deleteError } = await supabase
-          .from('vaults')
-          .delete()
-          .eq('id', vault.id);
-
-        if (deleteError) {
-          console.error(`[Cleanup] Failed to delete vault ${vault.id} from DB:`, deleteError.message);
-        } else {
-          console.log(`[Cleanup] Successfully deleted expired vault ${vault.id}`);
-        }
+        // 4. Delete vault from database
+        await supabase.from('vaults').delete().eq('id', vault.id);
+        deletedCount++;
       } catch (vaultErr: any) {
-        console.error(`[Cleanup] Unexpected error processing vault ${vault.id}:`, vaultErr.message);
+        console.error(`[Cleanup] Unexpected error for vault ${vault.id}:`, vaultErr.message);
       }
     }
     
-    addLog('SYSTEM', `Cleanup completed: Removed ${oldVaults.length} expired free-tier vaults.`);
+    if (deletedCount > 0) {
+        addLog('SYSTEM', `Cleanup completed: Removed ${deletedCount} vaults.`);
+    }
   } catch (error: any) {
     console.error('[Cleanup] Fatal error in background job:', error.message);
   }
 };
 
 // Initial run and then every hour
-cleanupFreeVaults();
-setInterval(cleanupFreeVaults, 60 * 60 * 1000);
+processVaultCleanups();
+setInterval(processVaultCleanups, 60 * 60 * 1000);
 
 // Vite Middleware
 async function startServer() {

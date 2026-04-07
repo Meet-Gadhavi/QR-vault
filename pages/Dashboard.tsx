@@ -5,7 +5,7 @@ import { supabase } from '../services/supabaseClient';
 import { Vault, User, PlanType, VaultFile, FileType, PLAN_LIMITS, AccessLevel, AccessRequest, RequestStatus, Invoice } from '../types';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import QRCode from 'react-qr-code';
-import { UploadCloud, File as FileIcon, Link as LinkIcon, Trash2, ExternalLink, Plus, X, Loader2, Eye, HardDrive, QrCode, Copy, Check, MoreVertical, Edit2, Search, Filter, ArrowUpDown, Download, Zap, ChevronDown, Lock, Users, Shield, UserCheck, UserX, Clock, ShieldCheck, AlertTriangle, AlertCircle } from 'lucide-react';
+import { UploadCloud, File as FileIcon, Link as LinkIcon, Trash2, ExternalLink, Plus, X, Loader2, Eye, HardDrive, QrCode, Copy, Check, MoreVertical, Edit2, Search, Filter, ArrowUpDown, Download, Zap, ChevronDown, Lock, Users, Shield, UserCheck, UserX, Clock, ShieldCheck, AlertTriangle, AlertCircle, RotateCcw, FileText } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 type SortOption = 'date-newest' | 'date-oldest' | 'name-asc' | 'name-desc' | 'size-desc' | 'size-asc';
@@ -20,9 +20,17 @@ type DeletedVaultLog = {
   vault_name: string;
   created_at: string;
   deleted_at: string;
+  views?: number;
+  deletion_reason?: string;
 };
 
-const VaultTimer: React.FC<{ createdAt: string; expiresAt?: string }> = ({ createdAt, expiresAt }) => {
+const VaultTimer: React.FC<{ 
+  createdAt: string; 
+  expiresAt?: string; 
+  views: number; 
+  maxViews?: number;
+  lockedUntil?: string;
+}> = ({ createdAt, expiresAt, views, maxViews, lockedUntil }) => {
   const [timeLeft, setTimeLeft] = useState<string>('');
 
   useEffect(() => {
@@ -53,6 +61,21 @@ const VaultTimer: React.FC<{ createdAt: string; expiresAt?: string }> = ({ creat
     const timer = setInterval(calculateTime, 1000);
     return () => clearInterval(timer);
   }, [createdAt, expiresAt]);
+
+  const isLocked = lockedUntil && new Date(lockedUntil) > new Date();
+
+  if (isLocked) return (
+    <div className="bg-red-600 py-2.5 px-4 flex items-center justify-between text-white font-black uppercase text-[10px] tracking-widest animate-pulse border-t border-red-700">
+      <div className="flex items-center gap-2">
+        <ShieldCheck className="w-4 h-4" />
+        <span>Vault Locked</span>
+      </div>
+      <div className="flex items-center gap-2 opacity-80">
+        <Clock className="w-3 h-3" />
+        <span>Expires: {new Date(lockedUntil!).toLocaleDateString()}</span>
+      </div>
+    </div>
+  );
 
   if (timeLeft === 'Expired') return (
     <div className="bg-red-50 py-2 px-4 border-t border-red-100 flex items-center justify-center gap-2">
@@ -135,6 +158,25 @@ export const Dashboard: React.FC = () => {
   const [isFreeLimitModalOpen, setIsFreeLimitModalOpen] = useState(false);
   const [deletedLogs, setDeletedLogs] = useState<DeletedVaultLog[]>([]);
   const [activeTab, setActiveTab] = useState<'vaults' | 'deleted'>('vaults');
+
+  // Reporting State
+  const [reportVault, setReportVault] = useState<Vault | null>(null);
+  const [vaultReports, setVaultReports] = useState<any[]>([]);
+  const [loadingReports, setLoadingReports] = useState(false);
+
+  useEffect(() => {
+    if (reportVault) {
+      setLoadingReports(true);
+      supabase.from('reports')
+        .select('*')
+        .eq('vault_id', reportVault.id)
+        .order('created_at', { ascending: false })
+        .then(({ data }: { data: any[] | null }) => {
+          setVaultReports(data || []);
+          setLoadingReports(false);
+        });
+    }
+  }, [reportVault]);
 
   useEffect(() => {
     // Immediate redirect if not authenticated
@@ -563,6 +605,59 @@ export const Dashboard: React.FC = () => {
           console.error('Auto-sync to Drive failed:', driveErr);
         }
       }
+    }
+  };
+
+  const handleRecoverVault = async (log: DeletedVaultLog) => {
+    if (!appUser) return;
+    if (appUser.plan === PlanType.FREE) {
+        alert("Vault recovery is only available for Plus and Pro members. Please upgrade to recover your data.");
+        return;
+    }
+
+    if (!googleTokens) {
+        alert("Please connect your Google Drive to recover vaults stored there.");
+        return;
+    }
+
+    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    setIsSubmitting(true);
+
+    try {
+        // 1. Get Folder ID
+        const ensureRes = await fetch(`${apiBase}/api/google-drive/ensure-folder`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tokens: googleTokens }),
+        });
+        const folderData = await ensureRes.json();
+        if (!ensureRes.ok) throw new Error("Failed to access Google Drive root folder.");
+
+        // 2. Search and list files
+        const listRes = await fetch(`${apiBase}/api/google-drive/list-vault-files`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                tokens: googleTokens,
+                folderId: folderData.folderId,
+                vaultName: log.vault_name
+            }),
+        });
+        
+        const listData = await listRes.json();
+        if (!listRes.ok) {
+            throw new Error(listData.error || "your data is not still in google data not found yet !!");
+        }
+
+        // 3. Recover in Supabase
+        await mockService.recoverVault(appUser.id, log.vault_name, listData.files);
+        
+        alert(`Successfully recovered "${log.vault_name}"!`);
+        await loadData(appUser.id);
+    } catch (err: any) {
+        alert(err.message);
+    } finally {
+        setIsSubmitting(false);
     }
   };
 
@@ -1303,6 +1398,12 @@ export const Dashboard: React.FC = () => {
                               >
                                 <Users className="w-4 h-4 text-gray-500" /> Manage Access
                               </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setReportVault(vault); setMenuOpenId(null); }}
+                                className="w-full text-left px-4 py-3 text-sm flex items-center gap-2 text-gray-700 hover:bg-gray-50"
+                              >
+                                <AlertTriangle className="w-4 h-4 text-red-500" /> View Reports {vault.reportCount || 0 > 0 && <span className="bg-red-100 text-red-600 px-1 rounded text-[9px] font-black">{vault.reportCount}</span>}
+                              </button>
                               <div className="h-px bg-gray-100"></div>
                               <button
                                 onClick={(e) => handleDeleteVault(vault.id, e)}
@@ -1359,9 +1460,13 @@ export const Dashboard: React.FC = () => {
                       </div>
                     </div>
                     {/* Deletion Timer - Full Width Band */}
-                    {vault.expiresAt && (
-                      <VaultTimer createdAt={vault.createdAt} expiresAt={vault.expiresAt} />
-                    )}
+                    <VaultTimer 
+                      createdAt={vault.createdAt} 
+                      expiresAt={vault.expiresAt} 
+                      views={vault.views} 
+                      maxViews={vault.maxViews} 
+                      lockedUntil={vault.lockedUntil} 
+                    />
                   </div>
                 ))}
 
@@ -1386,7 +1491,9 @@ export const Dashboard: React.FC = () => {
               <div className="p-6 border-b border-gray-50 bg-gray-50/50 flex items-center justify-between">
                 <div>
                   <h3 className="font-bold text-gray-900">Deletion History</h3>
-                  <p className="text-xs text-gray-500 mt-1">Vaults auto-removed after 24 hours (Free Tier limit).</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Vaults auto-removed after {appUser?.plan === PlanType.STARTER ? '72 hours (Plus limit)' : '24 hours (Free limit)'}.
+                  </p>
                 </div>
                 <Link to="/pricing" className="text-xs font-bold text-primary-600 hover:underline flex items-center gap-1 uppercase tracking-wider">
                   Stop Auto-Deletion <ExternalLink className="w-3 h-3" />
@@ -1409,13 +1516,37 @@ export const Dashboard: React.FC = () => {
                           #
                         </div>
                         <div>
-                          <h4 className="font-bold text-gray-900 text-sm">{log.vault_name}</h4>
-                          <p className="text-xs text-gray-500">Created: {new Date(log.created_at).toLocaleString()}</p>
+                          <h4 className="font-bold text-gray-900 text-sm tracking-tight">{log.vault_name}</h4>
+                          <div className="flex items-center gap-2 mt-1">
+                            <div className="flex items-center gap-1 text-[10px] font-black text-gray-400 uppercase tracking-tighter italic">
+                              <Clock className="w-3 h-3" /> {new Date(log.created_at).toLocaleDateString()}
+                            </div>
+                            <span className="text-gray-200">|</span>
+                            <div className="flex items-center gap-1 text-[10px] font-black text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full border border-primary-100">
+                              <Eye className="w-3 h-3" /> {log.views || 0} TOTAL SCANS
+                            </div>
+                            {log.deletion_reason && (
+                              <span className="text-[9px] bg-amber-50 text-amber-700 px-2 py-0.5 rounded font-black border border-amber-100 uppercase tracking-tighter whitespace-nowrap">
+                                {log.deletion_reason}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-xs font-bold text-red-500 uppercase tracking-wider">Auto-Deleted</p>
-                        <p className="text-[10px] text-gray-400">{new Date(log.deleted_at).toLocaleDateString()}</p>
+                      <div className="flex flex-col items-end gap-2 text-right">
+                        <div>
+                          <p className="text-xs font-bold text-red-500 uppercase tracking-wider">Auto-Deleted</p>
+                          <p className="text-[10px] text-gray-400">{new Date(log.deleted_at).toLocaleDateString()}</p>
+                        </div>
+                        {(appUser?.plan === PlanType.STARTER || appUser?.plan === PlanType.PRO) && (
+                          <button
+                            onClick={() => handleRecoverVault(log)}
+                            disabled={isSubmitting}
+                            className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary-100 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2"
+                          >
+                            <RotateCcw className="w-3 h-3" /> Recover
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))
@@ -1426,8 +1557,12 @@ export const Dashboard: React.FC = () => {
                 <div className="p-4 bg-amber-50 border-t border-amber-100 flex items-center gap-3">
                   <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
                   <p className="text-xs text-amber-700 leading-relaxed font-medium">
-                    Free vaults are automatically deleted after 24 hours to save server space.
-                    <Link to="/pricing" className="ml-1 underline font-bold">Upgrade to Plus</Link> for permanent storage.
+                    {appUser?.plan === PlanType.STARTER 
+                      ? "Your Plus vaults are automatically removed after 72 hours or once their scan limit is reached." 
+                      : "Free vaults are automatically deleted after 24 hours to save server space."}
+                    {appUser?.plan !== PlanType.PRO && (
+                      <Link to="/pricing" className="ml-1 underline font-bold">Upgrade to Pro</Link>
+                    )} for permanent storage.
                   </p>
                 </div>
               )}
@@ -1495,9 +1630,9 @@ export const Dashboard: React.FC = () => {
                 {(() => {
                     const expiryOptions = [
                         { value: 24, label: '24 Hours (Default)', disabled: false },
-                        { value: 48, label: '48 Hours', disabled: appUser.plan === PlanType.FREE },
-                        { value: 72, label: '72 Hours', disabled: appUser.plan === PlanType.FREE },
-                        { value: 'never', label: `Permanent Storage (Never Expire) ${appUser.plan === PlanType.STARTER ? '(PRO Only)' : ''}`, disabled: appUser.plan !== PlanType.PRO },
+                        { value: 48, label: '48 Hours', disabled: appUser?.plan === PlanType.FREE },
+                        { value: 72, label: '72 Hours', disabled: appUser?.plan === PlanType.FREE },
+                        { value: 'never', label: `Permanent Storage (Never Expire) ${appUser?.plan === PlanType.STARTER ? '(PRO Only)' : ''}`, disabled: appUser?.plan !== PlanType.PRO },
                     ];
                     const selected = expiryOptions.find(o => o.value === expiryHours) || expiryOptions[0];
                     const isOpen = menuOpenId === 'modal-expiry';
@@ -1511,8 +1646,8 @@ export const Dashboard: React.FC = () => {
                                     isOpen 
                                     ? 'bg-primary-50 border-primary-300 text-primary-700 shadow-lg shadow-primary-100 ring-2 ring-primary-200' 
                                     : 'bg-white border-gray-200 text-gray-700 hover:border-primary-300 hover:shadow-md'
-                                } ${appUser.plan === PlanType.FREE ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'}`}
-                                disabled={appUser.plan === PlanType.FREE}
+                                } ${appUser?.plan === PlanType.FREE ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'}`}
+                                disabled={appUser?.plan === PlanType.FREE}
                             >
                                 <Clock className={`w-5 h-5 transition-colors ${isOpen ? 'text-primary-500' : 'text-gray-400'}`} />
                                 <span className="flex-1 text-left">{selected.label}</span>
@@ -1545,7 +1680,7 @@ export const Dashboard: React.FC = () => {
                     );
                 })()}
                 
-                {appUser.plan === PlanType.STARTER && expiryHours !== 'never' && (
+                {appUser?.plan === PlanType.STARTER && expiryHours !== 'never' && (
                     <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-1 duration-200">
                         <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
                         <p className="text-xs text-amber-800 leading-relaxed font-medium">
@@ -1554,7 +1689,7 @@ export const Dashboard: React.FC = () => {
                     </div>
                 )}
                 
-                {appUser.plan === PlanType.FREE && (
+                {appUser?.plan === PlanType.FREE && (
                     <p className="mt-2 text-[10px] text-gray-400 italic">Free plan vaults are removed after 24 hours. Upgrade for up to 72 hours.</p>
                 )}
               </div>
@@ -1564,14 +1699,14 @@ export const Dashboard: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Scan Count Limit</label>
                 {(() => {
                     const scanOptions = [
-                        { value: 'none', label: 'Unlimited Scans', disabled: appUser.plan !== PlanType.PRO, proOnly: appUser.plan !== PlanType.PRO },
+                        { value: 'none', label: 'Unlimited Scans', disabled: appUser?.plan !== PlanType.PRO, proOnly: appUser?.plan !== PlanType.PRO },
                         { value: 25, label: '25 Scans', disabled: false },
                         { value: 45, label: '45 Scans', disabled: false },
-                        { value: 65, label: '65 Scans', disabled: appUser.plan === PlanType.FREE, plusOnly: appUser.plan === PlanType.FREE },
-                        { value: 85, label: '85 Scans', disabled: appUser.plan === PlanType.FREE, plusOnly: appUser.plan === PlanType.FREE },
-                        { value: 105, label: '105 Scans', disabled: appUser.plan !== PlanType.PRO, proOnly: appUser.plan !== PlanType.PRO },
-                        { value: 125, label: '125 Scans', disabled: appUser.plan !== PlanType.PRO, proOnly: appUser.plan !== PlanType.PRO },
-                        { value: 'custom', label: 'Custom Limit', disabled: appUser.plan !== PlanType.PRO, proOnly: appUser.plan !== PlanType.PRO },
+                        { value: 65, label: '65 Scans', disabled: appUser?.plan === PlanType.FREE, plusOnly: appUser?.plan === PlanType.FREE },
+                        { value: 85, label: '85 Scans', disabled: appUser?.plan === PlanType.FREE, plusOnly: appUser?.plan === PlanType.FREE },
+                        { value: 105, label: '105 Scans', disabled: appUser?.plan !== PlanType.PRO, proOnly: appUser?.plan !== PlanType.PRO },
+                        { value: 125, label: '125 Scans', disabled: appUser?.plan !== PlanType.PRO, proOnly: appUser?.plan !== PlanType.PRO },
+                        { value: 'custom', label: 'Custom Limit', disabled: appUser?.plan !== PlanType.PRO, proOnly: appUser?.plan !== PlanType.PRO },
                     ];
                     
                     const currentValue = maxViews === null ? 'none' : maxViews;
@@ -1629,7 +1764,7 @@ export const Dashboard: React.FC = () => {
                     );
                 })()}
 
-                {maxViews === 'custom' && appUser.plan === PlanType.PRO && (
+                {maxViews === 'custom' && appUser?.plan === PlanType.PRO && (
                     <div className="mt-3 animate-in fade-in slide-in-from-top-1 duration-200">
                         <div className="relative group">
                             <input
@@ -1822,7 +1957,7 @@ export const Dashboard: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-4 max-h-[60vh] overflow-y-auto">
-                  {managingVault.requests.map((req) => (
+                  {managingVault?.requests?.map((req) => (
                     <div key={req.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-100 bg-gray-50">
                       <div className="overflow-hidden">
                         <p className="font-semibold text-gray-900 truncate" title={req.email}>{req.email}</p>
@@ -1940,7 +2075,77 @@ export const Dashboard: React.FC = () => {
           </div>
         );
       })()}
+      {/* Reports History Modal */}
+      {reportVault && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in" onClick={() => setReportVault(null)}>
+          <div className="bg-white rounded-[2rem] w-full max-w-lg p-8 shadow-2xl animate-in zoom-in-95 overflow-hidden flex flex-col max-h-[80vh]" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-8">
+              <div className="flex items-center gap-4">
+                <div className="bg-red-50 p-3 rounded-2xl text-red-500">
+                  <Shield className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black text-gray-900 tracking-tight leading-none mb-1">Reports History</h3>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{reportVault.name}</p>
+                </div>
+              </div>
+              <button onClick={() => setReportVault(null)} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400"><X className="w-6 h-6" /></button>
+            </div>
 
+            <div className="flex-1 overflow-y-auto pr-2 space-y-4 no-scrollbar">
+              {loadingReports ? (
+                 <div className="flex flex-col items-center justify-center py-20 gap-4">
+                   <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
+                   <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Scanning History...</span>
+                 </div>
+              ) : vaultReports.length === 0 ? (
+                <div className="text-center py-20 bg-gray-50/50 rounded-3xl border-2 border-dashed border-gray-100">
+                  <ShieldCheck className="w-12 h-12 text-emerald-400 mx-auto mb-4" />
+                  <p className="text-sm font-black text-gray-900 uppercase">Vault Clean</p>
+                  <p className="text-xs text-gray-400 font-medium mt-1">No community reports received for this vault.</p>
+                </div>
+              ) : (
+                vaultReports.map((report) => (
+                  <div key={report.id} className="p-5 bg-white border-2 border-gray-50 rounded-3xl hover:border-red-50 transition-all hover:shadow-lg hover:shadow-red-50/20 group">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex flex-wrap gap-2">
+                        {report.reason_virus && <span className="bg-red-50 text-red-600 px-2 py-1 rounded-lg text-[9px] font-black uppercase ring-1 ring-red-100">Virus/Malware</span>}
+                        {report.reason_content && <span className="bg-orange-50 text-orange-600 px-2 py-1 rounded-lg text-[9px] font-black uppercase ring-1 ring-orange-100">Illegal Content</span>}
+                        {!report.reason_virus && !report.reason_content && <span className="bg-gray-50 text-gray-500 px-2 py-1 rounded-lg text-[9px] font-black uppercase ring-1 ring-gray-100">Other Violation</span>}
+                      </div>
+                      <span className="text-[10px] font-black text-gray-300 uppercase tracking-tighter">{new Date(report.created_at).toLocaleString()}</span>
+                    </div>
+                    {report.file_id && (
+                      <div className="mt-2 flex items-center gap-2 px-3 py-2 bg-red-50/50 rounded-xl border border-red-100/50">
+                        <FileText className="w-3 h-3 text-red-400" />
+                        <span className="text-[10px] font-black text-red-600 uppercase tracking-tight">Reported File:</span>
+                        <span className="text-[10px] font-medium text-gray-700 truncate max-w-[200px]">
+                          {reportVault?.files?.find((f: any) => f.id === report.file_id)?.name || "Unknown File"}
+                        </span>
+                      </div>
+                    )}
+                    {report.custom_message && (
+                      <div className="bg-gray-50/50 p-4 rounded-2xl italic text-gray-600 text-xs font-medium border-l-4 border-l-red-100 mt-3">
+                        "{report.custom_message}"
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="mt-8 bg-amber-50 border border-amber-100 rounded-2xl p-5 flex items-start gap-4">
+               <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+               <div>
+                  <p className="text-[10px] font-black text-amber-800 uppercase tracking-tight mb-1">Owner Warning</p>
+                  <p className="text-[11px] text-amber-700/80 font-medium leading-relaxed">
+                    Accumulating 4 reports will result in a 10-day lock. 10 reports will trigger automatic permanent deletion for community safety.
+                  </p>
+               </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

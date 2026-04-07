@@ -31,7 +31,9 @@ create table if not exists public.vaults (
   active boolean default true,
   access_level text default 'PUBLIC',                -- PUBLIC or RESTRICTED
   expires_at timestamp with time zone,               -- NEW: Auto-expiry date
-  max_views integer default null                     -- NEW: Max scans allowed
+  max_views integer default null,                    -- NEW: Max scans allowed
+  report_count integer default 0,                    -- NEW: Community flags
+  locked_until timestamp with time zone              -- NEW: Temp block until date
 );
 
 -- =============================================================================
@@ -172,6 +174,20 @@ ALTER TABLE public.vaults
 alter table public.invoices enable row level security;
 create policy "Public invoices access" on public.invoices for all using (true) with check (true);
 
+-- Ensure deleted_vault_logs has views and deletion_reason
+ALTER TABLE public.deleted_vault_logs 
+  ADD COLUMN IF NOT EXISTS views integer default 0;
+
+ALTER TABLE public.deleted_vault_logs 
+  ADD COLUMN IF NOT EXISTS deletion_reason text;
+
+-- Ensure vault reporting columns exist
+ALTER TABLE public.vaults 
+  ADD COLUMN IF NOT EXISTS report_count integer DEFAULT 0;
+
+ALTER TABLE public.vaults 
+  ADD COLUMN IF NOT EXISTS locked_until timestamp with time zone;
+
 -- =============================================================================
 -- PLAN STORAGE LIMITS REFERENCE
 -- =============================================================================
@@ -199,9 +215,29 @@ create table if not exists public.deleted_vault_logs (
   user_id uuid references public.profiles(id) on delete cascade not null,
   vault_name text not null,
   original_vault_id uuid,
+  views integer default 0,                           -- NEW: Scans before deletion
+  deletion_reason text,                              -- NEW: 'TIME_EXPIRED' or 'SCAN_LIMIT_REACHED'
   created_at timestamp with time zone,
   deleted_at timestamp with time zone default now()
 );
+
+-- =============================================================================
+-- 7. REPORTS TABLE
+-- Stores community flags for malware or inappropriate content.
+-- =============================================================================
+create table if not exists public.reports (
+  id uuid default gen_random_uuid() primary key,
+  vault_id uuid references public.vaults(id) on delete cascade not null,
+  file_id uuid references public.files(id) on delete cascade, -- NEW: specific file reported
+  reason_virus boolean default false,
+  reason_content boolean default false,
+  custom_message text,
+  expires_at timestamp with time zone,               -- NEW: report expiry
+  created_at timestamp with time zone default now()
+);
+
+alter table public.reports enable row level security;
+create policy "Public reports access" on public.reports for all using (true) with check (true);
 
 alter table public.deleted_vault_logs enable row level security;
 create policy "Public deleted_vault_logs access" on public.deleted_vault_logs for all using (true) with check (true);
