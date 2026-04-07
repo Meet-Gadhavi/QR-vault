@@ -386,7 +386,7 @@ const supabaseImpl = {
     },
 
     getUserInvoices: async (userId: string): Promise<Invoice[]> => {
-        const { data, error } = await supabase.from('invoices').select('*').eq('id', userId).order('timestamp', { ascending: false });
+        const { data, error } = await supabase.from('invoices').select('*').eq('user_id', userId).order('timestamp', { ascending: false });
         if (error) throw error;
         return (data || []).map((inv: any) => ({
             id: inv.id,

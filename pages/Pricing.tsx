@@ -144,11 +144,17 @@ export const Pricing: React.FC = () => {
       return { disabled: false, isCurrentPlan: false, showExpiry: false, needsCancel: false };
     }
 
+    const currentPlanName = userPlan === PlanType.STARTER ? 'Plus' : userPlan === PlanType.PRO ? 'Pro' : 'Free';
+    const hasPaidPlan = userPlan === PlanType.STARTER || userPlan === PlanType.PRO;
+
     if (planId === userPlan) {
       return { disabled: true, isCurrentPlan: true, showExpiry: planId !== PlanType.FREE, needsCancel: false };
     }
 
-    // Direct plan switching is now allowed, removed 'needsCancel' restriction.
+    if (hasPaidPlan && planId !== userPlan) {
+      return { disabled: true, isCurrentPlan: false, showExpiry: false, needsCancel: true, currentPlanName };
+    }
+
     return { disabled: false, isCurrentPlan: false, showExpiry: false, needsCancel: false };
   };
 
@@ -255,6 +261,10 @@ export const Pricing: React.FC = () => {
                       ) : state.isCurrentPlan ? (
                         <div className="w-full py-4 bg-green-500 text-white rounded-2xl text-center font-bold shadow-lg shadow-green-200 cursor-default">
                           Your Active Plan
+                        </div>
+                      ) : state.needsCancel ? (
+                        <div className="w-full py-4 bg-gray-100 text-gray-500 rounded-2xl text-center text-xs font-bold leading-relaxed px-4">
+                          Cancel your {state.currentPlanName} plan before switching
                         </div>
                       ) : (
                         <Link
