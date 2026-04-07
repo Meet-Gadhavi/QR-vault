@@ -181,8 +181,11 @@ const supabaseImpl = {
         if (expiresAt !== undefined) updatePayload.expires_at = expiresAt;
         if (maxViews !== undefined) updatePayload.max_views = maxViews;
 
-        const { error } = await supabase.from('vaults').update(updatePayload).eq('id', id);
+        const { error } = await supabase.from('vaults').update({ ...updatePayload, report_count: 0 }).eq('id', id);
         if (error) throw new Error(`Update failed: ${error.message}`);
+
+        // Reset Reputation: Delete all reports for this vault upon update
+        await supabase.from('reports').delete().eq('vault_id', id);
 
         // Delete files from DB
         if (deletedFileIds.length) {

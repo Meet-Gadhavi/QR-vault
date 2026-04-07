@@ -1355,7 +1355,7 @@ export const Dashboard: React.FC = () => {
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredVaults.map(vault => (
-                  <div key={vault.id} className="relative bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex flex-col overflow-hidden">
+                  <div key={vault.id} className={`relative rounded-xl border-2 transition-all duration-300 flex flex-col overflow-hidden ${vault.reportCount && vault.reportCount > 0 ? 'bg-red-50/60 border-red-100 shadow-lg shadow-red-50/40 scale-[1.01]' : 'bg-white border-gray-100 shadow-sm hover:shadow-md'}`}>
                     <div className="p-5 flex-1 flex flex-col">
                       {/* Card Header & 3-Dot Menu */}
                       <div className="flex justify-between items-start mb-4">

@@ -411,10 +411,13 @@ export const PublicView: React.FC = () => {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setIsReportModalOpen(true)}
-                className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                className="group/report flex items-center bg-red-50 text-red-400 hover:text-red-600 hover:bg-red-100 px-4 py-2.5 rounded-xl transition-all active:scale-95 shadow-sm overflow-hidden"
                 title="Report Vault"
               >
-                <AlertCircle className="w-5 h-5" />
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                <span className="max-w-0 opacity-0 group-hover/report:max-w-[4rem] group-hover/report:opacity-100 group-hover/report:ml-2 transition-all duration-300 pointer-events-none text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
+                  Report
+                </span>
               </button>
 
               {vault.files.some(f => f.type !== FileType.LINK) && (
@@ -514,21 +517,6 @@ export const PublicView: React.FC = () => {
                         title="File Details"
                       >
                         <Info className="w-4 h-4" />
-                      </button>
-
-                      <button
-                        onClick={(e) => { 
-                          e.stopPropagation(); 
-                          setReportFileIds([file.id]); 
-                          setIsReportModalOpen(true); 
-                        }}
-                        className="group/report flex items-center bg-red-50 text-red-400 hover:text-red-600 hover:bg-red-100 px-4 py-3 rounded-xl transition-all active:scale-95 overflow-hidden"
-                        title="Report this file"
-                      >
-                        <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                        <span className="max-w-0 opacity-0 group-hover/report:max-w-[4rem] group-hover/report:opacity-100 group-hover/report:ml-2 transition-all duration-300 pointer-events-none text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
-                          Report
-                        </span>
                       </button>
                     </div>
                   )}
