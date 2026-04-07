@@ -345,7 +345,7 @@ export const Dashboard: React.FC = () => {
     setExistingFiles([]);
     setDeletedFileIds([]);
     setExpiryHours(appUser?.plan === PlanType.FREE ? 24 : 24); // DEFAULT 24
-    setMaxViews(null);
+    setMaxViews(appUser?.plan === PlanType.PRO ? null : 25);
     setCustomMaxViews('');
     setIsModalOpen(true);
   };
@@ -1525,9 +1525,11 @@ export const Dashboard: React.FC = () => {
                     <select
                         value={maxViews === null ? 'none' : maxViews}
                         onChange={(e) => setMaxViews(e.target.value === 'none' ? null : (e.target.value === 'custom' ? 'custom' : Number(e.target.value)))}
-                        className="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all appearance-none cursor-pointer bg-white"
+                        className={`w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all appearance-none cursor-pointer bg-white`}
                     >
-                        <option value="none">Unlimited Scans</option>
+                        <option value="none" disabled={appUser.plan !== PlanType.PRO}>
+                            Unlimited Scans {appUser.plan !== PlanType.PRO ? '(PRO Only)' : ''}
+                        </option>
                         <option value={25}>25 Scans</option>
                         <option value={45}>45 Scans</option>
                         <option value={65} disabled={appUser.plan === PlanType.FREE}>65 Scans {appUser.plan === PlanType.FREE ? '(Plus/Pro Only)' : ''}</option>
