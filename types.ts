@@ -62,7 +62,8 @@ export interface Vault {
   userPlan?: PlanType;
   expiresAt?: string;
   maxViews?: number;
-  reportCount?: number;                            // NEW: Total flags received
+  password?: string;                               // NEW: Shared password for access
+  reportCount?: number;                            // TOTAL flags received
   lockedUntil?: string;                            // NEW: ISO Date for temporary block
 }
 

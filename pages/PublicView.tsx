@@ -20,6 +20,9 @@ export const PublicView: React.FC = () => {
   const [requestStatus, setRequestStatus] = useState<RequestStatus | null>(null);
   const [emailInput, setEmailInput] = useState('');
   const [requesting, setRequesting] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [isPasswordVerified, setIsPasswordVerified] = useState(false);
+  const [passwordError, setPasswordError] = useState(false);
 
   // Modals
   const [previewFile, setPreviewFile] = useState<VaultFile | null>(null);
@@ -39,6 +42,33 @@ export const PublicView: React.FC = () => {
   const [reportMessage, setReportMessage] = useState('');
   const [reportFileIds, setReportFileIds] = useState<string[]>([]);
   const [isReporting, setIsReporting] = useState(false);
+
+  const checkAccess = (v: Vault) => {
+    const storedPassword = localStorage.getItem(`qrvault_pass_${v.id}`);
+    if (v.password && storedPassword === v.password) {
+      setIsPasswordVerified(true);
+    } else if (!v.password) {
+      setIsPasswordVerified(true);
+    }
+
+    if (!v.accessLevel || v.accessLevel === AccessLevel.PUBLIC) {
+      setHasAccess(true);
+      return;
+    }
+
+    const storedEmail = localStorage.getItem('qrvault_viewer_email');
+    if (storedEmail) {
+      setEmailInput(storedEmail);
+      const req = (v.requests || []).find(r => r.email === storedEmail);
+
+      if (req) {
+        setRequestStatus(req.status);
+        if (req.status === RequestStatus.APPROVED) {
+          setHasAccess(true);
+        }
+      }
+    }
+  };
 
   useEffect(() => {
     if (id) {
@@ -70,23 +100,14 @@ export const PublicView: React.FC = () => {
     }
   }, [id]);
 
-  const checkAccess = (v: Vault) => {
-    if (!v.accessLevel || v.accessLevel === AccessLevel.PUBLIC) {
-      setHasAccess(true);
-      return;
-    }
-
-    const storedEmail = localStorage.getItem('qrvault_viewer_email');
-    if (storedEmail) {
-      setEmailInput(storedEmail);
-      const req = (v.requests || []).find(r => r.email === storedEmail);
-
-      if (req) {
-        setRequestStatus(req.status);
-        if (req.status === RequestStatus.APPROVED) {
-          setHasAccess(true);
-        }
-      }
+  const handleVerifyPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (vault && passwordInput === vault.password) {
+      setIsPasswordVerified(true);
+      setPasswordError(false);
+      localStorage.setItem(`qrvault_pass_${vault.id}`, passwordInput);
+    } else {
+      setPasswordError(true);
     }
   };
 
@@ -365,6 +386,49 @@ export const PublicView: React.FC = () => {
               </button>
             </form>
           )}
+        </div>
+      </div>
+    );
+  }
+
+  if (!isPasswordVerified && vault.password) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-gray-50 relative overflow-hidden">
+        <div className="bg-white p-10 rounded-3xl shadow-xl border border-gray-100 max-w-md w-full relative z-10">
+          <div className="w-16 h-16 bg-primary-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+            <Lock className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Password Protected</h1>
+          <p className="text-gray-500 mb-8 font-medium">This vault requires a password to view its contents.</p>
+          
+          <form onSubmit={handleVerifyPassword} className="space-y-4">
+            <div>
+              <label className="block text-left text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 ml-1">Enter Vault Password</label>
+              <input
+                type="password"
+                required
+                value={passwordInput}
+                onChange={(e) => { setPasswordInput(e.target.value); setPasswordError(false); }}
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-primary-500 outline-none transition-all font-medium ${passwordError ? 'border-red-300 bg-red-50' : 'border-gray-100 bg-gray-50 focus:bg-white'}`}
+                placeholder="••••••••"
+              />
+              {passwordError && (
+                <p className="text-left text-xs text-red-500 mt-2 font-bold flex items-center gap-1 animate-in fade-in slide-in-from-top-1">
+                  <AlertCircle className="w-3 h-3" /> Incorrect password. Please try again.
+                </p>
+              )}
+            </div>
+            <button
+              type="submit"
+              className="w-full bg-gray-900 hover:bg-black text-white font-bold py-4 px-4 rounded-xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2"
+            >
+              <ShieldCheck className="w-5 h-5" />
+              Unlock Vault
+            </button>
+          </form>
+          <div className="mt-8 flex items-center justify-center gap-2 text-[10px] font-black text-gray-300 uppercase tracking-widest">
+            <ShieldCheck className="w-3 h-3" /> End-to-End Encrypted
+          </div>
         </div>
       </div>
     );

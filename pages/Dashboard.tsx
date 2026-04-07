@@ -138,6 +138,8 @@ export const Dashboard: React.FC = () => {
   // Delete Confirm Modal State
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [vaultPassword, setVaultPassword] = useState('');
+  const [uploadTask, setUploadTask] = useState<0 | 1 | 2 | 3>(0);
 
   // Drag and Drop State
   const [isDragging, setIsDragging] = useState(false);
@@ -397,6 +399,7 @@ export const Dashboard: React.FC = () => {
     setExpiryHours(appUser?.plan === PlanType.FREE ? 24 : 24); // DEFAULT 24
     setMaxViews(appUser?.plan === PlanType.PRO ? null : 25);
     setCustomMaxViews('');
+    setVaultPassword('');
     setIsModalOpen(true);
   };
 
@@ -515,12 +518,17 @@ export const Dashboard: React.FC = () => {
     let progressInterval: ReturnType<typeof setInterval> | null = null;
     const startProgress = () => {
       const start = Date.now();
+      setUploadTask(1); // Task 1: Scanning
       progressInterval = setInterval(() => {
         const elapsed = Date.now() - start;
-        // Ease-out: fast start, slows near 90%
         const raw = elapsed / estimatedMs;
         const eased = 1 - Math.pow(1 - Math.min(raw, 1), 2);
-        setUploadProgress(Math.min(Math.round(eased * 90), 90));
+        const currentProgress = Math.min(Math.round(eased * 90), 90);
+        setUploadProgress(currentProgress);
+
+        // Update tasks based on progress
+        if (currentProgress > 30 && currentProgress <= 70) setUploadTask(2); // Task 2: Encryption
+        if (currentProgress > 70) setUploadTask(3); // Task 3: Finalizing
       }, 80);
     };
     startProgress();
@@ -570,23 +578,26 @@ export const Dashboard: React.FC = () => {
       }
 
       if (modalMode === 'CREATE') {
-        await mockService.createVault(appUser.id, vaultName, finalFiles, links, accessLevel, appUser.email, expiresAt, finalMaxViews);
+        await mockService.createVault(appUser.id, vaultName, finalFiles, links, accessLevel, appUser.email, expiresAt, finalMaxViews, vaultPassword);
       } else if (modalMode === 'EDIT' && editingVaultId) {
-        await mockService.updateVault(appUser.id, editingVaultId, vaultName, finalFiles, links, deletedFileIds, accessLevel, appUser.email, expiresAt, finalMaxViews);
+        await mockService.updateVault(appUser.id, editingVaultId, vaultName, finalFiles, links, deletedFileIds, accessLevel, appUser.email, expiresAt, finalMaxViews, vaultPassword);
       }
       success = true;
       if (progressInterval) clearInterval(progressInterval);
       setUploadProgress(100);
-      await new Promise(r => setTimeout(r, 600)); // show 100% briefly
+      setUploadTask(3);
+      await new Promise(r => setTimeout(r, 800)); // show 100% briefly
       setIsModalOpen(false);
     } catch (e: any) {
       console.error(e);
       if (progressInterval) clearInterval(progressInterval);
       setUploadProgress(0);
+      setUploadTask(0);
       alert(`Note: ${e.message}`);
     } finally {
       await loadData(appUser.id);
       setIsSubmitting(false);
+      setUploadTask(0);
       setUploadProgress(0);
 
       // Auto-save metadata (and QR) to Google Drive if connected
@@ -1598,10 +1609,46 @@ export const Dashboard: React.FC = () => {
                 <input
                   type="text"
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
-                  placeholder="e.g. Project Assets, Event Photos"
                   value={vaultName}
                   onChange={(e) => setVaultName(e.target.value)}
+                  placeholder="e.g. Project Assets"
                 />
+              </div>
+
+              {/* Security Section (NEW: Password) */}
+              <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Lock className="w-5 h-5 text-gray-900" />
+                    <h3 className="text-sm font-bold text-gray-900 uppercase tracking-tight">Security & Privacy</h3>
+                  </div>
+                  {appUser.plan !== PlanType.PRO && (
+                    <span className="flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-black rounded-full shadow-lg shadow-amber-100 uppercase tracking-widest animate-pulse">
+                      <Zap className="w-3 h-3 fill-current" /> Pro Feature
+                    </span>
+                  )}
+                </div>
+                
+                <div className="relative">
+                  <input
+                    type="password"
+                    disabled={appUser.plan !== PlanType.PRO}
+                    value={vaultPassword}
+                    onChange={(e) => setVaultPassword(e.target.value)}
+                    placeholder={appUser.plan === PlanType.PRO ? "Set a vault password (optional)" : "Upgrade to Pro to set passwords"}
+                    className={`w-full p-4 pl-12 border rounded-xl transition-all font-medium ${
+                      appUser.plan === PlanType.PRO 
+                        ? 'bg-white border-gray-200 focus:ring-2 focus:ring-primary-500 hover:border-primary-200' 
+                        : 'bg-gray-100 border-gray-200 cursor-not-allowed text-gray-400'
+                    }`}
+                  />
+                  <ShieldCheck className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 ${appUser.plan === PlanType.PRO ? 'text-primary-500' : 'text-gray-300'}`} />
+                </div>
+                <p className="text-[11px] text-gray-400 mt-3 flex items-center gap-1.5 px-1 font-medium">
+                  {appUser.plan === PlanType.PRO 
+                    ? "Visitors must enter this password to view files." 
+                    : "Password protection is only available for professional users."}
+                </p>
               </div>
 
               {/* Access Level */}
@@ -1903,6 +1950,34 @@ export const Dashboard: React.FC = () => {
                     />
                   </div>
                   <p className="text-[10px] text-gray-400 mt-1">Please don't close this window.</p>
+
+                  {/* Task Checklist (NEW) */}
+                  <div className="mt-6 space-y-3 bg-white/50 backdrop-blur-sm p-4 rounded-xl border border-primary-100/50">
+                    <div className="flex items-center justify-between mb-2">
+                       <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Processing Pipeline</span>
+                       <span className="text-[10px] font-black text-primary-500 bg-primary-50 px-2 py-0.5 rounded-full">{Math.min(uploadTask, 3)}/3 Tasks</span>
+                    </div>
+                    {[
+                      { id: 1, label: 'Security scan for threats', icon: <ShieldCheck className="w-3.5 h-3.5" /> },
+                      { id: 2, label: 'Encryption chain processing', icon: <Shield className="w-3.5 h-3.5" /> },
+                      { id: 3, label: 'Finalizing server distribution', icon: <Zap className="w-3.5 h-3.5" /> }
+                    ].map(task => {
+                      const isDone = uploadTask > task.id || (uploadTask === 3 && uploadProgress === 100);
+                      const isActive = uploadTask === task.id;
+                      return (
+                        <div key={task.id} className={`flex items-center gap-3 transition-opacity duration-300 ${isDone || isActive ? 'opacity-100' : 'opacity-30 grayscale'}`}>
+                           <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isDone ? 'bg-green-500 text-white shadow-lg shadow-green-100' : isActive ? 'bg-primary-600 text-white shadow-lg animate-pulse' : 'bg-gray-100 text-gray-400'}`}>
+                              {isDone ? <Check className="w-3.5 h-3.5" /> : task.icon}
+                           </div>
+                           <span className={`text-[11px] font-bold uppercase tracking-tight ${isDone ? 'text-green-600' : isActive ? 'text-primary-700' : 'text-gray-400'}`}>
+                              {task.label}
+                              {isActive && <span className="ml-1 inline-block animate-bounce">...</span>}
+                           </span>
+                           {isDone && <Check className="w-3 h-3 text-green-500 ml-auto" />}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
               <div className="p-6 flex justify-end gap-3">

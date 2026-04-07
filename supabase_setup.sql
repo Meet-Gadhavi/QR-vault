@@ -33,7 +33,8 @@ create table if not exists public.vaults (
   expires_at timestamp with time zone,               -- NEW: Auto-expiry date
   max_views integer default null,                    -- NEW: Max scans allowed
   report_count integer default 0,                    -- NEW: Community flags
-  locked_until timestamp with time zone              -- NEW: Temp block until date
+  locked_until timestamp with time zone,             -- NEW: Temp block until date
+  password text                                      -- NEW: Protect with password
 );
 
 -- =============================================================================
@@ -187,6 +188,9 @@ ALTER TABLE public.vaults
 
 ALTER TABLE public.vaults 
   ADD COLUMN IF NOT EXISTS locked_until timestamp with time zone;
+
+ALTER TABLE public.vaults 
+  ADD COLUMN IF NOT EXISTS password text;
 
 -- =============================================================================
 -- PLAN STORAGE LIMITS REFERENCE
