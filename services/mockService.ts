@@ -225,24 +225,53 @@ const supabaseImpl = {
     },
 
     deleteVault: async (userId: string, id: string) => {
-        // 1. Cleanup Supabase Storage files
+        // 1. Get vault and files for manifest
+        const { data: vault } = await supabase.from('vaults').select('name, created_at, views').eq('id', id).single();
+        const { data: files } = await supabase.from('files').select('name, size, type, mime_type, url').eq('vault_id', id);
+
+        // 2. Cleanup Supabase Storage files
         try {
-            const { data: files, error: listError } = await supabase.storage.from('vault-files').list(id);
-            if (!listError && files && files.length > 0) {
-                const paths = files.map((f: any) => `${id}/${f.name}`);
+            const { data: storageFiles, error: listError } = await supabase.storage.from('vault-files').list(id);
+            if (!listError && storageFiles && storageFiles.length > 0) {
+                const paths = storageFiles.map((f: any) => `${id}/${f.name}`);
                 await supabase.storage.from('vault-files').remove(paths);
             }
         } catch (storageErr) {
             console.warn("Storage cleanup failed:", storageErr);
         }
 
-        // 2. Delete from DB (Cascade delete handles files/requests/reports metadata)
+        // 3. Log the deletion with manifest before record is gone
+        if (vault) {
+            await supabase.from('deleted_vault_logs').insert({
+                user_id: userId,
+                vault_name: vault.name,
+                original_vault_id: id,
+                created_at: vault.created_at,
+                views: vault.views || 0,
+                deletion_reason: 'MANUAL_DELETE',
+                file_manifest: files || []                        // NEW: Save precise manifest
+            });
+        }
+
+        // 4. Delete from DB (Cascade delete handles files/requests/reports metadata)
         const { error } = await supabase.from('vaults').delete().eq('id', id);
         if (error) throw new Error(error.message);
     },
 
     recoverVault: async (userId: string, vaultName: string, driveFiles: any[]) => {
-        // 1. Create Vault Record
+        // 1. Get the deletion log to find the manifest
+        const { data: log } = await supabase
+            .from('deleted_vault_logs')
+            .select('file_manifest')
+            .eq('user_id', userId)
+            .eq('vault_name', vaultName)
+            .order('deleted_at', { ascending: false })
+            .limit(1)
+            .single();
+
+        const manifest = log?.file_manifest || [];
+
+        // 2. Create Vault Record
         const { data: vault, error: vError } = await supabase.from('vaults').insert({
             user_id: userId,
             name: vaultName,
@@ -254,8 +283,16 @@ const supabaseImpl = {
 
         if (vError) throw new Error(`Recovery failed: ${vError.message}`);
 
-        // 2. Insert Files from Drive metadata
+        // 3. Insert Files - ONLY if they are in the manifest (if manifest exists)
         for (const f of driveFiles) {
+            // Check if file name exists in manifest. If manifest is empty (older deletion), allow all.
+            const isInManifest = manifest.length === 0 || manifest.some((m: any) => m.name === f.name);
+            
+            if (!isInManifest) {
+                console.log(`[Recovery] Skipping file not in manifest: ${f.name}`);
+                continue;
+            }
+
             const fType = f.mimeType?.startsWith('image/') ? FileType.IMAGE : 
                          (f.mimeType === 'application/pdf' ? FileType.PDF : FileType.OTHER);
             
@@ -269,7 +306,7 @@ const supabaseImpl = {
             });
         }
 
-        // 3. Delete from Deletion Logs (clean up history)
+        // 4. Delete from Deletion Logs (clean up history)
         await supabase.from('deleted_vault_logs').delete().eq('user_id', userId).eq('vault_name', vaultName);
 
         return (await supabaseImpl.getVaultById(vault.id)) as Vault;
@@ -286,7 +323,7 @@ const supabaseImpl = {
         return (data || []).map((r: any) => ({
             id: r.id,
             vaultId: r.vault_id,
-            fileId: r.file_id,
+            fileIds: r.file_ids || [],                      // NEW: Support multiple files
             reasonVirus: r.reason_virus,
             reasonContent: r.reason_content,
             customMessage: r.custom_message,

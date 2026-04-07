@@ -2078,7 +2078,7 @@ export const Dashboard: React.FC = () => {
       {/* Reports History Modal */}
       {reportVault && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in" onClick={() => setReportVault(null)}>
-          <div className="bg-white rounded-[2rem] w-full max-w-lg p-8 shadow-2xl animate-in zoom-in-95 overflow-hidden flex flex-col max-h-[80vh]" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white rounded-[2rem] w-full max-w-2xl p-8 shadow-2xl animate-in zoom-in-95 overflow-hidden flex flex-col max-h-[70vh]" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-8">
               <div className="flex items-center gap-4">
                 <div className="bg-red-50 p-3 rounded-2xl text-red-500">
@@ -2115,13 +2115,25 @@ export const Dashboard: React.FC = () => {
                       </div>
                       <span className="text-[10px] font-black text-gray-300 uppercase tracking-tighter">{new Date(report.created_at).toLocaleString()}</span>
                     </div>
-                    {report.file_id && (
-                      <div className="mt-2 flex items-center gap-2 px-3 py-2 bg-red-50/50 rounded-xl border border-red-100/50">
-                        <FileText className="w-3 h-3 text-red-400" />
-                        <span className="text-[10px] font-black text-red-600 uppercase tracking-tight">Reported File:</span>
-                        <span className="text-[10px] font-medium text-gray-700 truncate max-w-[200px]">
-                          {reportVault?.files?.find((f: any) => f.id === report.file_id)?.name || "Unknown File"}
-                        </span>
+                    {report.fileIds && report.fileIds.length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-red-50/50 rounded-xl border border-red-100/50 w-fit">
+                          <AlertTriangle className="w-3 h-3 text-red-500" />
+                          <span className="text-[10px] font-black text-red-600 uppercase tracking-tight">Reported Content:</span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {report.fileIds.map((fid: string) => {
+                            const file = reportVault?.files?.find((f: any) => f.id === fid);
+                            return (
+                              <div key={fid} className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-xl border border-gray-100">
+                                <FileText className="w-3 h-3 text-gray-400" />
+                                <span className="text-[10px] font-medium text-gray-700 truncate">
+                                  {file?.name || "Unknown File"}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     )}
                     {report.custom_message && (

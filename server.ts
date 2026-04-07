@@ -1054,7 +1054,7 @@ const processVaultCleanups = async () => {
         // 2. Get files associated with this vault
         const { data: files, error: filesError } = await supabase
           .from('files')
-          .select('url')
+          .select('id, name, type, size, url')
           .eq('vault_id', vault.id);
 
         if (!filesError && files && files.length > 0) {
@@ -1080,7 +1080,8 @@ const processVaultCleanups = async () => {
           original_vault_id: vault.id,
           created_at: vault.created_at,
           views: vault.views || 0,
-          deletion_reason: reason
+          deletion_reason: reason,
+          file_manifest: files || []                        // NEW: Save precise manifest
         });
 
         // 4. Delete vault from database

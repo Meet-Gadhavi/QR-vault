@@ -217,6 +217,7 @@ create table if not exists public.deleted_vault_logs (
   original_vault_id uuid,
   views integer default 0,                           -- NEW: Scans before deletion
   deletion_reason text,                              -- NEW: 'TIME_EXPIRED' or 'SCAN_LIMIT_REACHED'
+  file_manifest jsonb default '[]'::jsonb,           -- NEW: Precise list of files at deletion
   created_at timestamp with time zone,
   deleted_at timestamp with time zone default now()
 );
@@ -228,7 +229,7 @@ create table if not exists public.deleted_vault_logs (
 create table if not exists public.reports (
   id uuid default gen_random_uuid() primary key,
   vault_id uuid references public.vaults(id) on delete cascade not null,
-  file_id uuid references public.files(id) on delete cascade, -- NEW: specific file reported
+  file_ids uuid[] default '{}'::uuid[],                -- CHANGED: support multiple files
   reason_virus boolean default false,
   reason_content boolean default false,
   custom_message text,

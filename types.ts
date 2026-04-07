@@ -69,7 +69,7 @@ export interface Vault {
 export interface Report {
   id: string;
   vaultId: string;
-  fileId?: string;                                 // NEW: specific file reported
+  fileIds?: string[];                               // NEW: specific files reported
   reasonVirus: boolean;
   reasonContent: boolean;
   customMessage: string;
@@ -84,6 +84,7 @@ export interface DeletedVaultLog {
   originalVaultId?: string;
   views: number;
   deletionReason?: string;
+  fileManifest?: any[];                            // NEW: List of files at deletion
   createdAt: string;
   deletedAt: string;
 }

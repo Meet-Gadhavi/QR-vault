@@ -37,7 +37,7 @@ export const PublicView: React.FC = () => {
   const [reportReasonVirus, setReportReasonVirus] = useState(false);
   const [reportReasonContent, setReportReasonContent] = useState(false);
   const [reportMessage, setReportMessage] = useState('');
-  const [reportFileId, setReportFileId] = useState<string | null>(null);
+  const [reportFileIds, setReportFileIds] = useState<string[]>([]);
   const [isReporting, setIsReporting] = useState(false);
 
   useEffect(() => {
@@ -238,7 +238,7 @@ export const PublicView: React.FC = () => {
 
       const { error: logError } = await supabase.from('reports').insert({
         vault_id: vault.id,
-        file_id: reportFileId,
+        file_ids: reportFileIds,                             // CHANGED: array of file IDs
         reason_virus: reportReasonVirus,
         reason_content: reportReasonContent,
         custom_message: reportMessage,
@@ -258,7 +258,7 @@ export const PublicView: React.FC = () => {
       setReportReasonVirus(false);
       setReportReasonContent(false);
       setReportMessage('');
-      setReportFileId(null);
+      setReportFileIds([]);
     } catch (err: any) {
       console.error("Report error:", err.message);
       alert("Failed to send report.");
@@ -558,15 +558,26 @@ export const PublicView: React.FC = () => {
               <div className="pt-2">
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 ml-1">Select File with Issue</p>
                 <div className="max-h-[150px] overflow-y-auto space-y-2 pr-2 no-scrollbar border-y-2 border-gray-50/50 py-2">
-                  {vault.files.map(file => (
-                    <label key={file.id} className={`flex items-center gap-3 p-3 border-2 rounded-xl cursor-pointer transition-all ${reportFileId === file.id ? 'border-red-500 bg-red-50/30' : 'border-gray-50 hover:bg-gray-50'}`}>
-                      <input type="radio" name="reportFile" className="w-4 h-4 text-red-600" checked={reportFileId === file.id} onChange={() => setReportFileId(file.id)} />
-                      <div className="flex flex-col min-w-0">
-                        <span className="text-xs font-bold text-gray-900 truncate">{file.name}</span>
-                        <span className="text-[9px] text-gray-400 font-medium uppercase">{file.type}</span>
-                      </div>
-                    </label>
-                  ))}
+                  {vault.files.map(file => {
+                    const isChecked = reportFileIds.includes(file.id);
+                    return (
+                      <label key={file.id} className={`flex items-center gap-3 p-3 border-2 rounded-xl cursor-pointer transition-all ${isChecked ? 'border-red-500 bg-red-50/30' : 'border-gray-50 hover:bg-gray-50'}`}>
+                        <input 
+                          type="checkbox" 
+                          className="w-4 h-4 text-red-600 rounded" 
+                          checked={isChecked} 
+                          onChange={(e) => {
+                            if (e.target.checked) setReportFileIds([...reportFileIds, file.id]);
+                            else setReportFileIds(reportFileIds.filter(id => id !== file.id));
+                          }} 
+                        />
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-xs font-bold text-gray-900 truncate">{file.name}</span>
+                          <span className="text-[9px] text-gray-400 font-medium uppercase">{file.type}</span>
+                        </div>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
 
