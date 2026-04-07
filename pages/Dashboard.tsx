@@ -22,13 +22,18 @@ type DeletedVaultLog = {
   deleted_at: string;
 };
 
-const VaultTimer: React.FC<{ createdAt: string }> = ({ createdAt }) => {
+const VaultTimer: React.FC<{ createdAt: string; expiresAt?: string }> = ({ createdAt, expiresAt }) => {
   const [timeLeft, setTimeLeft] = useState<string>('');
 
   useEffect(() => {
     const calculateTime = () => {
-      const created = new Date(createdAt).getTime();
-      const expires = created + 24 * 60 * 60 * 1000;
+      let expires: number;
+      if (expiresAt) {
+        expires = new Date(expiresAt).getTime();
+      } else {
+        // Fallback for legacy vaults
+        expires = new Date(createdAt).getTime() + 24 * 60 * 60 * 1000;
+      }
       const now = new Date().getTime();
       const diff = expires - now;
 
@@ -88,6 +93,9 @@ export const Dashboard: React.FC = () => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [links, setLinks] = useState<string[]>([]);
   const [tempLink, setTempLink] = useState('');
+  const [expiryHours, setExpiryHours] = useState<number | 'never'>(24);
+  const [maxViews, setMaxViews] = useState<number | 'custom' | null>(null);
+  const [customMaxViews, setCustomMaxViews] = useState<string>('');
 
   const [existingFiles, setExistingFiles] = useState<VaultFile[]>([]);
   const [deletedFileIds, setDeletedFileIds] = useState<string[]>([]);
@@ -336,6 +344,9 @@ export const Dashboard: React.FC = () => {
     setLinks([]);
     setExistingFiles([]);
     setDeletedFileIds([]);
+    setExpiryHours(appUser?.plan === PlanType.FREE ? 24 : 24); // DEFAULT 24
+    setMaxViews(null);
+    setCustomMaxViews('');
     setIsModalOpen(true);
   };
 
@@ -355,6 +366,24 @@ export const Dashboard: React.FC = () => {
     setLinks([]);
     setExistingFiles(vault.files);
     setDeletedFileIds([]);
+    
+    // In edit mode, try to infer expiryHours if possible or just set it
+    if (vault.expiresAt) {
+        const diff = new Date(vault.expiresAt).getTime() - new Date(vault.createdAt).getTime();
+        const hours = Math.round(diff / (1000 * 60 * 60));
+        setExpiryHours(hours as any);
+    } else {
+        setExpiryHours('never');
+    }
+
+    if (vault.maxViews) {
+        setMaxViews(vault.maxViews);
+        setCustomMaxViews(vault.maxViews.toString());
+    } else {
+        setMaxViews(null);
+        setCustomMaxViews('');
+    }
+
     setIsModalOpen(true);
   };
 
@@ -414,6 +443,21 @@ export const Dashboard: React.FC = () => {
     setUploadProgress(0);
     let success = false;
     const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+    // Calculate Expires At
+    let expiresAt: string | undefined = undefined;
+    if (expiryHours !== 'never') {
+        const now = new Date();
+        now.setHours(now.getHours() + Number(expiryHours));
+        expiresAt = now.toISOString();
+    }
+
+    let finalMaxViews: number | undefined = undefined;
+    if (maxViews === 'custom') {
+        finalMaxViews = parseInt(customMaxViews) || undefined;
+    } else if (maxViews !== null) {
+        finalMaxViews = Number(maxViews);
+    }
 
     // Estimate total upload size for progress simulation
     const totalSize = selectedFiles.reduce((acc, f) => acc + f.size, 0);
@@ -476,9 +520,9 @@ export const Dashboard: React.FC = () => {
       }
 
       if (modalMode === 'CREATE') {
-        await mockService.createVault(appUser.id, vaultName, finalFiles, links, accessLevel, appUser.email);
+        await mockService.createVault(appUser.id, vaultName, finalFiles, links, accessLevel, appUser.email, expiresAt, finalMaxViews);
       } else if (modalMode === 'EDIT' && editingVaultId) {
-        await mockService.updateVault(appUser.id, editingVaultId, vaultName, finalFiles, links, deletedFileIds, accessLevel, appUser.email);
+        await mockService.updateVault(appUser.id, editingVaultId, vaultName, finalFiles, links, deletedFileIds, accessLevel, appUser.email, expiresAt, finalMaxViews);
       }
       success = true;
       if (progressInterval) clearInterval(progressInterval);
@@ -1226,9 +1270,9 @@ export const Dashboard: React.FC = () => {
                             </button>
                           )}
                         </div>
-                        {/* 24h Deletion Timer for Free Users */}
-                        {appUser.plan === PlanType.FREE && (
-                          <VaultTimer createdAt={vault.createdAt} />
+                        {/* Deletion Timer - Show for any vault that has an expiry */}
+                        {vault.expiresAt && (
+                          <VaultTimer createdAt={vault.createdAt} expiresAt={vault.expiresAt} />
                         )}
                       </div>
 
@@ -1435,6 +1479,82 @@ export const Dashboard: React.FC = () => {
                     <p className="text-xs text-gray-500">Users must request access. You approve who can view.</p>
                   </button>
                 </div>
+              </div>
+
+              {/* Expiry Selection (New) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Vault Expiry</label>
+                <div className="relative group">
+                    <select
+                        value={expiryHours}
+                        onChange={(e) => setExpiryHours(e.target.value === 'never' ? 'never' : Number(e.target.value))}
+                        disabled={appUser.plan === PlanType.FREE}
+                        className={`w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all appearance-none cursor-pointer ${appUser.plan === PlanType.FREE ? 'bg-gray-100' : 'bg-white'}`}
+                    >
+                        <option value={24}>24 Hours (Default)</option>
+                        <option value={48} disabled={appUser.plan === PlanType.FREE}>48 Hours</option>
+                        <option value={72} disabled={appUser.plan === PlanType.FREE}>72 Hours</option>
+                        <option value="never" disabled={appUser.plan !== PlanType.PRO}>
+                            Permanent Storage (Never Expire) {appUser.plan === PlanType.STARTER ? '(PRO Only)' : ''}
+                        </option>
+                    </select>
+                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                        <ChevronDown className="w-4 h-4" />
+                    </div>
+                </div>
+                
+                {appUser.plan === PlanType.STARTER && expiryHours !== 'never' && (
+                    <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                        <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                        <p className="text-xs text-amber-800 leading-relaxed font-medium">
+                            <strong>Notice:</strong> This vault will be deleted after <strong>{expiryHours} hours</strong> because of the auto-expiry limits of your Plus account.
+                        </p>
+                    </div>
+                )}
+                
+                {appUser.plan === PlanType.FREE && (
+                    <p className="mt-2 text-[10px] text-gray-400 italic">Free plan vaults are removed after 24 hours. Upgrade for up to 72 hours.</p>
+                )}
+              </div>
+
+              {/* Scan Count Limit (New) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Scan Count Limit</label>
+                <div className="relative group">
+                    <select
+                        value={maxViews === null ? 'none' : maxViews}
+                        onChange={(e) => setMaxViews(e.target.value === 'none' ? null : (e.target.value === 'custom' ? 'custom' : Number(e.target.value)))}
+                        className="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all appearance-none cursor-pointer bg-white"
+                    >
+                        <option value="none">Unlimited Scans</option>
+                        <option value={25}>25 Scans</option>
+                        <option value={45}>45 Scans</option>
+                        <option value={65} disabled={appUser.plan === PlanType.FREE}>65 Scans {appUser.plan === PlanType.FREE ? '(Plus/Pro Only)' : ''}</option>
+                        <option value={85} disabled={appUser.plan === PlanType.FREE}>85 Scans {appUser.plan === PlanType.FREE ? '(Plus/Pro Only)' : ''}</option>
+                        <option value={105} disabled={appUser.plan !== PlanType.PRO}>105 Scans {appUser.plan !== PlanType.PRO ? '(PRO Only)' : ''}</option>
+                        <option value={125} disabled={appUser.plan !== PlanType.PRO}>125 Scans {appUser.plan !== PlanType.PRO ? '(PRO Only)' : ''}</option>
+                        <option value="custom" disabled={appUser.plan !== PlanType.PRO}>Custom Limit {appUser.plan !== PlanType.PRO ? '(PRO Only)' : ''}</option>
+                    </select>
+                    <Eye className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                        <ChevronDown className="w-4 h-4" />
+                    </div>
+                </div>
+
+                {maxViews === 'custom' && appUser.plan === PlanType.PRO && (
+                    <div className="mt-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                        <input
+                            type="number"
+                            min="1"
+                            placeholder="Enter custom scan limit"
+                            value={customMaxViews}
+                            onChange={(e) => setCustomMaxViews(e.target.value)}
+                            className="w-full p-3 border border-primary-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
+                        />
+                        <p className="mt-1.5 text-[10px] text-primary-600 font-medium italic">Vault will auto-deactivate after reaching this many views.</p>
+                    </div>
+                )}
               </div>
 
               {/* Existing Files List (Edit Mode Only) */}

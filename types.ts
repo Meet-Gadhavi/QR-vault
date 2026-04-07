@@ -60,6 +60,8 @@ export interface Vault {
   accessLevel: AccessLevel;
   requests: AccessRequest[];
   userPlan?: PlanType;
+  expiresAt?: string;
+  maxViews?: number;
 }
 
 export interface Invoice {

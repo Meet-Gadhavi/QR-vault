@@ -29,7 +29,9 @@ create table if not exists public.vaults (
   created_at timestamp with time zone default now(),
   views integer default 0,
   active boolean default true,
-  access_level text default 'PUBLIC'                 -- PUBLIC or RESTRICTED
+  access_level text default 'PUBLIC',                -- PUBLIC or RESTRICTED
+  expires_at timestamp with time zone,               -- NEW: Auto-expiry date
+  max_views integer default null                     -- NEW: Max scans allowed
 );
 
 -- =============================================================================
@@ -108,10 +110,26 @@ with check ( bucket_id = 'vault-files' );
 -- Increment vault view counter (called from PublicView page)
 create or replace function increment_vault_view(vault_id uuid)
 returns void as $$
+declare
+  current_views integer;
+  limit_views integer;
 begin
+  -- Get current views and limit
+  select views, max_views into current_views, limit_views 
+  from public.vaults 
+  where id = vault_id;
+
+  -- Increment
   update public.vaults
   set views = views + 1
   where id = vault_id;
+
+  -- Deactivate if limit reached
+  if limit_views is not null and (current_views + 1) >= limit_views then
+    update public.vaults
+    set active = false
+    where id = vault_id;
+  end if;
 end;
 $$ language plpgsql;
 
@@ -141,6 +159,14 @@ create table if not exists public.invoices (
   expiry text not null,
   timestamp bigint not null
 );
+
+-- Ensure expires_at column exists in vaults
+ALTER TABLE public.vaults 
+  ADD COLUMN IF NOT EXISTS expires_at timestamp with time zone;
+
+-- Ensure max_views column exists in vaults
+ALTER TABLE public.vaults 
+  ADD COLUMN IF NOT EXISTS max_views integer default null;
 
 -- Ensure invoices RLS is enabled
 alter table public.invoices enable row level security;

@@ -14,7 +14,9 @@ function mapDbVault(v: any): Vault {
         accessLevel: v.access_level || AccessLevel.PUBLIC,
         files: (v.files || []).map((f: any) => ({ id: f.id, name: f.name, size: f.size, type: f.type, url: f.url, mimeType: f.mime_type })),
         requests: (v.requests || []).map((r: any) => ({ id: r.id, email: r.email, status: r.status, requestedAt: r.requested_at })),
-        userPlan: v.profiles?.plan as PlanType
+        userPlan: v.profiles?.plan as PlanType,
+        expiresAt: v.expires_at,
+        maxViews: v.max_views
     };
 }
 
@@ -117,7 +119,7 @@ const supabaseImpl = {
         return mapDbVault(data);
     },
 
-    createVault: async (userId: string, name: string, files: File[], links: string[], accessLevel: AccessLevel, email?: string): Promise<Vault> => {
+    createVault: async (userId: string, name: string, files: File[], links: string[], accessLevel: AccessLevel, email?: string, expiresAt?: string, maxViews?: number): Promise<Vault> => {
         await supabaseImpl.ensureProfile(userId, email);
 
         // 1. Create Vault Record
@@ -127,7 +129,9 @@ const supabaseImpl = {
             access_level: accessLevel,
             created_at: new Date().toISOString(),
             views: 0,
-            active: true
+            active: true,
+            expires_at: expiresAt,
+            max_views: maxViews
         }).select().single();
 
         if (error) throw new Error(`Failed to create vault: ${error.message}`);
@@ -169,11 +173,13 @@ const supabaseImpl = {
         return (await supabaseImpl.getVaultById(vault.id)) as Vault;
     },
 
-    updateVault: async (userId: string, id: string, name: string, newFiles: File[], newLinks: string[], deletedFileIds: string[], accessLevel?: AccessLevel, email?: string) => {
+    updateVault: async (userId: string, id: string, name: string, newFiles: File[], newLinks: string[], deletedFileIds: string[], accessLevel?: AccessLevel, email?: string, expiresAt?: string, maxViews?: number) => {
         await supabaseImpl.ensureProfile(userId, email);
 
         const updatePayload: any = { name };
         if (accessLevel) updatePayload.access_level = accessLevel;
+        if (expiresAt !== undefined) updatePayload.expires_at = expiresAt;
+        if (maxViews !== undefined) updatePayload.max_views = maxViews;
 
         const { error } = await supabase.from('vaults').update(updatePayload).eq('id', id);
         if (error) throw new Error(`Update failed: ${error.message}`);
