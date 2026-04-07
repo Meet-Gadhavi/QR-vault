@@ -5,7 +5,7 @@ import { supabase } from '../services/supabaseClient';
 import { Vault, User, PlanType, VaultFile, FileType, PLAN_LIMITS, AccessLevel, AccessRequest, RequestStatus, Invoice } from '../types';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import QRCode from 'react-qr-code';
-import { UploadCloud, File as FileIcon, Link as LinkIcon, Trash2, ExternalLink, Plus, X, Loader2, Eye, HardDrive, QrCode, Copy, Check, MoreVertical, Edit2, Search, Filter, ArrowUpDown, Download, Zap, ChevronDown, Lock, Users, Shield, UserCheck, UserX, Clock, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { UploadCloud, File as FileIcon, Link as LinkIcon, Trash2, ExternalLink, Plus, X, Loader2, Eye, HardDrive, QrCode, Copy, Check, MoreVertical, Edit2, Search, Filter, ArrowUpDown, Download, Zap, ChevronDown, Lock, Users, Shield, UserCheck, UserX, Clock, ShieldCheck, AlertTriangle, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 type SortOption = 'date-newest' | 'date-oldest' | 'name-asc' | 'name-desc' | 'size-desc' | 'size-asc';
@@ -52,14 +52,22 @@ const VaultTimer: React.FC<{ createdAt: string; expiresAt?: string }> = ({ creat
     calculateTime();
     const timer = setInterval(calculateTime, 1000);
     return () => clearInterval(timer);
-  }, [createdAt]);
+  }, [createdAt, expiresAt]);
 
-  if (timeLeft === 'Expired') return <span className="text-red-500 font-bold">Expired</span>;
+  if (timeLeft === 'Expired') return (
+    <div className="bg-red-50 py-2 px-4 border-t border-red-100 flex items-center justify-center gap-2">
+      <AlertCircle className="w-3.5 h-3.5 text-red-500" />
+      <span className="text-red-600 font-bold text-[10px] uppercase tracking-wider">Vault Expired</span>
+    </div>
+  );
 
   return (
-    <div className="flex items-center gap-1.5 text-amber-600 font-mono text-xs bg-amber-50 px-2 py-1 rounded-md border border-amber-100 shadow-sm animate-pulse">
-      <Clock className="w-3 h-3" />
-      <span className="font-bold">Valid for: {timeLeft}</span>
+    <div className="bg-amber-50/60 py-2.5 px-4 border-t border-amber-100/50 flex items-center justify-center gap-2 group/timer transition-colors hover:bg-amber-50">
+      <Clock className="w-3.5 h-3.5 text-amber-500 group-hover/timer:animate-spin-slow" />
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] text-amber-700 font-bold uppercase tracking-widest">Valid for:</span>
+        <span className="text-sm font-mono font-bold text-amber-600 tabular-nums">{timeLeft}</span>
+      </div>
     </div>
   );
 };
@@ -1232,7 +1240,7 @@ export const Dashboard: React.FC = () => {
         {/* Vaults List */}
         {activeTab === 'vaults' ? (
           <div className="space-y-4">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Your Vaults ({filteredVaults.length})</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Your Vaults ({filteredVaults.length})</h2>
 
             {filteredVaults.length === 0 ? (
               <div className="text-center py-20 bg-white rounded-2xl border-2 border-dashed border-gray-200">
@@ -1252,11 +1260,11 @@ export const Dashboard: React.FC = () => {
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredVaults.map(vault => (
-                  <div key={vault.id} className="relative bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow p-5 flex flex-col">
-                    {/* Card Header & 3-Dot Menu */}
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="flex flex-col gap-2">
-                        <div className="flex gap-2">
+                  <div key={vault.id} className="relative bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex flex-col overflow-hidden">
+                    <div className="p-5 flex-1 flex flex-col">
+                      {/* Card Header & 3-Dot Menu */}
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex flex-col gap-2">
                           <div className="bg-primary-50 p-2 rounded-lg">
                             <QrCode className="w-6 h-6 text-primary-600" />
                           </div>
@@ -1270,90 +1278,90 @@ export const Dashboard: React.FC = () => {
                             </button>
                           )}
                         </div>
-                        {/* Deletion Timer - Show for any vault that has an expiry */}
-                        {vault.expiresAt && (
-                          <VaultTimer createdAt={vault.createdAt} expiresAt={vault.expiresAt} />
+
+                        <div className="relative">
+                          <button
+                            onClick={(e) => toggleMenu(e, vault.id)}
+                            className={`p-2 rounded-full hover:bg-gray-100 transition-colors ${menuOpenId === vault.id ? 'bg-gray-100 text-gray-900' : 'text-gray-400'}`}
+                          >
+                            <MoreVertical className="w-5 h-5" />
+                          </button>
+
+                          {/* Dropdown Menu */}
+                          {menuOpenId === vault.id && (
+                            <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-30 overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top-right">
+                              <button
+                                onClick={(e) => openEditModal(vault, e)}
+                                disabled={isOverLimit}
+                                className={`w-full text-left px-4 py-3 text-sm flex items-center gap-2 ${isOverLimit ? 'text-gray-400 cursor-not-allowed bg-gray-50' : 'text-gray-700 hover:bg-gray-50'}`}
+                              >
+                                {isOverLimit ? <Lock className="w-4 h-4" /> : <Edit2 className="w-4 h-4 text-gray-500" />} Edit Vault
+                              </button>
+                              <button
+                                onClick={(e) => openManageAccess(vault, e)}
+                                className="w-full text-left px-4 py-3 text-sm flex items-center gap-2 text-gray-700 hover:bg-gray-50"
+                              >
+                                <Users className="w-4 h-4 text-gray-500" /> Manage Access
+                              </button>
+                              <div className="h-px bg-gray-100"></div>
+                              <button
+                                onClick={(e) => handleDeleteVault(vault.id, e)}
+                                disabled={isOverLimit}
+                                className={`w-full text-left px-4 py-3 text-sm flex items-center gap-2 ${isOverLimit ? 'text-gray-400 cursor-not-allowed bg-gray-50' : 'text-red-600 hover:bg-red-50'}`}
+                              >
+                                {isOverLimit ? <Lock className="w-4 h-4" /> : <Trash2 className="w-4 h-4" />} Delete
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <h3 className="font-bold text-gray-900 truncate pr-8">{vault.name}</h3>
+                      <div className="text-sm text-gray-500 mt-1 mb-4">
+                        <div className="flex items-center gap-2">
+                          <span>{new Date(vault.createdAt).toLocaleDateString()}</span>
+                          <span>•</span>
+                          {vault.accessLevel === AccessLevel.RESTRICTED ? (
+                            <span className="flex items-center gap-1 text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded text-xs font-medium"><Shield className="w-3 h-3" /> Restricted</span>
+                          ) : (
+                            <span className="flex items-center gap-1 text-green-600 bg-green-50 px-1.5 py-0.5 rounded text-xs font-medium"><Users className="w-3 h-3" /> Public</span>
+                          )}
+                        </div>
+                        <div className="mt-1 text-xs text-gray-400 flex items-center gap-2">
+                          <span>{vault.files.length} files • {formatBytes(vault.files.reduce((acc, f) => acc + f.size, 0))}</span>
+                          <span>•</span>
+                          <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {vault.views}</span>
+                        </div>
+                        {appUser.plan === PlanType.FREE && (
+                          <Link 
+                            to="/pricing" 
+                            className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-primary-600 hover:text-primary-700 bg-primary-50 hover:bg-primary-100 px-2.5 py-1.5 rounded-lg transition-colors border border-primary-100 w-fit"
+                          >
+                            <Zap className="w-3 h-3" /> 
+                            Upgrade to Keep Permanent
+                          </Link>
                         )}
                       </div>
 
-                      <div className="relative">
+                      <div className="mt-auto pt-4 border-t border-gray-50 flex gap-2">
                         <button
-                          onClick={(e) => toggleMenu(e, vault.id)}
-                          className={`p-2 rounded-full hover:bg-gray-100 transition-colors ${menuOpenId === vault.id ? 'bg-gray-100 text-gray-900' : 'text-gray-400'}`}
+                          onClick={() => setViewQrVault(vault)}
+                          className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-primary-50 text-primary-600 rounded-xl text-sm font-semibold hover:bg-primary-100 transition-all border border-primary-100 cursor-pointer"
                         >
-                          <MoreVertical className="w-5 h-5" />
+                          <QrCode className="w-4 h-4" /> View QR
                         </button>
-
-                        {/* Dropdown Menu */}
-                        {menuOpenId === vault.id && (
-                          <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-30 overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top-right">
-                            <button
-                              onClick={(e) => openEditModal(vault, e)}
-                              disabled={isOverLimit}
-                              className={`w-full text-left px-4 py-3 text-sm flex items-center gap-2 ${isOverLimit ? 'text-gray-400 cursor-not-allowed bg-gray-50' : 'text-gray-700 hover:bg-gray-50'}`}
-                            >
-                              {isOverLimit ? <Lock className="w-4 h-4" /> : <Edit2 className="w-4 h-4 text-gray-500" />} Edit Vault
-                            </button>
-                            <button
-                              onClick={(e) => openManageAccess(vault, e)}
-                              className="w-full text-left px-4 py-3 text-sm flex items-center gap-2 text-gray-700 hover:bg-gray-50"
-                            >
-                              <Users className="w-4 h-4 text-gray-500" /> Manage Access
-                            </button>
-                            <div className="h-px bg-gray-100"></div>
-                            <button
-                              onClick={(e) => handleDeleteVault(vault.id, e)}
-                              disabled={isOverLimit}
-                              className={`w-full text-left px-4 py-3 text-sm flex items-center gap-2 ${isOverLimit ? 'text-gray-400 cursor-not-allowed bg-gray-50' : 'text-red-600 hover:bg-red-50'}`}
-                            >
-                              {isOverLimit ? <Lock className="w-4 h-4" /> : <Trash2 className="w-4 h-4" />} Delete
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <h3 className="font-bold text-gray-900 truncate pr-8">{vault.name}</h3>
-                    <div className="text-sm text-gray-500 mt-1 mb-4">
-                      <div className="flex items-center gap-2">
-                        <span>{new Date(vault.createdAt).toLocaleDateString()}</span>
-                        <span>•</span>
-                        {vault.accessLevel === AccessLevel.RESTRICTED ? (
-                          <span className="flex items-center gap-1 text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded text-xs font-medium"><Shield className="w-3 h-3" /> Restricted</span>
-                        ) : (
-                          <span className="flex items-center gap-1 text-green-600 bg-green-50 px-1.5 py-0.5 rounded text-xs font-medium"><Users className="w-3 h-3" /> Public</span>
-                        )}
-                      </div>
-                      <div className="mt-1 text-xs text-gray-400 flex items-center gap-2">
-                        <span>{vault.files.length} files • {formatBytes(vault.files.reduce((acc, f) => acc + f.size, 0))}</span>
-                        <span>•</span>
-                        <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {vault.views}</span>
-                      </div>
-                      {appUser.plan === PlanType.FREE && (
-                        <Link 
-                          to="/pricing" 
-                          className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-primary-600 hover:text-primary-700 bg-primary-50 hover:bg-primary-100 px-2.5 py-1.5 rounded-lg transition-colors border border-primary-100 w-fit"
+                        <Link
+                          to={`/v/${vault.id}`}
+                          className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-semibold hover:bg-gray-800 transition-all shadow-md active:scale-95"
                         >
-                          <Zap className="w-3 h-3" /> 
-                          Upgrade to Keep Permanent
+                          <ExternalLink className="w-4 h-4" /> Open
                         </Link>
-                      )}
+                      </div>
                     </div>
-
-                    <div className="mt-auto pt-4 border-t border-gray-50 flex gap-2">
-                      <button
-                        onClick={() => setViewQrVault(vault)}
-                        className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-primary-50 text-primary-600 rounded-xl text-sm font-semibold hover:bg-primary-100 transition-all border border-primary-100 cursor-pointer"
-                      >
-                        <QrCode className="w-4 h-4" /> View QR
-                      </button>
-                      <Link
-                        to={`/v/${vault.id}`}
-                        className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-semibold hover:bg-gray-800 transition-all shadow-md active:scale-95"
-                      >
-                        <ExternalLink className="w-4 h-4" /> Open
-                      </Link>
-                    </div>
+                    {/* Deletion Timer - Full Width Band */}
+                    {vault.expiresAt && (
+                      <VaultTimer createdAt={vault.createdAt} expiresAt={vault.expiresAt} />
+                    )}
                   </div>
                 ))}
 
