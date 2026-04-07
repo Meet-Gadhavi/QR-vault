@@ -1481,28 +1481,61 @@ export const Dashboard: React.FC = () => {
                 </div>
               </div>
 
-              {/* Expiry Selection (New) */}
-              <div>
+              {/* Expiry Selection (Custom Dropdown) */}
+              <div className="relative">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Vault Expiry</label>
-                <div className="relative group">
-                    <select
-                        value={expiryHours}
-                        onChange={(e) => setExpiryHours(e.target.value === 'never' ? 'never' : Number(e.target.value))}
-                        disabled={appUser.plan === PlanType.FREE}
-                        className={`w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all appearance-none cursor-pointer ${appUser.plan === PlanType.FREE ? 'bg-gray-100' : 'bg-white'}`}
-                    >
-                        <option value={24}>24 Hours (Default)</option>
-                        <option value={48} disabled={appUser.plan === PlanType.FREE}>48 Hours</option>
-                        <option value={72} disabled={appUser.plan === PlanType.FREE}>72 Hours</option>
-                        <option value="never" disabled={appUser.plan !== PlanType.PRO}>
-                            Permanent Storage (Never Expire) {appUser.plan === PlanType.STARTER ? '(PRO Only)' : ''}
-                        </option>
-                    </select>
-                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                        <ChevronDown className="w-4 h-4" />
-                    </div>
-                </div>
+                {(() => {
+                    const expiryOptions = [
+                        { value: 24, label: '24 Hours (Default)', disabled: false },
+                        { value: 48, label: '48 Hours', disabled: appUser.plan === PlanType.FREE },
+                        { value: 72, label: '72 Hours', disabled: appUser.plan === PlanType.FREE },
+                        { value: 'never', label: `Permanent Storage (Never Expire) ${appUser.plan === PlanType.STARTER ? '(PRO Only)' : ''}`, disabled: appUser.plan !== PlanType.PRO },
+                    ];
+                    const selected = expiryOptions.find(o => o.value === expiryHours) || expiryOptions[0];
+                    const isOpen = menuOpenId === 'modal-expiry';
+
+                    return (
+                        <>
+                            <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); setMenuOpenId(isOpen ? null : 'modal-expiry'); }}
+                                className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-all duration-200 border ${
+                                    isOpen 
+                                    ? 'bg-primary-50 border-primary-300 text-primary-700 shadow-lg shadow-primary-100 ring-2 ring-primary-200' 
+                                    : 'bg-white border-gray-200 text-gray-700 hover:border-primary-300 hover:shadow-md'
+                                } ${appUser.plan === PlanType.FREE ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'}`}
+                                disabled={appUser.plan === PlanType.FREE}
+                            >
+                                <Clock className={`w-5 h-5 transition-colors ${isOpen ? 'text-primary-500' : 'text-gray-400'}`} />
+                                <span className="flex-1 text-left">{selected.label}</span>
+                                <ChevronDown className={`w-4 h-4 transition-all duration-200 ${isOpen ? 'rotate-180 text-primary-500' : 'text-gray-400'}`} />
+                            </button>
+
+                            {isOpen && (
+                                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 ring-1 ring-black/5">
+                                    <div className="p-1.5">
+                                        {expiryOptions.map((opt) => (
+                                            <button
+                                                key={opt.value}
+                                                type="button"
+                                                disabled={opt.disabled}
+                                                onClick={() => { setExpiryHours(opt.value as any); setMenuOpenId(null); }}
+                                                className={`w-full flex items-center gap-2.5 px-3 py-3 rounded-lg text-sm text-left transition-all ${
+                                                    expiryHours === opt.value 
+                                                    ? 'bg-primary-50 text-primary-700 font-bold' 
+                                                    : opt.disabled ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-50'
+                                                }`}
+                                            >
+                                                {expiryHours === opt.value && <div className="w-1.5 h-1.5 rounded-full bg-primary-500" />}
+                                                <span className={expiryHours === opt.value ? 'ml-0' : 'ml-4'}>{opt.label}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    );
+                })()}
                 
                 {appUser.plan === PlanType.STARTER && expiryHours !== 'never' && (
                     <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-1 duration-200">
@@ -1518,43 +1551,90 @@ export const Dashboard: React.FC = () => {
                 )}
               </div>
 
-              {/* Scan Count Limit (New) */}
-              <div>
+              {/* Scan Count Limit (Custom Dropdown) */}
+              <div className="relative">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Scan Count Limit</label>
-                <div className="relative group">
-                    <select
-                        value={maxViews === null ? 'none' : maxViews}
-                        onChange={(e) => setMaxViews(e.target.value === 'none' ? null : (e.target.value === 'custom' ? 'custom' : Number(e.target.value)))}
-                        className={`w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all appearance-none cursor-pointer bg-white`}
-                    >
-                        <option value="none" disabled={appUser.plan !== PlanType.PRO}>
-                            Unlimited Scans {appUser.plan !== PlanType.PRO ? '(PRO Only)' : ''}
-                        </option>
-                        <option value={25}>25 Scans</option>
-                        <option value={45}>45 Scans</option>
-                        <option value={65} disabled={appUser.plan === PlanType.FREE}>65 Scans {appUser.plan === PlanType.FREE ? '(Plus/Pro Only)' : ''}</option>
-                        <option value={85} disabled={appUser.plan === PlanType.FREE}>85 Scans {appUser.plan === PlanType.FREE ? '(Plus/Pro Only)' : ''}</option>
-                        <option value={105} disabled={appUser.plan !== PlanType.PRO}>105 Scans {appUser.plan !== PlanType.PRO ? '(PRO Only)' : ''}</option>
-                        <option value={125} disabled={appUser.plan !== PlanType.PRO}>125 Scans {appUser.plan !== PlanType.PRO ? '(PRO Only)' : ''}</option>
-                        <option value="custom" disabled={appUser.plan !== PlanType.PRO}>Custom Limit {appUser.plan !== PlanType.PRO ? '(PRO Only)' : ''}</option>
-                    </select>
-                    <Eye className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                        <ChevronDown className="w-4 h-4" />
-                    </div>
-                </div>
+                {(() => {
+                    const scanOptions = [
+                        { value: 'none', label: 'Unlimited Scans', disabled: appUser.plan !== PlanType.PRO, proOnly: appUser.plan !== PlanType.PRO },
+                        { value: 25, label: '25 Scans', disabled: false },
+                        { value: 45, label: '45 Scans', disabled: false },
+                        { value: 65, label: '65 Scans', disabled: appUser.plan === PlanType.FREE, plusOnly: appUser.plan === PlanType.FREE },
+                        { value: 85, label: '85 Scans', disabled: appUser.plan === PlanType.FREE, plusOnly: appUser.plan === PlanType.FREE },
+                        { value: 105, label: '105 Scans', disabled: appUser.plan !== PlanType.PRO, proOnly: appUser.plan !== PlanType.PRO },
+                        { value: 125, label: '125 Scans', disabled: appUser.plan !== PlanType.PRO, proOnly: appUser.plan !== PlanType.PRO },
+                        { value: 'custom', label: 'Custom Limit', disabled: appUser.plan !== PlanType.PRO, proOnly: appUser.plan !== PlanType.PRO },
+                    ];
+                    
+                    const currentValue = maxViews === null ? 'none' : maxViews;
+                    const selected = scanOptions.find(o => o.value === currentValue) || scanOptions[1];
+                    const isOpen = menuOpenId === 'modal-scans';
+
+                    return (
+                        <>
+                            <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); setMenuOpenId(isOpen ? null : 'modal-scans'); }}
+                                className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-all duration-200 border ${
+                                    isOpen 
+                                    ? 'bg-primary-50 border-primary-300 text-primary-700 shadow-lg shadow-primary-100 ring-2 ring-primary-200' 
+                                    : 'bg-white border-gray-200 text-gray-700 hover:border-primary-300 hover:shadow-md'
+                                } cursor-pointer`}
+                            >
+                                <Eye className={`w-5 h-5 transition-colors ${isOpen ? 'text-primary-500' : 'text-gray-400'}`} />
+                                <span className="flex-1 text-left">
+                                    {selected.value === 'custom' && customMaxViews ? `${customMaxViews} Scans (Custom)` : selected.label}
+                                </span>
+                                <ChevronDown className={`w-4 h-4 transition-all duration-200 ${isOpen ? 'rotate-180 text-primary-500' : 'text-gray-400'}`} />
+                            </button>
+
+                            {isOpen && (
+                                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 ring-1 ring-black/5">
+                                    <div className="p-1.5 max-h-60 overflow-y-auto">
+                                        {scanOptions.map((opt) => (
+                                            <button
+                                                key={opt.value}
+                                                type="button"
+                                                disabled={opt.disabled}
+                                                onClick={() => { 
+                                                    setMaxViews(opt.value === 'none' ? null : (opt.value === 'custom' ? 'custom' : Number(opt.value))); 
+                                                    setMenuOpenId(null); 
+                                                }}
+                                                className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-left transition-all ${
+                                                    currentValue === opt.value 
+                                                    ? 'bg-primary-50 text-primary-700 font-bold' 
+                                                    : opt.disabled ? 'text-gray-300 cursor-not-allowed opacity-60' : 'text-gray-600 hover:bg-gray-50'
+                                                }`}
+                                            >
+                                                {currentValue === opt.value && <div className="w-1.5 h-1.5 rounded-full bg-primary-500" />}
+                                                <span className={`${currentValue === opt.value ? 'ml-0' : 'ml-4'} flex-1`}>
+                                                    {opt.label}
+                                                </span>
+                                                {opt.proOnly && <span className="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-400">PRO</span>}
+                                                {opt.plusOnly && <span className="text-[10px] bg-primary-50 px-1.5 py-0.5 rounded text-primary-400">PLUS</span>}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    );
+                })()}
 
                 {maxViews === 'custom' && appUser.plan === PlanType.PRO && (
                     <div className="mt-3 animate-in fade-in slide-in-from-top-1 duration-200">
-                        <input
-                            type="number"
-                            min="1"
-                            placeholder="Enter custom scan limit"
-                            value={customMaxViews}
-                            onChange={(e) => setCustomMaxViews(e.target.value)}
-                            className="w-full p-3 border border-primary-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none"
-                        />
-                        <p className="mt-1.5 text-[10px] text-primary-600 font-medium italic">Vault will auto-deactivate after reaching this many views.</p>
+                        <div className="relative group">
+                            <input
+                                type="number"
+                                min="1"
+                                placeholder="Enter custom scan limit"
+                                value={customMaxViews}
+                                onChange={(e) => setCustomMaxViews(e.target.value)}
+                                className="w-full p-4 bg-gray-50 border border-transparent focus:bg-white focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 rounded-xl text-sm outline-none transition-all duration-200"
+                            />
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-bold uppercase tracking-wider">Scans</div>
+                        </div>
+                        <p className="mt-2 text-[10px] text-primary-600 font-medium italic pl-1">Vault will auto-deactivate after reaching this many views.</p>
                     </div>
                 )}
               </div>
