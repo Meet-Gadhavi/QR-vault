@@ -386,7 +386,7 @@ const supabaseImpl = {
     },
 
     getUserInvoices: async (userId: string): Promise<Invoice[]> => {
-        const { data, error } = await supabase.from('invoices').select('*').eq('user_id', userId).order('timestamp', { ascending: false });
+        const { data, error } = await supabase.from('invoices').select('*').eq('id', userId).order('timestamp', { ascending: false });
         if (error) throw error;
         return (data || []).map((inv: any) => ({
             id: inv.id,
@@ -397,6 +397,30 @@ const supabaseImpl = {
             expiry: inv.expiry,
             timestamp: inv.timestamp
         }));
+    },
+
+    submitContactForm: async (data: { name: string; email: string; subject: string; message: string }) => {
+        // In a real app, this would send an email via an API
+        console.log('Contact Form Submitted:', data);
+        return new Promise((resolve) => setTimeout(resolve, 1000));
+    },
+
+    sendCancellationCode: async (userId: string, email: string) => {
+        // In a real app, this would send an email with a 6-digit code
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        console.log(`[MOCK] Cancellation code for ${email}: ${code}`);
+        // Store code in local storage or a mock map for verification
+        sessionStorage.setItem(`cancel_code_${userId}`, code);
+        return new Promise((resolve) => setTimeout(resolve, 1500));
+    },
+
+    verifyCancellationCode: async (userId: string, code: string) => {
+        const storedCode = sessionStorage.getItem(`cancel_code_${userId}`);
+        if (code === storedCode) {
+            sessionStorage.removeItem(`cancel_code_${userId}`);
+            return true;
+        }
+        throw new Error("Invalid verification code. Please try again.");
     }
 };
 

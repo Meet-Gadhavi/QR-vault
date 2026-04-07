@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Check, Clock, XCircle, X, AlertTriangle } from 'lucide-react';
+import { Check, Clock, XCircle, X, AlertTriangle, Mail } from 'lucide-react';
 import { PlanType } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { mockService } from '../services/mockService';
@@ -64,11 +64,15 @@ const planData = [
 ];
 
 export const Pricing: React.FC = () => {
-  const { isAuthenticated, userId } = useAuth();
+  const { isAuthenticated, userId, userEmail } = useAuth();
   const [userPlan, setUserPlan] = React.useState<PlanType | null>(null);
   const [planExpiry, setPlanExpiry] = React.useState<string | null>(null);
   const [cancelling, setCancelling] = React.useState(false);
   const [showCancelModal, setShowCancelModal] = React.useState(false);
+  const [cancelStep, setCancelStep] = React.useState<'confirm' | 'verify'>('confirm');
+  const [verificationCode, setVerificationCode] = React.useState('');
+  const [verificationError, setVerificationError] = React.useState('');
+  const [sendingCode, setSendingCode] = React.useState(false);
 
   React.useEffect(() => {
     const loadUserPlan = async () => {
@@ -97,20 +101,39 @@ export const Pricing: React.FC = () => {
   };
 
   const handleCancel = () => {
+    setCancelStep('confirm');
+    setVerificationCode('');
+    setVerificationError('');
     setShowCancelModal(true);
   };
 
-  const confirmCancel = async () => {
-    if (!userId) return;
-    setCancelling(true);
+  const requestCancelCode = async () => {
+    if (!userId || !userEmail) return;
+    setSendingCode(true);
     try {
+      await (mockService as any).sendCancellationCode(userId, userEmail);
+      setCancelStep('verify');
+    } catch (e) {
+      console.error('Failed to send code', e);
+      alert('Failed to send verification code.');
+    } finally {
+      setSendingCode(false);
+    }
+  };
+
+  const confirmCancel = async () => {
+    if (!userId || !verificationCode) return;
+    setCancelling(true);
+    setVerificationError('');
+    try {
+      await (mockService as any).verifyCancellationCode(userId, verificationCode);
       await mockService.cancelSubscription(userId);
       setUserPlan(PlanType.FREE);
       setPlanExpiry(null);
       setShowCancelModal(false);
-    } catch (e) {
+    } catch (e: any) {
       console.error('Failed to cancel', e);
-      alert('Failed to cancel subscription.');
+      setVerificationError(e.message || 'Invalid code. Please try again.');
     } finally {
       setCancelling(false);
     }
@@ -121,17 +144,11 @@ export const Pricing: React.FC = () => {
       return { disabled: false, isCurrentPlan: false, showExpiry: false, needsCancel: false };
     }
 
-    const currentPlanName = userPlan === PlanType.STARTER ? 'Plus' : userPlan === PlanType.PRO ? 'Pro' : 'Free';
-    const hasPaidPlan = userPlan === PlanType.STARTER || userPlan === PlanType.PRO;
-
     if (planId === userPlan) {
       return { disabled: true, isCurrentPlan: true, showExpiry: planId !== PlanType.FREE, needsCancel: false };
     }
 
-    if (hasPaidPlan && planId !== userPlan) {
-      return { disabled: true, isCurrentPlan: false, showExpiry: false, needsCancel: true, currentPlanName };
-    }
-
+    // Direct plan switching is now allowed, removed 'needsCancel' restriction.
     return { disabled: false, isCurrentPlan: false, showExpiry: false, needsCancel: false };
   };
 
@@ -239,10 +256,6 @@ export const Pricing: React.FC = () => {
                         <div className="w-full py-4 bg-green-500 text-white rounded-2xl text-center font-bold shadow-lg shadow-green-200 cursor-default">
                           Your Active Plan
                         </div>
-                      ) : state.needsCancel ? (
-                        <div className="w-full py-4 bg-gray-100 text-gray-500 rounded-2xl text-center text-xs font-bold leading-relaxed px-4">
-                          Cancel your {state.currentPlanName} plan before switching
-                        </div>
                       ) : (
                         <Link
                           to={plan.link}
@@ -265,49 +278,102 @@ export const Pricing: React.FC = () => {
           {/* Detailed Comparison Link */}
           <div className="mt-20 text-center animate-fade-in-up-delay-2">
             <p className="text-gray-500 text-sm font-medium">
-              Need more storage for enterprise? <a href="mailto:support@qrvault.com" className="text-primary-600 hover:underline">Contact our sales team</a>
+              Need more storage for enterprise? <Link to="/contact" className="text-primary-600 hover:underline">Contact our sales team</Link>
             </p>
           </div>
         </div>
       </div>
 
       {/* Cancel Subscription Modal */}
-      {
-        showCancelModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center">
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowCancelModal(false)} />
-            <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-              <div className="bg-red-50 p-6 text-center">
-                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <AlertTriangle className="w-8 h-8 text-red-500" />
+      {showCancelModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowCancelModal(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            {cancelStep === 'confirm' ? (
+              <>
+                <div className="bg-red-50 p-6 text-center">
+                  <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <AlertTriangle className="w-8 h-8 text-red-500" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900">Cancel Subscription?</h3>
+                  <p className="text-sm text-gray-600 mt-2">
+                    You will receive a <strong>verification code</strong> via email to confirm this action.
+                  </p>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900">Cancel Subscription?</h3>
-                <p className="text-sm text-gray-600 mt-2">
-                  You will be downgraded to the <strong>Free plan</strong> immediately. You'll lose access to your premium features and your storage limit will be reduced to 1 GB.
-                </p>
-              </div>
-              <div className="p-6 flex gap-3">
-                <button
-                  onClick={() => setShowCancelModal(false)}
-                  className="flex-1 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors"
-                >
-                  Keep Subscription
-                </button>
-                <button
-                  onClick={confirmCancel}
-                  disabled={cancelling}
-                  className="flex-1 py-3 px-4 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
-                >
-                  {cancelling ? (
-                    <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Cancelling...</>
-                  ) : (
-                    <><XCircle className="w-4 h-4" /> Yes, Cancel</>
-                  )}
-                </button>
-              </div>
-            </div>
+                <div className="p-6 flex flex-col gap-3">
+                  <button
+                    onClick={requestCancelCode}
+                    disabled={sendingCode}
+                    className="w-full py-4 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-red-200/50 flex items-center justify-center gap-2"
+                  >
+                    {sendingCode ? (
+                      <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Sending Code...</>
+                    ) : (
+                      <>Get Verification Code</>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setShowCancelModal(false)}
+                    className="w-full py-3 text-gray-500 hover:text-gray-700 font-semibold"
+                  >
+                    Keep My Subscription
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="bg-primary-50 p-6 text-center">
+                  <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Mail className="w-8 h-8 text-primary-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900">Enter Verification Code</h3>
+                  <p className="text-sm text-gray-600 mt-2">
+                    We've sent a code to <strong>{userEmail}</strong>. 
+                  </p>
+                </div>
+                <div className="p-6 space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">6-Digit Code</label>
+                    <input
+                      type="text"
+                      maxLength={6}
+                      value={verificationCode}
+                      onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
+                      className={`w-full bg-gray-50 border-2 ${verificationError ? 'border-red-500' : 'border-gray-100 focus:border-primary-500'} rounded-xl px-4 py-3 text-center text-2xl font-bold tracking-widest focus:outline-none transition-all`}
+                      placeholder="000000"
+                    />
+                    {verificationError && (
+                      <p className="text-red-500 text-xs mt-2 font-medium">{verificationError}</p>
+                    )}
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setCancelStep('confirm')}
+                      className="flex-1 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-colors"
+                    >
+                      Back
+                    </button>
+                    <button
+                      onClick={confirmCancel}
+                      disabled={cancelling || verificationCode.length < 6}
+                      className="flex-1 py-3 px-4 bg-red-500 hover:bg-red-600 disabled:bg-gray-200 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2"
+                    >
+                      {cancelling ? (
+                        <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Verifying...</>
+                      ) : (
+                        'Confirm Cancel'
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-center text-xs text-gray-400">
+                    Didn't receive a code? <button onClick={requestCancelCode} className="text-primary-600 font-bold hover:underline">Resend</button>
+                  </p>
+                </div>
+              </>
+            )}
           </div>
-        )}
+        </div>
+      )}
     </>
   );
 };

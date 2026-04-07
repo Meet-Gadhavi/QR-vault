@@ -1,5 +1,7 @@
 import React from 'react';
-import { Mail, Clock, Shield, Lock, Globe, Zap, Users, HelpCircle } from 'lucide-react';
+import { Mail, Clock, Shield, Lock, Globe, Zap, Users, HelpCircle, Send, User, MessageSquare, AlertCircle } from 'lucide-react';
+import { mockService } from '../services/mockService';
+import { useNotification } from '../contexts/NotificationContext';
 
 const InfoLayout: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
   <div className="max-w-4xl mx-auto px-4 py-16">
@@ -51,54 +53,189 @@ export const About: React.FC = () => (
   </InfoLayout>
 );
 
-export const Contact: React.FC = () => (
-  <InfoLayout title="Contact Us">
-    <div className="space-y-8">
-      <p>If you need help or have questions regarding QR Vault services, please contact us.</p>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="w-12 h-12 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center">
-              <Mail className="w-6 h-6" />
-            </div>
-            <div>
-              <h3 className="font-bold text-gray-900">Email Support</h3>
-              <p className="text-primary-600 font-medium">support@qrvault.app</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center">
-              <Clock className="w-6 h-6" />
-            </div>
-            <div>
-              <h3 className="font-bold text-gray-900">Support Response Time</h3>
-              <p className="text-gray-500">Typically 24–48 hours</p>
-            </div>
-          </div>
-        </div>
+export const Contact: React.FC = () => {
+  const { toast } = useNotification();
+  const [loading, setLoading] = React.useState(false);
+  const [formData, setFormData] = React.useState({
+    name: '',
+    email: '',
+    subject: '',
+    message: ''
+  });
 
-        <div className="bg-gray-50 p-8 rounded-2xl border border-gray-200">
-          <h3 className="font-bold text-gray-900 mb-4">For technical issues, please include:</h3>
-          <ul className="space-y-3">
-            <li className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 bg-primary-600 rounded-full"></div>
-              <span>Account email</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 bg-primary-600 rounded-full"></div>
-              <span>Description of the problem</span>
-            </li>
-            <li className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 bg-primary-600 rounded-full"></div>
-              <span>Screenshots if possible</span>
-            </li>
-          </ul>
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await (mockService as any).submitContactForm(formData);
+      toast('Message Sent', "We've received your inquiry and will get back to you soon.", 'success');
+      setFormData({ name: '', email: '', subject: '', message: '' });
+    } catch (error) {
+      toast('Error', 'Failed to send message. Please try again later.', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50/50 py-16 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        <div className="grid lg:grid-cols-2 gap-16 items-start">
+          {/* Left Side: Contact Info */}
+          <div className="space-y-12">
+            <div>
+              <h1 className="text-4xl font-extrabold text-gray-900 mb-6 tracking-tight">
+                Let's <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-primary-400">Start a Conversation</span>
+              </h1>
+              <p className="text-xl text-gray-600 leading-relaxed max-w-lg">
+                Have questions about our enterprise features, storage limits, or custom solutions? 
+                Our team is here to help you secure your digital vault.
+              </p>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-8">
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                <div className="w-12 h-12 bg-primary-50 text-primary-600 rounded-xl flex items-center justify-center mb-4">
+                  <Mail className="w-6 h-6" />
+                </div>
+                <h3 className="font-bold text-gray-900 mb-1">Email Us</h3>
+                <p className="text-sm text-gray-500 mb-2">For general inquiries</p>
+                <a href="mailto:support@qrvault.app" className="text-primary-600 font-semibold hover:underline">support@qrvault.app</a>
+              </div>
+
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                <div className="w-12 h-12 bg-primary-50 text-primary-600 rounded-xl flex items-center justify-center mb-4">
+                  <Clock className="w-6 h-6" />
+                </div>
+                <h3 className="font-bold text-gray-900 mb-1">Response Time</h3>
+                <p className="text-sm text-gray-500 mb-2">Fast support</p>
+                <p className="text-primary-600 font-semibold">Within 24 hours</p>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-primary-600 to-primary-800 rounded-3xl p-8 text-white relative overflow-hidden shadow-xl shadow-primary-200">
+               <div className="absolute top-0 right-0 -translate-y-1/4 translate-x-1/4 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
+               <div className="relative z-10">
+                 <h3 className="text-xl font-bold mb-4">Why Contact Our Sales?</h3>
+                 <ul className="space-y-4">
+                   {[
+                     'Custom storage limits for teams',
+                     'Dedicated account management',
+                     'Advanced security configurations',
+                     'SLA-backed priority support'
+                   ].map((item, i) => (
+                     <li key={i} className="flex items-center gap-3 text-primary-50">
+                       <Shield className="w-5 h-5 text-primary-200" />
+                       <span className="font-medium">{item}</span>
+                     </li>
+                   ))}
+                 </ul>
+               </div>
+            </div>
+          </div>
+
+          {/* Right Side: Form */}
+          <div className="bg-white rounded-3xl p-8 lg:p-10 shadow-2xl shadow-gray-200/50 border border-gray-100 relative">
+            <h2 className="text-2xl font-bold text-gray-900 mb-8">Send Us a Message</h2>
+            
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid sm:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                    <User className="w-3.5 h-3.5" /> Full Name
+                  </label>
+                  <input
+                    required
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    className="w-full bg-gray-50 border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 rounded-xl px-4 py-3 outline-none transition-all"
+                    placeholder="Enter your name"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                    <Mail className="w-3.5 h-3.5" /> Best Email
+                  </label>
+                  <input
+                    required
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="w-full bg-gray-50 border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 rounded-xl px-4 py-3 outline-none transition-all"
+                    placeholder="name@company.com"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                  <HelpCircle className="w-3.5 h-3.5" /> Inquiry Subject
+                </label>
+                <input
+                  required
+                  type="text"
+                  name="subject"
+                  value={formData.subject}
+                  onChange={handleChange}
+                  className="w-full bg-gray-50 border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 rounded-xl px-4 py-3 outline-none transition-all"
+                  placeholder="Need 100GB enterprise storage"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                  <MessageSquare className="w-3.5 h-3.5" /> Message
+                </label>
+                <textarea
+                  required
+                  name="message"
+                  value={formData.message}
+                  onChange={handleChange}
+                  rows={5}
+                  className="w-full bg-gray-50 border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 rounded-xl px-4 py-3 outline-none transition-all resize-none"
+                  placeholder="Tell us about your needs..."
+                />
+              </div>
+
+              <button
+                disabled={loading}
+                type="submit"
+                className="w-full bg-primary-600 hover:bg-primary-700 disabled:bg-gray-400 text-white font-bold py-4 rounded-xl shadow-lg shadow-primary-200 transition-all flex items-center justify-center gap-2 group"
+              >
+                {loading ? (
+                  <>
+                    <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Sending Inquiry...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                    Send Message
+                  </>
+                )}
+              </button>
+            </form>
+
+            <div className="mt-8 flex items-center gap-3 p-4 bg-amber-50 rounded-2xl border border-amber-100">
+              <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0" />
+              <p className="text-xs text-amber-800 font-medium leading-relaxed">
+                Our sales team typically responds to enterprise inquiries within half a business day. 
+                For emergency technical support, please use the help center in your dashboard.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  </InfoLayout>
-);
+  );
+};
 
 export const FAQ: React.FC = () => (
   <InfoLayout title="Frequently Asked Questions">
