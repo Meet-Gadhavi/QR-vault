@@ -510,10 +510,25 @@ export const PublicView: React.FC = () => {
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); setInfoFile(file); }}
-                        className="px-4 py-3 bg-gray-50 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-all active:scale-95"
+                        className="px-4 py-3 bg-gray-50 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-all active:scale-95 flex items-center justify-center"
                         title="File Details"
                       >
                         <Info className="w-4 h-4" />
+                      </button>
+
+                      <button
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          setReportFileIds([file.id]); 
+                          setIsReportModalOpen(true); 
+                        }}
+                        className="group/report flex items-center bg-red-50 text-red-400 hover:text-red-600 hover:bg-red-100 px-4 py-3 rounded-xl transition-all active:scale-95 overflow-hidden"
+                        title="Report this file"
+                      >
+                        <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                        <span className="max-w-0 opacity-0 group-hover/report:max-w-[4rem] group-hover/report:opacity-100 group-hover/report:ml-2 transition-all duration-300 pointer-events-none text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
+                          Report
+                        </span>
                       </button>
                     </div>
                   )}
@@ -536,28 +551,44 @@ export const PublicView: React.FC = () => {
 
       {isReportModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in" onClick={() => setIsReportModalOpen(false)}>
-          <div className="bg-white rounded-[2rem] w-full max-w-md p-8 shadow-2xl animate-in zoom-in-95" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white rounded-[2.5rem] w-full max-w-4xl p-10 shadow-2xl animate-in zoom-in-95 flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-8">
-              <div className="bg-red-50 p-3 rounded-2xl text-red-500"><AlertCircle className="w-6 h-6" /></div>
+              <div className="flex items-center gap-4">
+                <div className="bg-red-50 p-3 rounded-2xl text-red-500">
+                  <AlertCircle className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black text-gray-900 tracking-tight leading-none mb-1">Report Violation</h3>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Community Moderation System</p>
+                </div>
+              </div>
               <button onClick={() => setIsReportModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400"><X className="w-6 h-6" /></button>
             </div>
-            <h3 className="text-2xl font-black text-gray-900 mb-2 tracking-tight">Report Violation</h3>
-            <p className="text-gray-500 mb-8 font-medium">Help us keep the community safe. All reports are reviewed within 24 hours.</p>
 
-            <form onSubmit={handleReportSubmit} className="space-y-4">
-              <label className="flex items-center gap-4 p-4 border-2 border-gray-50 rounded-[1.25rem] hover:border-red-100 hover:bg-red-50/20 transition-all cursor-pointer">
-                <input type="checkbox" className="w-5 h-5 text-red-600 rounded-lg border-gray-200 focus:ring-red-500" checked={reportReasonVirus} onChange={(e) => setReportReasonVirus(e.target.checked)} />
-                <div className="flex flex-col"><span className="text-sm font-black text-gray-900 uppercase tracking-tight">Virus or Malware</span><span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Dangerous potential harmful files</span></div>
-              </label>
+            <form onSubmit={handleReportSubmit} className="flex-1 flex flex-col md:flex-row gap-10 overflow-hidden">
+              {/* Left Column: Reasons & Files */}
+              <div className="flex-1 flex flex-col min-w-0 overflow-y-auto pr-2 no-scrollbar">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 ml-1">Select Reason(s)</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                  <label className="flex items-center gap-4 p-4 border-2 border-gray-50 rounded-2xl hover:border-red-100 hover:bg-red-50/20 transition-all cursor-pointer">
+                    <input type="checkbox" className="w-5 h-5 text-red-600 rounded-lg border-gray-200 focus:ring-red-500" checked={reportReasonVirus} onChange={(e) => setReportReasonVirus(e.target.checked)} />
+                    <div className="flex flex-col">
+                      <span className="text-sm font-black text-gray-900 uppercase tracking-tight">Malware</span>
+                      <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Dangerous files</span>
+                    </div>
+                  </label>
 
-              <label className="flex items-center gap-4 p-4 border-2 border-gray-50 rounded-[1.25rem] hover:border-red-100 hover:bg-red-50/20 transition-all cursor-pointer">
-                <input type="checkbox" className="w-5 h-5 text-red-600 rounded-lg border-gray-200 focus:ring-red-500" checked={reportReasonContent} onChange={(e) => setReportReasonContent(e.target.checked)} />
-                <div className="flex flex-col"><span className="text-sm font-black text-gray-900 uppercase tracking-tight">Illegal Content</span><span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Copyright or policy violations</span></div>
-              </label>
+                  <label className="flex items-center gap-4 p-4 border-2 border-gray-50 rounded-2xl hover:border-red-100 hover:bg-red-50/20 transition-all cursor-pointer">
+                    <input type="checkbox" className="w-5 h-5 text-red-600 rounded-lg border-gray-200 focus:ring-red-500" checked={reportReasonContent} onChange={(e) => setReportReasonContent(e.target.checked)} />
+                    <div className="flex flex-col">
+                      <span className="text-sm font-black text-gray-900 uppercase tracking-tight">Illegal</span>
+                      <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Policy violations</span>
+                    </div>
+                  </label>
+                </div>
 
-              <div className="pt-2">
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 ml-1">Select File with Issue</p>
-                <div className="max-h-[150px] overflow-y-auto space-y-2 pr-2 no-scrollbar border-y-2 border-gray-50/50 py-2">
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 ml-1">Affected Files</p>
+                <div className="flex-1 max-h-[300px] overflow-y-auto space-y-2 pr-2 no-scrollbar border-y-2 border-gray-50/50 py-4">
                   {vault.files.map(file => {
                     const isChecked = reportFileIds.includes(file.id);
                     return (
@@ -573,7 +604,7 @@ export const PublicView: React.FC = () => {
                         />
                         <div className="flex flex-col min-w-0">
                           <span className="text-xs font-bold text-gray-900 truncate">{file.name}</span>
-                          <span className="text-[9px] text-gray-400 font-medium uppercase">{file.type}</span>
+                          <span className="text-[9px] text-gray-400 font-black uppercase tracking-tight">{file.type}</span>
                         </div>
                       </label>
                     );
@@ -581,13 +612,27 @@ export const PublicView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="pt-2">
-                <textarea className="w-full p-4 bg-gray-50 border-2 border-transparent rounded-[1.25rem] focus:bg-white focus:border-red-200 transition-all outline-none text-sm font-medium min-h-[120px]" placeholder="Additional details..." value={reportMessage} onChange={(e) => setReportMessage(e.target.value)} />
-              </div>
+              {/* Right Column: Custom Message & Submission */}
+              <div className="flex-1 flex flex-col justify-between">
+                <div className="flex-1 flex flex-col mb-6">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 ml-1">Additional Details</p>
+                  <textarea 
+                    className="flex-1 w-full p-6 bg-gray-50 border-2 border-transparent rounded-[2rem] focus:bg-white focus:border-red-200 transition-all outline-none text-sm font-medium resize-none" 
+                    placeholder="Provide more information about the violation..." 
+                    value={reportMessage} 
+                    onChange={(e) => setReportMessage(e.target.value)} 
+                  />
+                </div>
 
-              <button type="submit" disabled={isReporting} className="w-full py-4 text-xs font-black text-white bg-red-600 hover:bg-red-700 rounded-[1.25rem] shadow-xl shadow-red-100 transition-all active:scale-95 disabled:opacity-50 uppercase tracking-widest">
-                {isReporting ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Confirm Report'}
-              </button>
+                <div className="space-y-4">
+                  <p className="text-[10px] text-gray-400 font-medium px-2 leading-relaxed">
+                    Reports are private and help us maintain a safe community. Repeated false reports may lead to your IP being restricted.
+                  </p>
+                  <button type="submit" disabled={isReporting} className="w-full py-5 text-sm font-black text-white bg-red-600 hover:bg-red-700 rounded-[1.5rem] shadow-xl shadow-red-100 transition-all active:scale-95 disabled:opacity-50 uppercase tracking-widest">
+                    {isReporting ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'Confirm Report'}
+                  </button>
+                </div>
+              </div>
             </form>
           </div>
         </div>
