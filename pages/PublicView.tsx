@@ -50,6 +50,10 @@ export const PublicView: React.FC = () => {
   const [reportFileIds, setReportFileIds] = useState<string[]>([]);
   const [isReporting, setIsReporting] = useState(false);
 
+  // Destruct Warning
+  const [warningFile, setWarningFile] = useState<VaultFile | null>(null);
+  const [acknowledgedFiles, setAcknowledgedFiles] = useState<Set<string>>(new Set());
+
   const checkAccess = (v: Vault) => {
     const storedPassword = localStorage.getItem(`qrvault_pass_${v.id}`);
     if (v.password && storedPassword === v.password) {
@@ -515,15 +519,21 @@ export const PublicView: React.FC = () => {
     </div>
   );
 
-  const handleOpenPreview = (file: VaultFile) => {
-    if (file.type === FileType.IMAGE) setPreviewFile(file);
-    else if (file.type === FileType.PDF) setPreviewPdf(file);
-    else if (file.type === FileType.VIDEO) setPreviewVideo(file);
-    
     // Record view for self-destruct timing
     if (file.deleteAfterMinutes) {
         mockService.recordFileView(file.id).catch(console.error);
     }
+
+    // Show warning if destruct is active and not yet acknowledged
+    if ((file.maxDownloads || file.deleteAfterMinutes || file.expiresAt) && !acknowledgedFiles.has(file.id)) {
+        setWarningFile(file);
+        return;
+    }
+
+    if (file.type === FileType.IMAGE) setPreviewFile(file);
+    else if (file.type === FileType.PDF) setPreviewPdf(file);
+    else if (file.type === FileType.VIDEO) setPreviewVideo(file);
+    else handleSingleDownload(file, { stopPropagation: () => {} } as any);
   };
 
   const FileCardTimer: React.FC<{ file: VaultFile }> = ({ file }) => {
@@ -541,6 +551,12 @@ export const PublicView: React.FC = () => {
         if (distance < 0) {
           setTimeLeft('EXPIRED');
           clearInterval(timer);
+          
+          // Trigger Google Drive deletion if applicable
+          if (file.url.includes('drive.google.com')) {
+              mockService.deleteFileFromDrive(file.url).catch(console.error);
+          }
+
           // Refresh vault to hide expired file
           fetchVault();
           return;
@@ -971,6 +987,50 @@ export const PublicView: React.FC = () => {
             {/* Visual Flair */}
             <div className="absolute -bottom-12 -right-12 w-32 h-32 bg-primary-500/5 dark:bg-primary-500/10 rounded-full blur-3xl"></div>
             <div className="absolute -top-12 -left-12 w-32 h-32 bg-emerald-500/5 dark:bg-emerald-500/10 rounded-full blur-3xl"></div>
+          </div>
+        </div>
+      )}
+
+      {/* Auto-Destruct Warning Modal */}
+      {warningFile && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-black/60 dark:bg-black/90 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-8 max-w-md w-full shadow-2xl border border-red-100 dark:border-red-900/20 animate-in zoom-in-95 duration-500 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-red-500"></div>
+            
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 bg-red-50 dark:bg-red-500/10 rounded-2xl flex items-center justify-center text-red-500 mb-6">
+                <AlertCircle className="w-8 h-8 animate-pulse" />
+              </div>
+
+              <h3 className="text-xl font-black text-gray-900 dark:text-white tracking-tight uppercase mb-2">
+                Auto-Destruction Active
+              </h3>
+              
+              <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mb-8 leading-relaxed">
+                ⚠️ Caution: This file is set to auto-destruct after 
+                <span className="text-red-500 font-black"> 
+                  {warningFile.maxDownloads ? ` ${warningFile.maxDownloads} download${warningFile.maxDownloads > 1 ? 's' : ''}` : ''}
+                  {warningFile.deleteAfterMinutes ? ` ${warningFile.deleteAfterMinutes} minutes` : ''}
+                </span>. 
+                Please ensure you save it securely immediately.
+              </p>
+
+              <button
+                onClick={() => {
+                  setAcknowledgedFiles(prev => new Set([...prev, warningFile.id]));
+                  const fileToPreview = warningFile;
+                  setWarningFile(null);
+                  // Call handleOpenPreview again with acknowledgment bypass
+                  if (fileToPreview.type === FileType.IMAGE) setPreviewFile(fileToPreview);
+                  else if (fileToPreview.type === FileType.PDF) setPreviewPdf(fileToPreview);
+                  else if (fileToPreview.type === FileType.VIDEO) setPreviewVideo(fileToPreview);
+                  else handleSingleDownload(fileToPreview, { stopPropagation: () => {} } as any);
+                }}
+                className="w-full bg-gray-900 dark:bg-white text-white dark:text-black font-black py-4 rounded-xl shadow-lg transition-all active:scale-95 hover:tracking-widest uppercase text-xs"
+              >
+                I Understand, Proceed
+              </button>
+            </div>
           </div>
         </div>
       )}

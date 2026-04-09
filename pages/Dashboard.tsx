@@ -2335,6 +2335,7 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
       {/* File-Specific Setting Modal (Self-Destruct) */}
       {selectedFileForSettings && (
         <div className="fixed inset-0 bg-black/60 dark:bg-black/90 backdrop-blur-xl z-[100] flex items-center justify-center p-4">

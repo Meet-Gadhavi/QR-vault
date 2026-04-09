@@ -192,6 +192,14 @@ ALTER TABLE public.vaults
 ALTER TABLE public.vaults 
   ADD COLUMN IF NOT EXISTS password text;
 
+-- Ensure file self-destruct columns exist
+ALTER TABLE public.files 
+  ADD COLUMN IF NOT EXISTS max_downloads integer default null,
+  ADD COLUMN IF NOT EXISTS download_count integer default 0,
+  ADD COLUMN IF NOT EXISTS expires_at timestamp with time zone,
+  ADD COLUMN IF NOT EXISTS delete_after_minutes integer default null,
+  ADD COLUMN IF NOT EXISTS first_viewed_at timestamp with time zone;
+
 -- =============================================================================
 -- PLAN STORAGE LIMITS REFERENCE
 -- =============================================================================

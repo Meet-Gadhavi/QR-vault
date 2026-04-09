@@ -170,9 +170,42 @@ const supabaseImpl = {
 
     incrementFileDownload: async (fileId: string) => {
         // Increment download count in DB
-        const { data: file } = await supabase.from('files').select('download_count').eq('id', fileId).single();
+        const { data: file } = await supabase.from('files').select('id, url, max_downloads, download_count').eq('id', fileId).single();
         if (file) {
-            await supabase.from('files').update({ download_count: (file.download_count || 0) + 1 }).eq('id', fileId);
+            const newCount = (file.download_count || 0) + 1;
+            await supabase.from('files').update({ download_count: newCount }).eq('id', fileId);
+
+            // Trigger Google Drive deletion if limit reached
+            if (file.url.includes('drive.google.com') && file.max_downloads && newCount >= file.max_downloads) {
+                await supabaseImpl.deleteFileFromDrive(file.url).catch(err => console.error("Drive auto-destruct failed:", err));
+            }
+        }
+    },
+
+    deleteFileFromDrive: async (url: string) => {
+        const match = url.match(/\/d\/([^/|?]+)/) || url.match(/[?&]id=([^&]+)/);
+        const fileId = match ? match[1] : null;
+        if (!fileId) return;
+
+        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        // Note: This requires the user's Google tokens. In a real app, 
+        // we'd retrieve them from the session or a secure store.
+        // For this implementation, we'll look for them in localStorage as a fallback.
+        const tokens = JSON.parse(localStorage.getItem('qrvault_google_tokens') || 'null');
+        
+        if (!tokens) {
+            console.warn("Cannot delete from Drive: No tokens found for background destruct.");
+            return;
+        }
+
+        try {
+            await fetch(`${apiBase}/api/google-drive/delete-file`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tokens, fileId })
+            });
+        } catch (e) {
+            console.error("Failed to call Drive deletion API", e);
         }
     },
 
