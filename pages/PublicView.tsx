@@ -31,6 +31,7 @@ export const PublicView: React.FC = () => {
   // Download States
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null);
+  const [downloadProgress, setDownloadProgress] = useState<{current: number, total: number} | null>(null);
 
   const [isExpired, setIsExpired] = useState(false);
   const [expiredVaultName, setExpiredVaultName] = useState<string | null>(null);
@@ -192,40 +193,61 @@ export const PublicView: React.FC = () => {
   const handleBulkDownload = async () => {
     if (!vault || isDownloadingAll) return;
     setIsDownloadingAll(true);
+    const downloadableFiles = vault.files.filter(f => f.type !== FileType.LINK);
+    setDownloadProgress({ current: 0, total: downloadableFiles.length });
+
     try {
       const zip = new JSZip();
       const folderName = vault.name.replace(/[^a-z0-9]/gi, '_') || 'vault';
       const folder = zip.folder(folderName);
-      const downloadableFiles = vault.files.filter(f => f.type !== FileType.LINK);
 
       if (downloadableFiles.length === 0) {
         alert("No files to download.");
         setIsDownloadingAll(false);
+        setDownloadProgress(null);
         return;
       }
 
       let successCount = 0;
-      await Promise.all(downloadableFiles.map(async (file) => {
+      let i = 0;
+      for (const file of downloadableFiles) {
+        i++;
+        setDownloadProgress({ current: i, total: downloadableFiles.length });
         try {
           const proxyUrl = `/api/proxy-download?url=${encodeURIComponent(file.url)}&filename=${encodeURIComponent(file.name)}`;
           const response = await fetch(proxyUrl);
-          if (!response.ok) throw new Error(`Fetch failed`);
+          
+          if (!response.ok) {
+            console.error(`Failed to download ${file.name}: ${response.statusText}`);
+            continue;
+          }
+
+          const contentType = response.headers.get('content-type') || '';
           const blob = await response.blob();
+          
+          // Validation: If it's HTML and small, it's likely a GDrive error page that the proxy couldn't bypass
+          if (contentType.includes('text/html') && blob.size < 100000) {
+            console.error(`Skipping ${file.name}: Proxy returned HTML instead of file content.`);
+            continue;
+          }
+
           if (blob.size > 0) {
             folder?.file(file.name, blob);
             successCount++;
           }
         } catch (e: any) {
-          console.error(`Failed to download ${file.name}`);
+          console.error(`Error processing ${file.name}:`, e);
         }
-      }));
+      }
 
       if (successCount === 0) {
-        alert("Failed to download files.");
+        alert("Could not download any files. Please check if the files are still accessible.");
         setIsDownloadingAll(false);
+        setDownloadProgress(null);
         return;
       }
 
+      setDownloadProgress(null); // Switch to "Zipping..." state
       const content = await zip.generateAsync({ type: "blob" });
       const url = URL.createObjectURL(content);
       const a = document.createElement('a');
@@ -237,8 +259,10 @@ export const PublicView: React.FC = () => {
       document.body.removeChild(a);
     } catch (error) {
       console.error("Zip error", error);
+      alert("An error occurred while creating the ZIP file.");
     } finally {
       setIsDownloadingAll(false);
+      setDownloadProgress(null);
     }
   };
 
@@ -491,7 +515,13 @@ export const PublicView: React.FC = () => {
                   disabled={isDownloadingAll}
                 >
                   {isDownloadingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                  <span>{isDownloadingAll ? 'Zipping...' : 'Download All as .ZIP'}</span>
+                  <span>
+                    {isDownloadingAll 
+                      ? (downloadProgress 
+                          ? `Downloading ${downloadProgress.current}/${downloadProgress.total}...` 
+                          : 'Finalizing ZIP...') 
+                      : 'Download All as .ZIP'}
+                  </span>
                 </button>
               )}
             </div>

@@ -627,48 +627,40 @@ apiRouter.get('/proxy-download', async (req: Request, res: Response) => {
     // For Google Drive, ensure we use the direct download link
     let finalUrl = url;
     if (url.includes('drive.google.com') && !url.includes('export=download')) {
-      // Extract file ID from /d/ID/ or ?id=ID
       const match = url.match(/\/d\/([^/|?]+)/) || url.match(/[?&]id=([^&]+)/);
       if (match && match[1]) {
-        finalUrl = `https://drive.google.com/uc?export=download&id=${match[1]}`;
+        // Automatically append confirm=t to attempt bypass for public large files immediately
+        finalUrl = `https://drive.google.com/uc?export=download&id=${match[1]}&confirm=t`;
       }
     }
 
     let response = await fetch(finalUrl);
     
     // Check for Google Drive virus scan warning page (HTML response on a download link)
-    const contentType = response.headers.get('content-type') || '';
+    let contentType = response.headers.get('content-type') || '';
     if (contentType.includes('text/html') && url.includes('drive.google.com')) {
       const html = await response.text();
       
       // Look for the "confirm" token in the GDrive warning page
-      // Broader regex to catch different formats (confirm=XXX, &amp;confirm=XXX, name="confirm" value="XXX")
       const confirmMatch = 
         html.match(/confirm=([^&"'\s>]+)/i) || 
         html.match(/name="confirm"\s+value="([^"]+)"/i) ||
         html.match(/value="([^"]+)"\s+name="confirm"/i);
 
       if (confirmMatch && confirmMatch[1]) {
-        // Construct the confirmed URL. Ensure we use the uc?export=download format.
         const fileIdMatch = url.match(/[?&]id=([^&]+)/) || url.match(/\/d\/([^/|?]+)/);
         const fileId = fileIdMatch ? fileIdMatch[1] : '';
         const confirmedUrl = `https://drive.google.com/uc?export=download&id=${fileId}&confirm=${confirmMatch[1]}`;
         
         console.log(`[Proxy Download] GDrive warning detected, retrying with confirm token: ${confirmMatch[1]}`);
         response = await fetch(confirmedUrl);
-      } else if (html.includes('id="uc-download-link"') || html.includes('confirm=')) {
-         // If we see evidence of a confirm link but regex failed, log a bit more of the HTML
-         console.warn(`[Proxy Download] GDrive warning detected but regex failed. HTML snippet: ${html.substring(html.indexOf('confirm'), html.indexOf('confirm') + 100)}`);
-         return res.status(403).json({ 
-           error: 'Google Drive security check failed.', 
-           details: 'A security check was found but the proxy could not automatically bypass it. Please share the file "Anyone with the link can view".' 
-         });
+        contentType = response.headers.get('content-type') || '';
       } else {
         // If we can't find a token but it's HTML, it might be an error or private file
-        console.warn(`[Proxy Download] GDrive returned HTML (likely login or error). Start of HTML: ${html.substring(0, 300)}`);
+        console.warn(`[Proxy Download] GDrive returned HTML (likely login or error).`);
         return res.status(403).json({ 
           error: 'Google Drive file is not accessible.', 
-          details: 'The file might be private or the owner needs to re-sync permissions. Please ensure the file is shared "Anyone with the link can view" and NOT restricted.' 
+          details: 'The file might be private or the owner needs to re-sync permissions.' 
         });
       }
     }
@@ -678,20 +670,12 @@ apiRouter.get('/proxy-download', async (req: Request, res: Response) => {
     }
 
     // Proxy the content type
-    const finalContentType = response.headers.get('content-type');
-    if (finalContentType) {
-      res.setHeader('Content-Type', finalContentType);
-    } else {
-       res.setHeader('Content-Type', 'application/octet-stream');
-    }
+    if (contentType) res.setHeader('Content-Type', contentType);
+    else res.setHeader('Content-Type', 'application/octet-stream');
 
-    // Proxy the size if available
     const contentLength = response.headers.get('content-length');
-    if (contentLength) {
-      res.setHeader('Content-Length', contentLength);
-    }
+    if (contentLength) res.setHeader('Content-Length', contentLength);
 
-    // Add Content-Disposition if filename is provided
     if (filename && typeof filename === 'string') {
       res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
     }
