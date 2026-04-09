@@ -519,6 +519,7 @@ export const PublicView: React.FC = () => {
     </div>
   );
 
+  const handleOpenPreview = (file: VaultFile) => {
     // Record view for self-destruct timing
     if (file.deleteAfterMinutes) {
         mockService.recordFileView(file.id).catch(console.error);
