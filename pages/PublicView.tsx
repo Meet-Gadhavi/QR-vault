@@ -38,6 +38,7 @@ export const PublicView: React.FC = () => {
   const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null);
   const [downloadProgress, setDownloadProgress] = useState<{current: number, total: number} | null>(null);
   const [downloadStatus, setDownloadStatus] = useState<'PREPARING' | 'DOWNLOADING' | 'ZIPPING' | 'COMPLETE'>('PREPARING');
+  const [currentFileName, setCurrentFileName] = useState<string | null>(null);
 
   const [isExpired, setIsExpired] = useState(false);
   const [expiredVaultName, setExpiredVaultName] = useState<string | null>(null);
@@ -213,73 +214,86 @@ export const PublicView: React.FC = () => {
     if (!vault || isDownloadingAll) return;
     setIsDownloadingAll(true);
     setDownloadStatus('PREPARING');
+    setCurrentFileName(null);
+
     const downloadableFiles = vault.files.filter(f => f.type !== FileType.LINK);
+    if (downloadableFiles.length === 0) {
+      alert('No files to download.');
+      setIsDownloadingAll(false);
+      return;
+    }
+
     setDownloadProgress({ current: 0, total: downloadableFiles.length });
+    setDownloadStatus('DOWNLOADING');
 
-    try {
-      const zip = new JSZip();
-      const folderName = vault.name.replace(/[^a-z0-9]/gi, '_') || 'vault';
-      zip.folder(folderName); // No longer nesting inside folder for flat zip if preferred, but keeping it consistent
+    const zip = new JSZip();
+    const folderName = vault.name.replace(/[^a-z0-9]/gi, '_') || 'vault';
+    const skippedFiles: string[] = [];
+    let successCount = 0;
 
-      if (downloadableFiles.length === 0) {
-        alert("No files to download.");
-        setIsDownloadingAll(false);
-        return;
-      }
+    for (let i = 0; i < downloadableFiles.length; i++) {
+      const file = downloadableFiles[i];
+      setCurrentFileName(file.name);
+      setDownloadProgress({ current: i + 1, total: downloadableFiles.length });
 
-      setDownloadStatus('DOWNLOADING');
-      let successCount = 0;
-      let skippedFiles: string[] = [];
-      let i = 0;
-      for (const file of downloadableFiles) {
-        i++;
-        setDownloadProgress({ current: i, total: downloadableFiles.length });
+      try {
+        let blob: Blob | null = null;
+
+        // --- Strategy 1: Try the server proxy (handles CORS + GDrive auth) ---
+        const proxyUrl = `/api/proxy-download?url=${encodeURIComponent(file.url)}&filename=${encodeURIComponent(file.name)}`;
         try {
-          const proxyUrl = `/api/proxy-download?url=${encodeURIComponent(file.url)}&filename=${encodeURIComponent(file.name)}`;
-          const response = await fetch(proxyUrl);
-          
-          if (!response.ok) {
-            skippedFiles.push(file.name);
-            continue;
+          const proxyRes = await fetch(proxyUrl);
+          if (proxyRes.ok) {
+            const ct = proxyRes.headers.get('content-type') || '';
+            // Reject HTML responses (GDrive error pages, login walls)
+            if (!ct.includes('text/html')) {
+              blob = await proxyRes.blob();
+              if (blob.size === 0) blob = null;
+            }
           }
+        } catch (_) { /* proxy failed, fall through */ }
 
-          const contentType = response.headers.get('content-type') || '';
-          const blob = await response.blob();
-          
-          if (contentType.includes('text/html') && blob.size < 100000) {
-            skippedFiles.push(file.name);
-            continue;
-          }
+        // --- Strategy 2: Direct fetch (works for public Supabase URLs) ---
+        if (!blob) {
+          try {
+            const directRes = await fetch(file.url, { mode: 'cors' });
+            if (directRes.ok) {
+              blob = await directRes.blob();
+              if (blob.size === 0) blob = null;
+            }
+          } catch (_) { /* direct fetch failed */ }
+        }
 
-          if (blob.size > 0) {
-            zip.file(file.name, blob); // Flat structure for easier usage
-            successCount++;
-            // Increment download count for self-destruct logic
-            mockService.incrementFileDownload(file.id).catch(console.error);
-          } else {
-            skippedFiles.push(file.name);
-          }
-        } catch (e: any) {
+        if (blob && blob.size > 0) {
+          zip.file(file.name, blob);
+          successCount++;
+          mockService.incrementFileDownload(file.id).catch(console.error);
+        } else {
           skippedFiles.push(file.name);
         }
+      } catch (e: any) {
+        console.error(`[Bulk] Failed: ${file.name}`, e);
+        skippedFiles.push(file.name);
       }
+    }
 
-      if (successCount === 0) {
-        alert("Could not download any files.");
-        setIsDownloadingAll(false);
-        return;
-      }
+    if (successCount === 0) {
+      alert('Could not download any files. They may be private or require authentication.');
+      setIsDownloadingAll(false);
+      setDownloadProgress(null);
+      setCurrentFileName(null);
+      return;
+    }
 
-      if (skippedFiles.length > 0) {
-        alert(`${skippedFiles.length} file(s) skipped due to errors.`);
-      }
+    setDownloadStatus('ZIPPING');
+    setCurrentFileName(folderName + '.zip');
 
-      setDownloadStatus('ZIPPING');
-      const content = await zip.generateAsync({ type: "blob" }, (metadata) => {
-        // Optional: Update progress based on zipping metadata if needed
-      });
+    try {
+      const content = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 3 } });
 
       setDownloadStatus('COMPLETE');
+      setCurrentFileName(null);
+
       const url = URL.createObjectURL(content);
       const a = document.createElement('a');
       a.href = url;
@@ -289,15 +303,17 @@ export const PublicView: React.FC = () => {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
-      // Brief delay to show "Complete!"
+      if (skippedFiles.length > 0) {
+        setTimeout(() => alert(`${skippedFiles.length} file(s) could not be included:\n• ${skippedFiles.join('\n• ')}`), 500);
+      }
+
       setTimeout(() => {
         setIsDownloadingAll(false);
         setDownloadProgress(null);
-      }, 1000);
-
-    } catch (error) {
-      console.error("Zip error", error);
-      alert("An error occurred while creating the ZIP file.");
+      }, 1500);
+    } catch (zipErr: any) {
+      console.error('[Bulk] ZIP generation failed:', zipErr);
+      alert('Failed to create ZIP. ' + zipErr.message);
       setIsDownloadingAll(false);
       setDownloadProgress(null);
     }
@@ -930,64 +946,97 @@ export const PublicView: React.FC = () => {
           </div>
         </div>
       )}
-      {/* MEGA-style Download Manager Modal */}
+      {/* Download Manager Modal */}
       {isDownloadingAll && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-xl p-6 animate-in fade-in transition-all">
-          <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] p-8 md:p-12 w-full max-w-lg shadow-[0_32px_128px_-16px_rgba(0,0,0,0.3)] dark:shadow-[0_32px_128px_-16px_rgba(0,0,0,0.6)] border border-white dark:border-white/5 animate-in zoom-in-95 slide-in-from-bottom-12 duration-500 relative overflow-hidden">
-            {/* Background Decoration */}
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-500 via-emerald-500 to-blue-500"></div>
-            
-            <div className="flex flex-col items-center text-center">
-              <div className="w-24 h-24 bg-primary-50 dark:bg-primary-500/10 rounded-[2rem] flex items-center justify-center text-primary-600 dark:text-primary-400 mb-8 shadow-inner relative group">
-                <div className="absolute inset-0 bg-primary-400/20 dark:bg-primary-400/10 rounded-[2rem] animate-ping opacity-20"></div>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="bg-white dark:bg-black w-full max-w-md mx-4 rounded-2xl border border-gray-100 dark:border-white/10 shadow-2xl overflow-hidden">
+            {/* Header */}
+            <div className="bg-primary-600 dark:bg-primary-700 px-6 py-5 flex items-center gap-4">
+              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
                 {downloadStatus === 'COMPLETE' ? (
-                  <ShieldCheck className="w-12 h-12 animate-in zoom-in duration-300" />
+                  <ShieldCheck className="w-5 h-5 text-white" />
                 ) : (
-                  <Download className="w-12 h-12 animate-bounce" />
+                  <Download className="w-5 h-5 text-white animate-bounce" />
                 )}
               </div>
+              <div>
+                <h2 className="text-white font-black text-lg tracking-tight">
+                  {downloadStatus === 'PREPARING' && 'Preparing Archive'}
+                  {downloadStatus === 'DOWNLOADING' && 'Downloading Files'}
+                  {downloadStatus === 'ZIPPING' && 'Creating ZIP'}
+                  {downloadStatus === 'COMPLETE' && 'Download Ready!'}
+                </h2>
+                <p className="text-white/70 text-xs font-medium">
+                  {downloadProgress ? `${downloadProgress.current} of ${downloadProgress.total} files` : 'Starting...'}
+                </p>
+              </div>
+            </div>
 
-              <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tighter mb-2 uppercase italic">
-                {downloadStatus === 'PREPARING' && 'Preparing...'}
-                {downloadStatus === 'DOWNLOADING' && 'Downloading...'}
-                {downloadStatus === 'ZIPPING' && 'Zipping...'}
-                {downloadStatus === 'COMPLETE' && 'Complete!'}
-              </h2>
-              
-              <p className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-10">
-                {downloadStatus === 'PREPARING' && 'Initializing secure transfer protocol'}
-                {downloadStatus === 'DOWNLOADING' && `Processing asset ${downloadProgress?.current} of ${downloadProgress?.total}`}
-                {downloadStatus === 'ZIPPING' && 'Compressing vault for instant delivery'}
-                {downloadStatus === 'COMPLETE' && 'Your download has been served successfully'}
-              </p>
+            {/* Body */}
+            <div className="px-6 py-5 space-y-4">
 
-              {/* Progress Bar Container */}
-              <div className="w-full bg-gray-100 dark:bg-white/5 h-4 rounded-full overflow-hidden mb-4 border border-gray-200 dark:border-white/5 p-1 shadow-inner group/bar relative">
-                <div 
-                  className="h-full bg-gradient-to-r from-primary-500 via-emerald-500 to-blue-500 rounded-full transition-all duration-500 ease-out relative shadow-sm"
-                  style={{ 
-                    width: downloadStatus === 'PREPARING' ? '10%' : 
-                           downloadStatus === 'DOWNLOADING' ? `${(downloadProgress?.current || 0) / (downloadProgress?.total || 1) * 80 + 10}%` :
-                           downloadStatus === 'ZIPPING' ? '95%' : '100%'
-                  }}
-                >
-                  <div className="absolute inset-0 bg-white/20 animate-shine opacity-30"></div>
+              {/* Current File Being Processed */}
+              <div className="bg-gray-50 dark:bg-white/5 rounded-xl px-4 py-3 border border-gray-100 dark:border-white/10">
+                <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">
+                  {downloadStatus === 'DOWNLOADING' ? 'Currently Downloading' : downloadStatus === 'ZIPPING' ? 'Compressing' : downloadStatus === 'COMPLETE' ? 'Completed' : 'Initialising'}
+                </p>
+                <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                  {downloadStatus === 'PREPARING' && 'Scanning vault files...'}
+                  {downloadStatus === 'DOWNLOADING' && (currentFileName || 'Fetching...')}
+                  {downloadStatus === 'ZIPPING' && vault?.name + '.zip'}
+                  {downloadStatus === 'COMPLETE' && '✓ All files packaged'}
+                </p>
+              </div>
+
+              {/* Progress Bar */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+                    {downloadStatus === 'COMPLETE' ? 'Done' : 'Progress'}
+                  </span>
+                  <span className="text-sm font-black text-primary-600 dark:text-primary-400">
+                    {downloadStatus === 'PREPARING' && '5%'}
+                    {downloadStatus === 'DOWNLOADING' && `${Math.round(((downloadProgress?.current || 0) / (downloadProgress?.total || 1)) * 90)}%`}
+                    {downloadStatus === 'ZIPPING' && '95%'}
+                    {downloadStatus === 'COMPLETE' && '100%'}
+                  </span>
+                </div>
+                <div className="w-full h-2 bg-gray-100 dark:bg-white/10 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary-600 dark:bg-primary-500 rounded-full transition-all duration-500 ease-out"
+                    style={{
+                      width: downloadStatus === 'PREPARING' ? '5%' :
+                             downloadStatus === 'DOWNLOADING' ? `${Math.round(((downloadProgress?.current || 0) / (downloadProgress?.total || 1)) * 90)}%` :
+                             downloadStatus === 'ZIPPING' ? '95%' : '100%'
+                    }}
+                  />
                 </div>
               </div>
 
-              <div className="flex justify-between w-full px-1">
-                 <span className="text-[10px] font-black text-gray-400 dark:text-gray-600 uppercase tracking-tighter italic">
-                    {downloadStatus === 'COMPLETE' ? '100%' : 'In Progress'}
-                 </span>
-                 <span className="text-[10px] font-black text-primary-600 dark:text-primary-400 uppercase tracking-widest animate-pulse">
-                    Secure Download Hub
-                 </span>
-              </div>
+              {/* File List */}
+              {downloadProgress && vault && (
+                <div className="space-y-1 max-h-36 overflow-y-auto">
+                  {vault.files.filter(f => f.type !== FileType.LINK).map((file, idx) => {
+                    const done = idx < (downloadProgress.current);
+                    const active = idx === (downloadProgress.current - 1) && downloadStatus === 'DOWNLOADING';
+                    return (
+                      <div key={file.id} className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs transition-colors ${
+                        done ? 'text-gray-400 dark:text-gray-600' :
+                        active ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 font-bold' :
+                        'text-gray-300 dark:text-gray-700'
+                      }`}>
+                        <span className="flex-shrink-0">
+                          {done ? '✓' : active ? '⟳' : '○'}
+                        </span>
+                        <span className="truncate">{file.name}</span>
+                        {active && <span className="ml-auto text-[10px] font-black text-primary-500 animate-pulse">NOW</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
             </div>
-            
-            {/* Visual Flair */}
-            <div className="absolute -bottom-12 -right-12 w-32 h-32 bg-primary-500/5 dark:bg-primary-500/10 rounded-full blur-3xl"></div>
-            <div className="absolute -top-12 -left-12 w-32 h-32 bg-emerald-500/5 dark:bg-emerald-500/10 rounded-full blur-3xl"></div>
           </div>
         </div>
       )}

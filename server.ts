@@ -617,7 +617,14 @@ apiRouter.get('/proxy-download', async (req: Request, res: Response) => {
 
   try {
     // Basic security check: only allow Google and Supabase domains
-    const allowedDomains = ['drive.google.com', 'supabase.co', 'googleapis.com'];
+    const allowedDomains = [
+      'drive.google.com',
+      'supabase.co',
+      'supabase.in',
+      'supabase.com',
+      'googleapis.com',
+      '.supabase.co',
+    ];
     const urlObj = new URL(url);
     if (!allowedDomains.some(domain => urlObj.hostname.endsWith(domain))) {
       console.warn(`[Proxy Download] Domain not authorized: ${urlObj.hostname}`);
