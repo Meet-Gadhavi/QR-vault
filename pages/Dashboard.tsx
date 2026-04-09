@@ -539,6 +539,9 @@ export const Dashboard: React.FC = () => {
     const totalSize = selectedFiles.reduce((acc, file) => acc + file.size, 0);
     const fileProgresses = new Array(selectedFiles.length).fill(0);
     const startTime = Date.now();
+    let lastBytesLoaded = 0;
+    let lastUpdateTime = Date.now();
+    let smoothedSpeed = 0;
 
     try {
       let finalFiles: (File | any)[] = [...selectedFiles];
@@ -579,13 +582,25 @@ export const Dashboard: React.FC = () => {
             const percent = totalSize > 0 ? Math.min(Math.round((totalLoaded / totalSize) * 98), 98) : 50;
             setUploadProgress(percent);
 
-            // True Time Estimation (based on speed)
-            const elapsedMs = Date.now() - startTime;
-            if (elapsedMs > 500 && totalLoaded > 0) {
-              const bytesPerSec = totalLoaded / (elapsedMs / 1000);
-              const remainingBytes = totalSize - totalLoaded;
-              const remainingSec = Math.max(1, Math.ceil(remainingBytes / bytesPerSec));
-              setEstimatedSeconds(remainingSec);
+            // Smoothed Time Estimation (Rolling Average)
+            const now = Date.now();
+            const timeDiff = (now - lastUpdateTime) / 1000;
+            if (timeDiff >= 0.5) { // Update speed every 0.5s for smoothness
+              const bytesSinceLast = totalLoaded - lastBytesLoaded;
+              const currentSpeed = bytesSinceLast / timeDiff;
+              
+              // Exponential Moving Average (EMA) to prevent jumps
+              if (smoothedSpeed === 0) smoothedSpeed = currentSpeed;
+              else smoothedSpeed = (smoothedSpeed * 0.8) + (currentSpeed * 0.2);
+              
+              lastBytesLoaded = totalLoaded;
+              lastUpdateTime = now;
+
+              if (smoothedSpeed > 0) {
+                const remainingBytes = totalSize - totalLoaded;
+                const remainingSec = Math.max(1, Math.ceil(remainingBytes / smoothedSpeed));
+                setEstimatedSeconds(remainingSec);
+              }
             }
 
             // Task Pipeline UI

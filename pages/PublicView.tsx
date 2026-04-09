@@ -209,6 +209,7 @@ export const PublicView: React.FC = () => {
       }
 
       let successCount = 0;
+      let skippedFiles: string[] = [];
       let i = 0;
       for (const file of downloadableFiles) {
         i++;
@@ -219,6 +220,7 @@ export const PublicView: React.FC = () => {
           
           if (!response.ok) {
             console.error(`Failed to download ${file.name}: ${response.statusText}`);
+            skippedFiles.push(file.name);
             continue;
           }
 
@@ -228,15 +230,19 @@ export const PublicView: React.FC = () => {
           // Validation: If it's HTML and small, it's likely a GDrive error page that the proxy couldn't bypass
           if (contentType.includes('text/html') && blob.size < 100000) {
             console.error(`Skipping ${file.name}: Proxy returned HTML instead of file content.`);
+            skippedFiles.push(file.name);
             continue;
           }
 
           if (blob.size > 0) {
             folder?.file(file.name, blob);
             successCount++;
+          } else {
+            skippedFiles.push(file.name);
           }
         } catch (e: any) {
           console.error(`Error processing ${file.name}:`, e);
+          skippedFiles.push(file.name);
         }
       }
 
@@ -245,6 +251,10 @@ export const PublicView: React.FC = () => {
         setIsDownloadingAll(false);
         setDownloadProgress(null);
         return;
+      }
+
+      if (skippedFiles.length > 0) {
+        alert(`Note: ${skippedFiles.length} file(s) were skipped due to download errors or security restrictions: \n${skippedFiles.join(', ')}\n\nPlease try downloading these individually.`);
       }
 
       setDownloadProgress(null); // Switch to "Zipping..." state
