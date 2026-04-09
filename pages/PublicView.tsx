@@ -554,8 +554,8 @@ export const PublicView: React.FC = () => {
           clearInterval(timer);
           
           // Trigger Google Drive deletion if applicable
-          if (file.url.includes('drive.google.com')) {
-              mockService.deleteFileFromDrive(file.url).catch(console.error);
+          if (file.url.includes('drive.google.com') && typeof (mockService as any).deleteFileFromDrive === 'function') {
+              (mockService as any).deleteFileFromDrive(file.url).catch(console.error);
           }
 
           // Refresh vault to hide expired file
