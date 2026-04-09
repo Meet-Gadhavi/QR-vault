@@ -1366,127 +1366,121 @@ export const Dashboard: React.FC = () => {
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredVaults.map(vault => (
-                  <div key={vault.id} className={`relative rounded-xl border-2 transition-all duration-300 flex flex-col overflow-hidden ${vault.reportCount && vault.reportCount > 0 ? 'bg-red-50/60 border-red-100 shadow-lg shadow-red-50/40 scale-[1.01]' : 'bg-white border-gray-100 shadow-sm hover:shadow-md'}`}>
-                    <div className="p-5 flex-1 flex flex-col">
-                      {/* Card Header & 3-Dot Menu */}
-                      <div className="flex justify-between items-start mb-4">
-                        <div className="flex flex-col gap-2">
-                          <div className="bg-primary-50 p-2 rounded-lg">
-                            <QrCode className="w-6 h-6 text-primary-600" />
-                          </div>
-                          {getPendingRequestCount(vault) > 0 && (
-                            <button
-                              onClick={(e) => openManageAccess(vault, e)}
-                              className="bg-red-100 text-red-600 px-2 rounded-lg text-xs font-bold flex items-center animate-pulse"
-                              title="Pending Access Requests"
-                            >
-                              {getPendingRequestCount(vault)} Requests
-                            </button>
-                          )}
-                        </div>
-
-                        <div className="relative">
-                          <button
-                            onClick={(e) => toggleMenu(e, vault.id)}
-                            className={`p-2 rounded-full hover:bg-gray-100 transition-colors ${menuOpenId === vault.id ? 'bg-gray-100 text-gray-900' : 'text-gray-400'}`}
-                          >
-                            <MoreVertical className="w-5 h-5" />
-                          </button>
-
-                          {/* Dropdown Menu */}
-                          {menuOpenId === vault.id && (
-                            <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 z-30 overflow-hidden animate-in fade-in zoom-in-95 duration-100 origin-top-right">
+                  <div key={vault.id} className="relative z-10 w-full h-full perspective-[1000px]">
+                    <div 
+                      onClick={(e) => toggleMenu(e, vault.id)} 
+                      className={`cursor-pointer relative w-full h-full flex flex-col rounded-xl border-2 transition-all duration-500 shadow-sm hover:shadow-md transform-gpu ${vault.reportCount && vault.reportCount > 0 ? 'bg-red-50 border-red-100 shadow-lg shadow-red-50/40 scale-[1.01]' : 'bg-white border-gray-100'}`}
+                      style={{ transformStyle: 'preserve-3d', transform: menuOpenId === vault.id ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
+                    >
+                      {/* FRONT FACE */}
+                      <div className="flex-1 flex flex-col w-full h-full rounded-xl overflow-hidden relative" style={{ backfaceVisibility: 'hidden' }}>
+                        <div className="p-5 flex-1 flex flex-col">
+                          {/* Card Header */}
+                          <div className="flex justify-between items-start mb-4">
+                            <div className="flex flex-col gap-2">
+                              <div className="bg-primary-50 p-2 rounded-lg">
+                                <QrCode className="w-6 h-6 text-primary-600" />
+                              </div>
+                              {getPendingRequestCount(vault) > 0 && (
+                                <button
+                                  onClick={(e) => openManageAccess(vault, e)}
+                                  className="bg-red-100 text-red-600 px-2 rounded-lg text-xs font-bold flex items-center animate-pulse"
+                                  title="Pending Access Requests"
+                                >
+                                  {getPendingRequestCount(vault)} Requests
+                                </button>
+                              )}
+                            </div>
+                            
+                            <div className="relative">
                               <button
-                                onClick={(e) => openEditModal(vault, e)}
-                                disabled={isOverLimit}
-                                className={`w-full text-left px-4 py-3 text-sm flex items-center gap-2 ${isOverLimit ? 'text-gray-400 cursor-not-allowed bg-gray-50' : 'text-gray-700 hover:bg-gray-50'}`}
+                                onClick={(e) => toggleMenu(e, vault.id)}
+                                className={`p-2 rounded-full hover:bg-gray-100 transition-colors ${menuOpenId === vault.id ? 'bg-gray-100 text-gray-900' : 'text-gray-400'}`}
+                                title="Click Card or Menu to Flip"
                               >
-                                {isOverLimit ? <Lock className="w-4 h-4" /> : <Edit2 className="w-4 h-4 text-gray-500" />} Edit Vault
-                              </button>
-                              <button
-                                onClick={(e) => openManageAccess(vault, e)}
-                                className="w-full text-left px-4 py-3 text-sm flex items-center gap-2 text-gray-700 hover:bg-gray-50"
-                              >
-                                <Users className="w-4 h-4 text-gray-500" /> Manage Access
-                              </button>
-                              <button
-                                onClick={(e) => { e.stopPropagation(); setReportVault(vault); setMenuOpenId(null); }}
-                                className="w-full text-left px-4 py-3 text-sm flex items-center gap-2 text-gray-700 hover:bg-gray-50"
-                              >
-                                <AlertTriangle className="w-4 h-4 text-red-500" /> View Reports {vault.reportCount || 0 > 0 && <span className="bg-red-100 text-red-600 px-1 rounded text-[9px] font-black">{vault.reportCount}</span>}
-                              </button>
-                              <div className="h-px bg-gray-100"></div>
-                              <button
-                                onClick={(e) => handleDeleteVault(vault.id, e)}
-                                disabled={isOverLimit}
-                                className={`w-full text-left px-4 py-3 text-sm flex items-center gap-2 ${isOverLimit ? 'text-gray-400 cursor-not-allowed bg-gray-50' : 'text-red-600 hover:bg-red-50'}`}
-                              >
-                                {isOverLimit ? <Lock className="w-4 h-4" /> : <Trash2 className="w-4 h-4" />} Delete
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 9l-6 6"/><path d="M9 9l6 6"/></svg>
                               </button>
                             </div>
-                          )}
+                          </div>
+
+                          <h3 className="font-bold text-gray-900 truncate pr-8">{vault.name}</h3>
+                          <div className="text-sm text-gray-500 mt-1 mb-4">
+                            <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-1.5 text-gray-400">
+                                <Clock className="w-3.5 h-3.5" />
+                                <span>{new Date(vault.createdAt).toLocaleDateString()}</span>
+                              </div>
+                              <span className="text-gray-200">|</span>
+                              <div className="flex items-center gap-1.5 text-primary-600 font-bold whitespace-nowrap">
+                                <Eye className="w-3.5 h-3.5" />
+                                <span>{vault.views}/{vault.maxViews || (vault.userPlan === PlanType.FREE ? 85 : 500)}</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 mt-2">
+                              {vault.accessLevel === AccessLevel.RESTRICTED ? (
+                                <span className="flex items-center gap-1 text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tight"><Shield className="w-3 h-3" /> Restricted</span>
+                              ) : (
+                                <span className="flex items-center gap-1 text-green-600 bg-green-50 px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tight"><Users className="w-3 h-3" /> Public</span>
+                              )}
+                            </div>
+                            <div className="mt-1 text-xs text-gray-400 flex items-center gap-2">
+                              <span>{vault.files.length} files • {formatBytes(vault.files.reduce((acc, f) => acc + f.size, 0))}</span>
+                              <span>•</span>
+                              <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {vault.views}</span>
+                            </div>
+                            {appUser.plan === PlanType.FREE && (
+                              <Link 
+                                to="/pricing" 
+                                onClick={(e) => e.stopPropagation()}
+                                className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-primary-600 hover:text-primary-700 bg-primary-50 hover:bg-primary-100 px-2.5 py-1.5 rounded-lg transition-colors border border-primary-100 w-fit"
+                              >
+                                <Zap className="w-3 h-3" /> 
+                                Upgrade to Keep Permanent
+                              </Link>
+                            )}
+                          </div>
+
+                          <div className="mt-auto pt-4 border-t border-gray-50 flex gap-2">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setViewQrVault(vault); }}
+                              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-primary-50 text-primary-600 rounded-xl text-sm font-semibold hover:bg-primary-100 transition-all border border-primary-100 cursor-pointer"
+                            >
+                              <QrCode className="w-4 h-4" /> View QR
+                            </button>
+                            <Link
+                              to={`/v/${vault.id}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-semibold hover:bg-gray-800 transition-all shadow-md active:scale-95"
+                            >
+                              <ExternalLink className="w-4 h-4" /> Open
+                            </Link>
+                          </div>
                         </div>
+                        {/* Deletion Timer */}
+                        <VaultTimer 
+                          createdAt={vault.createdAt} 
+                          expiresAt={vault.expiresAt} 
+                          views={vault.views} 
+                          maxViews={vault.maxViews} 
+                          lockedUntil={vault.lockedUntil} 
+                        />
                       </div>
 
-                      <h3 className="font-bold text-gray-900 truncate pr-8">{vault.name}</h3>
-                      <div className="text-sm text-gray-500 mt-1 mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-1.5 text-gray-400">
-                            <Clock className="w-3.5 h-3.5" />
-                            <span>{new Date(vault.createdAt).toLocaleDateString()}</span>
-                          </div>
-                          <span className="text-gray-200">|</span>
-                          <div className="flex items-center gap-1.5 text-primary-600 font-bold whitespace-nowrap">
-                            <Eye className="w-3.5 h-3.5" />
-                            <span>{vault.views}/{vault.maxViews || (vault.userPlan === PlanType.FREE ? 85 : 500)}</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 mt-2">
-                          {vault.accessLevel === AccessLevel.RESTRICTED ? (
-                            <span className="flex items-center gap-1 text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tight"><Shield className="w-3 h-3" /> Restricted</span>
-                          ) : (
-                            <span className="flex items-center gap-1 text-green-600 bg-green-50 px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tight"><Users className="w-3 h-3" /> Public</span>
-                          )}
-                        </div>
-                        <div className="mt-1 text-xs text-gray-400 flex items-center gap-2">
-                          <span>{vault.files.length} files • {formatBytes(vault.files.reduce((acc, f) => acc + f.size, 0))}</span>
-                          <span>•</span>
-                          <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {vault.views}</span>
-                        </div>
-                        {appUser.plan === PlanType.FREE && (
-                          <Link 
-                            to="/pricing" 
-                            className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-primary-600 hover:text-primary-700 bg-primary-50 hover:bg-primary-100 px-2.5 py-1.5 rounded-lg transition-colors border border-primary-100 w-fit"
-                          >
-                            <Zap className="w-3 h-3" /> 
-                            Upgrade to Keep Permanent
-                          </Link>
-                        )}
+                      {/* BACK FACE */}
+                      <div className="absolute inset-0 w-full h-full bg-gray-900 rounded-xl flex flex-col justify-center items-center text-white p-6 shadow-xl" style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
+                           <button onClick={(e) => toggleMenu(e, vault.id)} className="absolute top-4 right-4 text-gray-400 hover:text-white p-2 transition-colors"><X className="w-5 h-5"/></button>
+                           <h3 className="text-lg font-black tracking-tight mb-4 opacity-90 truncate w-full text-center">{vault.name}</h3>
+                           
+                           <div className="w-full space-y-2.5">
+                               <button disabled={isOverLimit} onClick={(e) => openEditModal(vault, e)} className={`w-full py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-black flex items-center justify-center gap-2 transition-all shadow-md ${isOverLimit ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700 text-white shadow-primary-500/20 active:scale-95'}`}><Edit2 className="w-4 h-4"/> Edit Vault</button>
+                               <button onClick={(e) => openManageAccess(vault, e)} className="w-full bg-white/10 hover:bg-white/20 active:scale-95 text-white py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-black flex items-center justify-center gap-2 transition-all"><Users className="w-4 h-4"/> Manage Access</button>
+                               <button onClick={(e) => { e.stopPropagation(); setReportVault(vault); setMenuOpenId(null); }} className="w-full bg-red-500/10 hover:bg-red-500/20 active:scale-95 text-red-500 py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-black flex items-center justify-center gap-2 transition-all"><AlertTriangle className="w-4 h-4"/> View Reports {vault.reportCount || 0 > 0 && <span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-[10px] ml-1">{vault.reportCount}</span>}</button>
+                           </div>
+                           
+                           <button disabled={isOverLimit} onClick={(e) => handleDeleteVault(vault.id, e)} className={`w-full mt-auto py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${isOverLimit ? 'text-gray-600 cursor-not-allowed' : 'text-red-400 hover:text-red-300 hover:bg-red-500/10 active:scale-95'}`}><Trash2 className="w-3.5 h-3.5"/> Delete Vault</button>
                       </div>
 
-                      <div className="mt-auto pt-4 border-t border-gray-50 flex gap-2">
-                        <button
-                          onClick={() => setViewQrVault(vault)}
-                          className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-primary-50 text-primary-600 rounded-xl text-sm font-semibold hover:bg-primary-100 transition-all border border-primary-100 cursor-pointer"
-                        >
-                          <QrCode className="w-4 h-4" /> View QR
-                        </button>
-                        <Link
-                          to={`/v/${vault.id}`}
-                          className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-semibold hover:bg-gray-800 transition-all shadow-md active:scale-95"
-                        >
-                          <ExternalLink className="w-4 h-4" /> Open
-                        </Link>
-                      </div>
                     </div>
-                    {/* Deletion Timer - Full Width Band */}
-                    <VaultTimer 
-                      createdAt={vault.createdAt} 
-                      expiresAt={vault.expiresAt} 
-                      views={vault.views} 
-                      maxViews={vault.maxViews} 
-                      lockedUntil={vault.lockedUntil} 
-                    />
                   </div>
                 ))}
 

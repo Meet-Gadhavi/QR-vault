@@ -491,7 +491,7 @@ export const PublicView: React.FC = () => {
                   disabled={isDownloadingAll}
                 >
                   {isDownloadingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                  <span>{isDownloadingAll ? 'Zipping...' : 'Download All'}</span>
+                  <span>{isDownloadingAll ? 'Zipping...' : 'Download All as .ZIP'}</span>
                 </button>
               )}
             </div>

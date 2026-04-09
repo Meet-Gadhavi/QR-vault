@@ -224,7 +224,7 @@ const supabaseImpl = {
 
         // Add new links
         for (const link of newLinks) {
-            await supabase.from('files').insert({ vault_id: id, name: link, size: 0, type: FileType.LINK, mime_type: 'text/url', url: link });
+            await supabase.from('files').insert({ vault_id: id, name: link, size: 0, type: FileType.LINK, mime_type: 'text/url', url: link.startsWith('http') ? link : `https://${link}` });
         }
 
         return (await supabaseImpl.getVaultById(id)) as Vault;
