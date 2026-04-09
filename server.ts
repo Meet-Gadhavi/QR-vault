@@ -9,11 +9,12 @@ import { google } from 'googleapis';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
 import { Readable } from 'stream';
+import os from 'os';
 
 // Use diskStorage instead of memoryStorage for better handling of large files (prevents RAM issues)
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, '/tmp'); // Render/Linux temp dir
+    cb(null, os.tmpdir()); // OS-agnostic temp dir
   },
   filename: (req, file, cb) => {
     cb(null, `${Date.now()}-${file.originalname}`);

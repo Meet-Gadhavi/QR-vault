@@ -493,6 +493,14 @@ export const Dashboard: React.FC = () => {
       return;
     }
 
+    const totalNewSize = selectedFiles.reduce((acc, f) => acc + f.size, 0);
+    const projectedStorage = (googleTokens ? driveStorageUsed : appUser.storageUsed) + totalNewSize;
+    
+    if (projectedStorage > appUser.storageLimit) {
+      alert(`Upload failed: This vault exceeds your total ${formatBytes(appUser.storageLimit, 0)} storage plan limit. Please delete files or upgrade your plan.`);
+      return;
+    }
+
     setIsSubmitting(true);
     setUploadProgress(0);
     let success = false;
@@ -541,8 +549,8 @@ export const Dashboard: React.FC = () => {
     try {
       let finalFiles: (File | any)[] = [...selectedFiles];
 
-      // If Plus/Pro and Drive connected, use Drive as primary storage
-      if (googleTokens && (appUser.plan === PlanType.PRO || appUser.plan === PlanType.STARTER)) {
+      // If Drive is connected, use Drive as primary storage to bypass direct Supabase API limits
+      if (googleTokens) {
         // 1. Ensure QRVM folder
         const ensureRes = await fetch(`${apiBase}/api/google-drive/ensure-folder`, {
           method: 'POST',
