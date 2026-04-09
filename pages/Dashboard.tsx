@@ -458,31 +458,45 @@ export const Dashboard: React.FC = () => {
     if (updatedVault) setManagingVault(updatedVault);
   };
 
-  const uploadFileToDrive = async (file: File, folderId: string) => {
-    const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('tokens', JSON.stringify(googleTokens));
-    formData.append('folderId', folderId);
+  const uploadFileToDrive = (file: File, folderId: string, onProgress?: (loaded: number) => void) => {
+    return new Promise<any>((resolve, reject) => {
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('tokens', JSON.stringify(googleTokens));
+      formData.append('folderId', folderId);
 
-    const res = await fetch(`${apiBase}/api/google-drive/upload-file`, {
-      method: 'POST',
-      body: formData,
-    });
-    if (!res.ok) {
-        const text = await res.text();
-        let errorMsg = 'Failed to upload file to Drive';
-        try {
-            const errorData = JSON.parse(text);
-            errorMsg = errorData.error || errorMsg;
-        } catch (e) {
-            // If not JSON, use the status text or a generic message
-            errorMsg = `Server error (${res.status}): ${res.statusText || 'Connection lost'}`;
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `${apiBase}/api/google-drive/upload-file`, true);
+
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable && onProgress) {
+          onProgress(e.loaded);
         }
-        throw new Error(errorMsg);
-    }
-    const data = await res.json();
-    return data; // { id, name, webViewLink, size }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            resolve(JSON.parse(xhr.responseText));
+          } catch (e) {
+            reject(new Error('Invalid server response'));
+          }
+        } else {
+          let errorMsg = 'Failed to upload file to Drive';
+          try {
+            const errorData = JSON.parse(xhr.responseText);
+            errorMsg = errorData.error || errorMsg;
+          } catch (e) {
+            errorMsg = `Server error (${xhr.status})`;
+          }
+          reject(new Error(errorMsg));
+        }
+      };
+
+      xhr.onerror = () => reject(new Error('Network error during upload'));
+      xhr.send(formData);
+    });
   };
 
   const handleSubmit = async () => {
@@ -503,6 +517,7 @@ export const Dashboard: React.FC = () => {
 
     setIsSubmitting(true);
     setUploadProgress(0);
+    setUploadTask(1); // Security scan / Initializing
     let success = false;
     const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -521,30 +536,9 @@ export const Dashboard: React.FC = () => {
         finalMaxViews = Number(maxViews);
     }
 
-    // Estimate total upload size for progress simulation
-    const totalSize = selectedFiles.reduce((acc, f) => acc + f.size, 0);
-    const estimatedMs = Math.max(1500, Math.min(totalSize / 50000 * 1000, 30000)); // 1.5s – 30s
-    let progressInterval: ReturnType<typeof setInterval> | null = null;
-    const startProgress = () => {
-      const start = Date.now();
-      setUploadTask(1); // Task 1: Scanning
-      progressInterval = setInterval(() => {
-        const elapsed = Date.now() - start;
-        const raw = elapsed / estimatedMs;
-        const eased = 1 - Math.pow(1 - Math.min(raw, 1), 2);
-        const currentProgress = Math.min(Math.round(eased * 90), 90);
-        setUploadProgress(currentProgress);
-
-        // Calculate remaining seconds
-        const remaining = Math.max(0, Math.ceil((estimatedMs - elapsed) / 1000));
-        setEstimatedSeconds(remaining);
-
-        // Update tasks based on progress
-        if (currentProgress > 30 && currentProgress <= 70) setUploadTask(2); // Task 2: Encryption
-        if (currentProgress > 70) setUploadTask(3); // Task 3: Finalizing
-      }, 80);
-    };
-    startProgress();
+    const totalSize = selectedFiles.reduce((acc, file) => acc + file.size, 0);
+    const fileProgresses = new Array(selectedFiles.length).fill(0);
+    const startTime = Date.now();
 
     try {
       let finalFiles: (File | any)[] = [...selectedFiles];
@@ -575,46 +569,52 @@ export const Dashboard: React.FC = () => {
         if (!saveRes.ok) throw new Error(saveData.error || 'Failed to create vault folder on Drive');
         const vaultFolderId = saveData.vaultFolderId;
 
-        // 3. Upload each new file to Drive
-        const driveFiles = [];
-        for (const file of selectedFiles) {
-          const driveFile = await uploadFileToDrive(file, vaultFolderId);
-          driveFiles.push({
-            name: driveFile.name,
-            size: driveFile.size || file.size,
-            type: file.type.startsWith('image/') ? FileType.IMAGE : (file.type === 'application/pdf' ? FileType.PDF : FileType.OTHER),
-            mimeType: file.type,
-            url: driveFile.webViewLink
+        // 3. Parallel Upload to Drive
+        const uploadPromises = selectedFiles.map((file, index) => {
+          return uploadFileToDrive(file, vaultFolderId, (loaded) => {
+            fileProgresses[index] = loaded;
+            const totalLoaded = fileProgresses.reduce((a, b) => a + b, 0);
+            
+            // Progress Calculation (0-98%)
+            const percent = totalSize > 0 ? Math.min(Math.round((totalLoaded / totalSize) * 98), 98) : 50;
+            setUploadProgress(percent);
+
+            // True Time Estimation (based on speed)
+            const elapsedMs = Date.now() - startTime;
+            if (elapsedMs > 500 && totalLoaded > 0) {
+              const bytesPerSec = totalLoaded / (elapsedMs / 1000);
+              const remainingBytes = totalSize - totalLoaded;
+              const remainingSec = Math.max(1, Math.ceil(remainingBytes / bytesPerSec));
+              setEstimatedSeconds(remainingSec);
+            }
+
+            // Task Pipeline UI
+            if (percent > 10 && percent <= 60) setUploadTask(2); // Encryption processing
+            if (percent > 60) setUploadTask(3); // Finalizing server distribution
           });
-        }
-        finalFiles = driveFiles;
+        });
+
+        const driveResults = await Promise.all(uploadPromises);
+        finalFiles = driveResults.map((driveFile, i) => ({
+          name: driveFile.name,
+          size: driveFile.size || selectedFiles[i].size,
+          type: selectedFiles[i].type.startsWith('image/') ? FileType.IMAGE : (selectedFiles[i].type === 'application/pdf' ? FileType.PDF : FileType.OTHER),
+          mimeType: selectedFiles[i].type,
+          url: driveFile.webViewLink
+        }));
       }
 
+      setUploadTask(3); // Finalizing
       if (modalMode === 'CREATE') {
         await mockService.createVault(appUser.id, vaultName, finalFiles, links, accessLevel, appUser.email, expiresAt, finalMaxViews, vaultPassword);
       } else if (modalMode === 'EDIT' && editingVaultId) {
         await mockService.updateVault(appUser.id, editingVaultId, vaultName, finalFiles, links, deletedFileIds, accessLevel, appUser.email, expiresAt, finalMaxViews, vaultPassword);
       }
+      
       success = true;
-      if (progressInterval) clearInterval(progressInterval);
-      setUploadProgress(100);
-      setUploadTask(3);
-      await new Promise(r => setTimeout(r, 800)); // show 100% briefly
-      setIsModalOpen(false);
-    } catch (e: any) {
-      console.error(e);
-      if (progressInterval) clearInterval(progressInterval);
-      setUploadProgress(0);
-      setUploadTask(0);
-      alert(`Note: ${e.message}`);
-    } finally {
-      await loadData(appUser.id);
-      setIsSubmitting(false);
-      setUploadTask(0);
-      setUploadProgress(0);
 
       // Auto-save metadata (and QR) to Google Drive if connected
-      if (success && googleTokens) {
+      if (googleTokens) {
         try {
           const updatedVaults = await mockService.getVaults(appUser.id);
           const latestVault = updatedVaults.sort((a, b) =>
@@ -629,6 +629,21 @@ export const Dashboard: React.FC = () => {
           console.error('Auto-sync to Drive failed:', driveErr);
         }
       }
+
+      setUploadProgress(100);
+      setEstimatedSeconds(0);
+      await new Promise(r => setTimeout(r, 800)); // show 100% briefly
+      setIsModalOpen(false);
+    } catch (e: any) {
+      console.error(e);
+      setUploadProgress(0);
+      setUploadTask(0);
+      alert(`Upload failed: ${e.message}`);
+    } finally {
+      await loadData(appUser.id);
+      setIsSubmitting(false);
+      setUploadTask(0);
+      setEstimatedSeconds(0);
     }
   };
 
