@@ -150,6 +150,8 @@ export const Dashboard: React.FC = () => {
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [viewQrVault, setViewQrVault] = useState<Vault | null>(null);
   const [copied, setCopied] = useState(false);
+  const [selectedFileForSettings, setSelectedFileForSettings] = useState<{ type: 'NEW' | 'EXISTING', index: number } | null>(null);
+  const [fileSettings, setFileSettings] = useState<Record<string, any>>({}); // key is index for NEW, id for EXISTING
 
   // Google Drive State
   const [googleTokens, setGoogleTokens] = useState<any>(null);
@@ -619,7 +621,30 @@ export const Dashboard: React.FC = () => {
               ? FileType.VIDEO 
               : (selectedFiles[i].type === 'application/pdf' ? FileType.PDF : FileType.OTHER)),
           mimeType: selectedFiles[i].type,
-          url: driveFile.webViewLink
+          url: driveFile.webViewLink,
+          settings: fileSettings[i]
+        }));
+      } else {
+        // Supabase only: attach settings directly to file objects
+        finalFiles = selectedFiles.map((f, i) => {
+          (f as any).settings = fileSettings[i];
+          return f;
+        });
+      }
+
+      // Update existing files settings for EDIT mode
+      if (modalMode === 'EDIT') {
+        setExistingFiles(prev => prev.map(f => {
+          const settings = fileSettings[f.id];
+          if (settings) {
+            return {
+              ...f,
+              maxDownloads: settings.maxDownloads,
+              expiresAt: settings.expiresAt,
+              deleteAfterMinutes: settings.deleteAfterMinutes
+            };
+          }
+          return f;
         }));
       }
 
@@ -1895,13 +1920,22 @@ export const Dashboard: React.FC = () => {
                           {file.type === FileType.LINK ? <LinkIcon className="w-4 h-4 text-blue-500" /> : <FileIcon className="w-4 h-4 text-gray-500" />}
                           <span className="text-gray-700 truncate max-w-[200px]">{file.name}</span>
                         </div>
-                        <button
-                          onClick={() => handleMarkFileDeleted(file.id)}
-                          className="text-gray-400 hover:text-red-500 p-1"
-                          title="Delete File"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => setSelectedFileForSettings({ type: 'EXISTING', index: file.id as any })}
+                            className="text-gray-400 hover:text-primary-600 p-1"
+                            title="File Settings"
+                          >
+                            <Settings className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleMarkFileDeleted(file.id)}
+                            className="text-gray-400 hover:text-red-500 p-1"
+                            title="Delete File"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1940,8 +1974,22 @@ export const Dashboard: React.FC = () => {
                   <div className="mt-3 space-y-2">
                     {selectedFiles.map((f, i) => (
                       <div key={i} className="flex items-center justify-between text-sm bg-blue-50 border border-blue-100 p-2 rounded-lg">
-                        <span className="truncate flex items-center gap-2"><FileIcon className="w-4 h-4 text-blue-500" /> {f.name}</span>
-                        <button onClick={() => removeSelectedFile(i)} className="text-gray-400 hover:text-red-500"><X className="w-4 h-4" /></button>
+                        <span className="truncate flex items-center gap-2">
+                          <FileIcon className="w-4 h-4 text-blue-500" /> {f.name}
+                          {fileSettings[i] && (
+                            <span className="text-[9px] bg-red-500 text-white px-1.5 py-0.5 rounded-full font-black uppercase tracking-tighter animate-pulse">Destruct Active</span>
+                          )}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setSelectedFileForSettings({ type: 'NEW', index: i }); }}
+                            className="text-gray-400 hover:text-primary-600 p-1"
+                            title="File Settings"
+                          >
+                            <Settings className="w-4 h-4" />
+                          </button>
+                          <button onClick={(e) => { e.stopPropagation(); removeSelectedFile(i); }} className="text-gray-400 hover:text-red-500 p-1"><X className="w-4 h-4" /></button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -2284,6 +2332,118 @@ export const Dashboard: React.FC = () => {
                     Accumulating 4 reports will result in a 10-day lock. 10 reports will trigger automatic permanent deletion for community safety.
                   </p>
                </div>
+            </div>
+          </div>
+        </div>
+      {/* File-Specific Setting Modal (Self-Destruct) */}
+      {selectedFileForSettings && (
+        <div className="fixed inset-0 bg-black/60 dark:bg-black/90 backdrop-blur-xl z-[100] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] w-full max-w-md shadow-2xl animate-in fade-in zoom-in-95 duration-300 border border-white/20 overflow-hidden relative">
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-red-500 via-orange-500 to-amber-500"></div>
+            
+            <div className="p-8">
+              <div className="flex justify-between items-center mb-8">
+                <div>
+                  <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tighter uppercase italic">File Destruct</h3>
+                  <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-1">Advanced Security Protocol</p>
+                </div>
+                <button onClick={() => setSelectedFileForSettings(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"><X className="text-gray-400 w-6 h-6" /></button>
+              </div>
+
+              <div className="space-y-6">
+                {/* 1. Max Downloads */}
+                <div className="bg-gray-50 dark:bg-black/40 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 relative group">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Download className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                      <span className="text-xs font-black text-gray-900 dark:text-gray-200 uppercase tracking-tight">Download Limit</span>
+                    </div>
+                    {appUser?.plan === PlanType.FREE && (
+                      <span className="text-[9px] font-black bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-500 px-2 py-0.5 rounded-full uppercase tracking-widest">Plus+</span>
+                    )}
+                  </div>
+                  <input 
+                    type="number"
+                    disabled={appUser?.plan === PlanType.FREE}
+                    placeholder="Unlimited"
+                    value={fileSettings[selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any]?.maxDownloads || ''}
+                    onChange={(e) => {
+                      const val = e.target.value === '' ? undefined : parseInt(e.target.value);
+                      const key = selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any;
+                      setFileSettings({ ...fileSettings, [key]: { ...fileSettings[key], maxDownloads: val } });
+                    }}
+                    className={`w-full bg-white dark:bg-black border border-gray-100 dark:border-gray-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-primary-500 transition-all font-bold ${appUser?.plan === PlanType.FREE ? 'opacity-50 cursor-not-allowed' : 'dark:text-white'}`}
+                  />
+                  <p className="text-[9px] text-gray-400 mt-2 font-medium">Auto-delete after reaching this many successful downloads.</p>
+                </div>
+
+                {/* 2. Vanishing Timer */}
+                <div className="bg-gray-50 dark:bg-black/40 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 relative group">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                      <span className="text-xs font-black text-gray-900 dark:text-gray-200 uppercase tracking-tight">Vanishing Timer</span>
+                    </div>
+                    {appUser?.plan === PlanType.FREE && (
+                      <span className="text-[9px] font-black bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-500 px-2 py-0.5 rounded-full uppercase tracking-widest">Plus+</span>
+                    )}
+                  </div>
+                  <select
+                    disabled={appUser?.plan === PlanType.FREE}
+                    value={fileSettings[selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any]?.deleteAfterMinutes || ''}
+                    onChange={(e) => {
+                      const val = e.target.value === '' ? undefined : parseInt(e.target.value);
+                      const key = selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any;
+                      setFileSettings({ ...fileSettings, [key]: { ...fileSettings[key], deleteAfterMinutes: val } });
+                    }}
+                    className={`w-full bg-white dark:bg-black border border-gray-100 dark:border-gray-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-orange-500 transition-all font-bold ${appUser?.plan === PlanType.FREE ? 'opacity-50 cursor-not-allowed' : 'dark:text-white'}`}
+                  >
+                    <option value="">Never vanish</option>
+                    <option value="1">1 Minute after opening</option>
+                    <option value="5">5 Minutes after opening</option>
+                    <option value="60">1 Hour after opening</option>
+                    <option value="1440">24 Hours after opening</option>
+                  </select>
+                  <p className="text-[9px] text-gray-400 mt-2 font-medium">Countdown begins once the visitor first previews or downloads this file.</p>
+                </div>
+
+                {/* 3. Fixed Expiry */}
+                <div className="bg-gray-50 dark:bg-black/40 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 relative group">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-red-600 dark:text-red-400" />
+                      <span className="text-xs font-black text-gray-900 dark:text-gray-200 uppercase tracking-tight">Hard Expiry</span>
+                    </div>
+                    {appUser?.plan === PlanType.FREE && (
+                      <span className="text-[9px] font-black bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-500 px-2 py-0.5 rounded-full uppercase tracking-widest">Plus+</span>
+                    )}
+                  </div>
+                  <input 
+                    type="datetime-local"
+                    disabled={appUser?.plan === PlanType.FREE}
+                    value={fileSettings[selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any]?.expiresAt || ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const key = selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any;
+                      setFileSettings({ ...fileSettings, [key]: { ...fileSettings[key], expiresAt: val } });
+                    }}
+                    className={`w-full bg-white dark:bg-black border border-gray-100 dark:border-gray-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-red-500 transition-all font-bold ${appUser?.plan === PlanType.FREE ? 'opacity-50 cursor-not-allowed' : 'dark:text-white'}`}
+                  />
+                  <p className="text-[9px] text-gray-400 mt-2 font-medium">File will vanish on this specific date regardless of views.</p>
+                </div>
+              </div>
+
+              <div className="mt-10 flex gap-4">
+                 {appUser?.plan === PlanType.FREE ? (
+                  <Link to="/pricing" onClick={() => setSelectedFileForSettings(null)} className="flex-1 bg-gradient-to-r from-amber-500 to-orange-600 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 animate-in slide-in-from-bottom-2">
+                    <Zap className="w-4 h-4 fill-current" /> Upgrade to Plus
+                  </Link>
+                 ) : (
+                  <button onClick={() => setSelectedFileForSettings(null)} className="flex-1 bg-gray-900 dark:bg-white dark:text-gray-900 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl hover:scale-95 transition-all">
+                    Apply Protocol
+                  </button>
+                 )}
+              </div>
             </div>
           </div>
         </div>

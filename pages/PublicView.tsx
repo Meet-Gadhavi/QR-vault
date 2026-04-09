@@ -3,7 +3,8 @@ import { useParams, useLocation, Link } from 'react-router-dom';
 import { mockService } from '../services/mockService';
 import { supabase } from '../services/supabaseClient';
 import { Vault, FileType, VaultFile, AccessLevel, RequestStatus, PlanType } from '../types';
-import { Download, ExternalLink, FileText, Image as ImageIcon, Box, Loader2, ShieldCheck, AlertCircle, Eye, Link as LinkIcon, Info, X, File, Lock, Send, Clock, Zap } from 'lucide-react';
+import { Download, ExternalLink, FileText, Image as ImageIcon, Box, Loader2, ShieldCheck, AlertCircle, Eye, Link as LinkIcon, Info, X, File, Lock, Send, Clock, Zap, RefreshCw, Sun, Moon } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
 import JSZip from 'jszip';
 
 type Tab = 'ALL' | 'PHOTOS' | 'DOCS' | 'LINKS';
@@ -13,6 +14,8 @@ export const PublicView: React.FC = () => {
   const [vault, setVault] = useState<Vault | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>('ALL');
+  const { theme, toggleTheme } = useTheme();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Gatekeeper State
   const [viewerEmail, setViewerEmail] = useState<string>(() => localStorage.getItem('qrvault_viewer_email') || '');
@@ -34,6 +37,7 @@ export const PublicView: React.FC = () => {
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const [downloadingFileId, setDownloadingFileId] = useState<string | null>(null);
   const [downloadProgress, setDownloadProgress] = useState<{current: number, total: number} | null>(null);
+  const [downloadStatus, setDownloadStatus] = useState<'PREPARING' | 'DOWNLOADING' | 'ZIPPING' | 'COMPLETE'>('PREPARING');
 
   const [isExpired, setIsExpired] = useState(false);
   const [expiredVaultName, setExpiredVaultName] = useState<string | null>(null);
@@ -73,34 +77,40 @@ export const PublicView: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    if (id) {
-      mockService.getVaultById(id).then(async (v) => {
-        if (v) {
-          setVault(v);
-          checkAccess(v);
-        } else {
-          // Check if it was recently deleted
-          try {
-            const { data: log } = await supabase
-              .from('deleted_vault_logs')
-              .select('vault_name')
-              .eq('original_vault_id', id)
-              .single();
-            
-            if (log) {
-              setIsExpired(true);
-              setExpiredVaultName(log.vault_name);
-            }
-          } catch (err) {
-            console.warn("Not found in deletion logs either");
-          }
-        }
-        setLoading(false);
-      });
-    } else {
+  const fetchVault = async () => {
+    if (!id) {
       setLoading(false);
+      return;
     }
+    setIsRefreshing(true);
+    try {
+      const v = await mockService.getVaultById(id);
+      if (v) {
+        setVault(v);
+        checkAccess(v);
+      } else {
+        // Check if it was recently deleted
+        const { data: log } = await supabase
+          .from('deleted_vault_logs')
+          .select('vault_name')
+          .eq('original_vault_id', id)
+          .single();
+        
+        if (log) {
+          setIsExpired(true);
+          setExpiredVaultName(log.vault_name);
+        }
+      }
+    } catch (err) {
+      console.warn("Fetch failed or not found", err);
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchVault();
   }, [id]);
 
   const handleVerifyPassword = (e: React.FormEvent) => {
@@ -174,6 +184,9 @@ export const PublicView: React.FC = () => {
 
     setDownloadingFileId(file.id);
     try {
+      // Increment download count for self-destruct logic
+      await mockService.incrementFileDownload(file.id);
+      
       const response = await fetch(file.url);
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
@@ -195,21 +208,22 @@ export const PublicView: React.FC = () => {
   const handleBulkDownload = async () => {
     if (!vault || isDownloadingAll) return;
     setIsDownloadingAll(true);
+    setDownloadStatus('PREPARING');
     const downloadableFiles = vault.files.filter(f => f.type !== FileType.LINK);
     setDownloadProgress({ current: 0, total: downloadableFiles.length });
 
     try {
       const zip = new JSZip();
       const folderName = vault.name.replace(/[^a-z0-9]/gi, '_') || 'vault';
-      const folder = zip.folder(folderName);
+      zip.folder(folderName); // No longer nesting inside folder for flat zip if preferred, but keeping it consistent
 
       if (downloadableFiles.length === 0) {
         alert("No files to download.");
         setIsDownloadingAll(false);
-        setDownloadProgress(null);
         return;
       }
 
+      setDownloadStatus('DOWNLOADING');
       let successCount = 0;
       let skippedFiles: string[] = [];
       let i = 0;
@@ -221,7 +235,6 @@ export const PublicView: React.FC = () => {
           const response = await fetch(proxyUrl);
           
           if (!response.ok) {
-            console.error(`Failed to download ${file.name}: ${response.statusText}`);
             skippedFiles.push(file.name);
             continue;
           }
@@ -229,38 +242,40 @@ export const PublicView: React.FC = () => {
           const contentType = response.headers.get('content-type') || '';
           const blob = await response.blob();
           
-          // Validation: If it's HTML and small, it's likely a GDrive error page that the proxy couldn't bypass
           if (contentType.includes('text/html') && blob.size < 100000) {
-            console.error(`Skipping ${file.name}: Proxy returned HTML instead of file content.`);
             skippedFiles.push(file.name);
             continue;
           }
 
           if (blob.size > 0) {
-            folder?.file(file.name, blob);
+            zip.file(file.name, blob); // Flat structure for easier usage
             successCount++;
+            // Increment download count for self-destruct logic
+            mockService.incrementFileDownload(file.id).catch(console.error);
           } else {
             skippedFiles.push(file.name);
           }
         } catch (e: any) {
-          console.error(`Error processing ${file.name}:`, e);
           skippedFiles.push(file.name);
         }
       }
 
       if (successCount === 0) {
-        alert("Could not download any files. Please check if the files are still accessible.");
+        alert("Could not download any files.");
         setIsDownloadingAll(false);
-        setDownloadProgress(null);
         return;
       }
 
       if (skippedFiles.length > 0) {
-        alert(`Note: ${skippedFiles.length} file(s) were skipped due to download errors or security restrictions: \n${skippedFiles.join(', ')}\n\nPlease try downloading these individually.`);
+        alert(`${skippedFiles.length} file(s) skipped due to errors.`);
       }
 
-      setDownloadProgress(null); // Switch to "Zipping..." state
-      const content = await zip.generateAsync({ type: "blob" });
+      setDownloadStatus('ZIPPING');
+      const content = await zip.generateAsync({ type: "blob" }, (metadata) => {
+        // Optional: Update progress based on zipping metadata if needed
+      });
+
+      setDownloadStatus('COMPLETE');
       const url = URL.createObjectURL(content);
       const a = document.createElement('a');
       a.href = url;
@@ -269,10 +284,16 @@ export const PublicView: React.FC = () => {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
+
+      // Brief delay to show "Complete!"
+      setTimeout(() => {
+        setIsDownloadingAll(false);
+        setDownloadProgress(null);
+      }, 1000);
+
     } catch (error) {
       console.error("Zip error", error);
       alert("An error occurred while creating the ZIP file.");
-    } finally {
       setIsDownloadingAll(false);
       setDownloadProgress(null);
     }
@@ -494,8 +515,58 @@ export const PublicView: React.FC = () => {
     </div>
   );
 
+  const handleOpenPreview = (file: VaultFile) => {
+    if (file.type === FileType.IMAGE) setPreviewFile(file);
+    else if (file.type === FileType.PDF) setPreviewPdf(file);
+    else if (file.type === FileType.VIDEO) setPreviewVideo(file);
+    
+    // Record view for self-destruct timing
+    if (file.deleteAfterMinutes) {
+        mockService.recordFileView(file.id).catch(console.error);
+    }
+  };
+
+  const FileCardTimer: React.FC<{ file: VaultFile }> = ({ file }) => {
+    const [timeLeft, setTimeLeft] = useState<string | null>(null);
+
+    useEffect(() => {
+      if (!file.deleteAfterMinutes || !file.firstViewedAt) return;
+
+      const timer = setInterval(() => {
+        const now = new Date().getTime();
+        const viewsAt = new Date(file.firstViewedAt!).getTime();
+        const expiry = viewsAt + file.deleteAfterMinutes! * 60000;
+        const distance = expiry - now;
+
+        if (distance < 0) {
+          setTimeLeft('EXPIRED');
+          clearInterval(timer);
+          // Refresh vault to hide expired file
+          fetchVault();
+          return;
+        }
+
+        const mins = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const secs = Math.floor((distance % (1000 * 60)) / 1000);
+        setTimeLeft(`${mins}:${secs.toString().padStart(2, '0')}`);
+      }, 1000);
+
+      return () => clearInterval(timer);
+    }, [file]);
+
+    if (!timeLeft) return null;
+
+    return (
+      <div className="absolute top-2 right-2 bg-red-600/90 backdrop-blur-md text-white px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 animate-pulse shadow-xl border border-white/20 z-10">
+        <Clock className="w-2.5 h-2.5" />
+        Vanish: {timeLeft}
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-[#fcfcfd] dark:bg-[#050505] flex flex-col relative overflow-hidden transition-colors duration-500">
+
       {/* Dynamic Background Blobs */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary-500/10 dark:bg-primary-500/5 rounded-full blur-[120px] animate-blob"></div>
@@ -516,9 +587,28 @@ export const PublicView: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2">
+              {/* Theme Toggle */}
+              <button
+                onClick={toggleTheme}
+                className="p-2.5 rounded-xl bg-gray-100/50 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 transition-all active:scale-95 border border-white/20 dark:border-white/5 shadow-sm"
+                title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              >
+                {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              </button>
+
+              {/* Refresh Button */}
+              <button
+                onClick={fetchVault}
+                disabled={isRefreshing}
+                className="p-2.5 rounded-xl bg-gray-100/50 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 transition-all active:scale-95 border border-white/20 dark:border-white/5 shadow-sm disabled:opacity-50"
+                title="Refresh Vault Content"
+              >
+                <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+              </button>
+
               <button
                 onClick={() => setIsReportModalOpen(true)}
-                className="group/report flex items-center bg-red-50 text-red-400 hover:text-red-600 hover:bg-red-100 px-4 py-2.5 rounded-xl transition-all active:scale-95 shadow-sm overflow-hidden"
+                className="group/report flex items-center bg-red-50 dark:bg-red-500/10 text-red-400 dark:text-red-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 px-4 py-2.5 rounded-xl transition-all active:scale-95 shadow-sm border border-red-100 dark:border-red-500/20 overflow-hidden"
                 title="Report Vault"
               >
                 <AlertCircle className="w-5 h-5 flex-shrink-0" />
@@ -578,14 +668,11 @@ export const PublicView: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 relative z-[1]">
             {currentFiles.map(file => (
-              <div key={file.id} className="bg-white/40 dark:bg-white/5 backdrop-blur-xl rounded-[2rem] border border-white dark:border-white/5 shadow-xl shadow-gray-200/50 dark:shadow-black/20 overflow-hidden hover:shadow-2xl hover:scale-[1.02] transition-all group border-b-4 border-b-gray-100/50 dark:border-b-white/5">
+              <div key={file.id} className="bg-white/40 dark:bg-white/5 backdrop-blur-xl rounded-[2rem] border border-white dark:border-white/5 shadow-xl shadow-gray-200/50 dark:shadow-black/20 overflow-hidden hover:shadow-2xl hover:scale-[1.02] transition-all group border-b-4 border-b-gray-100/50 dark:border-b-white/5 relative">
+                <FileCardTimer file={file} />
                 <div
                   className="aspect-video bg-gray-100/50 dark:bg-white/5 relative flex items-center justify-center overflow-hidden cursor-pointer"
-                  onClick={() => {
-                    if (file.type === FileType.IMAGE) setPreviewFile(file);
-                    if (file.type === FileType.VIDEO) setPreviewVideo(file);
-                    if (file.type === FileType.PDF) setPreviewPdf(file);
-                  }}
+                  onClick={() => handleOpenPreview(file)}
                 >
                   {file.type === FileType.IMAGE ? (
                     <>
@@ -634,12 +721,7 @@ export const PublicView: React.FC = () => {
                   ) : (
                     <div className="flex gap-3">
                       <button
-                        onClick={() => {
-                          if (file.type === FileType.IMAGE) setPreviewFile(file);
-                          else if (file.type === FileType.VIDEO) setPreviewVideo(file);
-                          else if (file.type === FileType.PDF) setPreviewPdf(file);
-                          else handleSingleDownload(file, { stopPropagation: () => {} } as any);
-                        }}
+                        onClick={() => handleOpenPreview(file)}
                         className="flex-1 flex items-center justify-center gap-2 py-4 bg-gray-900 dark:bg-white text-white dark:text-black rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-800 dark:hover:bg-gray-100 transition-all active:scale-95 disabled:opacity-50"
                       >
                         {file.type === FileType.IMAGE || file.type === FileType.VIDEO || file.type === FileType.PDF ? 'PREVIEW' : 'DOWNLOAD'}
@@ -828,6 +910,67 @@ export const PublicView: React.FC = () => {
             ) : (
               <a href={infoFile.url} target="_blank" rel="noreferrer" className="w-full bg-primary-600 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary-100 hover:bg-primary-700 transition-all active:scale-95 flex items-center justify-center gap-2"><ExternalLink className="w-4 h-4" /> Open Link</a>
             )}
+          </div>
+        </div>
+      )}
+      {/* MEGA-style Download Manager Modal */}
+      {isDownloadingAll && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-xl p-6 animate-in fade-in transition-all">
+          <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] p-8 md:p-12 w-full max-w-lg shadow-[0_32px_128px_-16px_rgba(0,0,0,0.3)] dark:shadow-[0_32px_128px_-16px_rgba(0,0,0,0.6)] border border-white dark:border-white/5 animate-in zoom-in-95 slide-in-from-bottom-12 duration-500 relative overflow-hidden">
+            {/* Background Decoration */}
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-500 via-emerald-500 to-blue-500"></div>
+            
+            <div className="flex flex-col items-center text-center">
+              <div className="w-24 h-24 bg-primary-50 dark:bg-primary-500/10 rounded-[2rem] flex items-center justify-center text-primary-600 dark:text-primary-400 mb-8 shadow-inner relative group">
+                <div className="absolute inset-0 bg-primary-400/20 dark:bg-primary-400/10 rounded-[2rem] animate-ping opacity-20"></div>
+                {downloadStatus === 'COMPLETE' ? (
+                  <ShieldCheck className="w-12 h-12 animate-in zoom-in duration-300" />
+                ) : (
+                  <Download className="w-12 h-12 animate-bounce" />
+                )}
+              </div>
+
+              <h2 className="text-3xl font-black text-gray-900 dark:text-white tracking-tighter mb-2 uppercase italic">
+                {downloadStatus === 'PREPARING' && 'Preparing...'}
+                {downloadStatus === 'DOWNLOADING' && 'Downloading...'}
+                {downloadStatus === 'ZIPPING' && 'Zipping...'}
+                {downloadStatus === 'COMPLETE' && 'Complete!'}
+              </h2>
+              
+              <p className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-10">
+                {downloadStatus === 'PREPARING' && 'Initializing secure transfer protocol'}
+                {downloadStatus === 'DOWNLOADING' && `Processing asset ${downloadProgress?.current} of ${downloadProgress?.total}`}
+                {downloadStatus === 'ZIPPING' && 'Compressing vault for instant delivery'}
+                {downloadStatus === 'COMPLETE' && 'Your download has been served successfully'}
+              </p>
+
+              {/* Progress Bar Container */}
+              <div className="w-full bg-gray-100 dark:bg-white/5 h-4 rounded-full overflow-hidden mb-4 border border-gray-200 dark:border-white/5 p-1 shadow-inner group/bar relative">
+                <div 
+                  className="h-full bg-gradient-to-r from-primary-500 via-emerald-500 to-blue-500 rounded-full transition-all duration-500 ease-out relative shadow-sm"
+                  style={{ 
+                    width: downloadStatus === 'PREPARING' ? '10%' : 
+                           downloadStatus === 'DOWNLOADING' ? `${(downloadProgress?.current || 0) / (downloadProgress?.total || 1) * 80 + 10}%` :
+                           downloadStatus === 'ZIPPING' ? '95%' : '100%'
+                  }}
+                >
+                  <div className="absolute inset-0 bg-white/20 animate-shine opacity-30"></div>
+                </div>
+              </div>
+
+              <div className="flex justify-between w-full px-1">
+                 <span className="text-[10px] font-black text-gray-400 dark:text-gray-600 uppercase tracking-tighter italic">
+                    {downloadStatus === 'COMPLETE' ? '100%' : 'In Progress'}
+                 </span>
+                 <span className="text-[10px] font-black text-primary-600 dark:text-primary-400 uppercase tracking-widest animate-pulse">
+                    Secure Download Hub
+                 </span>
+              </div>
+            </div>
+            
+            {/* Visual Flair */}
+            <div className="absolute -bottom-12 -right-12 w-32 h-32 bg-primary-500/5 dark:bg-primary-500/10 rounded-full blur-3xl"></div>
+            <div className="absolute -top-12 -left-12 w-32 h-32 bg-emerald-500/5 dark:bg-emerald-500/10 rounded-full blur-3xl"></div>
           </div>
         </div>
       )}

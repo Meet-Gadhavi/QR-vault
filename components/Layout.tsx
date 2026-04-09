@@ -56,6 +56,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
               <ThemeToggle />
               
+              {isAuthenticated ? (
                 <>
                   <Link to="/dashboard" className={`font-medium text-sm transition-colors ${isDashboard ? 'text-primary-600' : 'text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400'}`}>
                       My Dashboard

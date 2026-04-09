@@ -30,6 +30,7 @@ const planData = [
     period: '/month',
     features: [
       '10 GB Secure Storage',
+      'Self-Destructing Files (Vanishing)',
       'Expiration Rules (Auto-expire)',
       'Unlimited QR Vaults',
       'Priority Speed & Performance',
@@ -50,6 +51,7 @@ const planData = [
     period: '/month',
     features: [
       '20 GB Secure Storage',
+      'Self-Destructing Files (Priority)',
       'Permanent Storage (Optional Expiry)',
       'Password Protected Vaults',
       'Fastest Global Delivery',

@@ -12,7 +12,19 @@ function mapDbVault(v: any): Vault {
         views: v.views,
         active: v.active,
         accessLevel: v.access_level || AccessLevel.PUBLIC,
-        files: (v.files || []).map((f: any) => ({ id: f.id, name: f.name, size: f.size, type: f.type, url: f.url, mimeType: f.mime_type })),
+        files: (v.files || []).map((f: any) => ({ 
+            id: f.id, 
+            name: f.name, 
+            size: f.size, 
+            type: f.type, 
+            url: f.url, 
+            mimeType: f.mime_type,
+            maxDownloads: f.max_downloads,
+            downloadCount: f.download_count || 0,
+            expiresAt: f.expires_at,
+            deleteAfterMinutes: f.delete_after_minutes,
+            firstViewedAt: f.first_viewed_at
+        })),
         requests: (v.requests || []).map((r: any) => ({ id: r.id, email: r.email, status: r.status, requestedAt: r.requested_at })),
         userPlan: v.profiles?.plan as PlanType,
         expiresAt: v.expires_at,
@@ -21,13 +33,25 @@ function mapDbVault(v: any): Vault {
     };
 }
 
-function createFileRecord(vaultId: string, file: File, url: string) {
+function createFileRecord(vaultId: string, file: File, url: string, settings?: any) {
     let fType = FileType.OTHER;
     if (file.type.startsWith('image/')) fType = FileType.IMAGE;
     else if (file.type.startsWith('video/')) fType = FileType.VIDEO;
     else if (file.type === 'application/pdf') fType = FileType.PDF;
     else if (file.type.includes('zip')) fType = FileType.ZIP;
-    return { vault_id: vaultId, name: file.name, size: file.size, type: fType, mime_type: file.type, url };
+    
+    return { 
+        vault_id: vaultId, 
+        name: file.name, 
+        size: file.size, 
+        type: fType, 
+        mime_type: file.type, 
+        url,
+        max_downloads: settings?.maxDownloads,
+        expires_at: settings?.expiresAt,
+        delete_after_minutes: settings?.deleteAfterMinutes,
+        download_count: 0
+    };
 }
 
 // --- SUPABASE IMPLEMENTATION ---
@@ -113,12 +137,51 @@ const supabaseImpl = {
         const { data, error } = await supabase.from('vaults').select(`*, profiles(plan), files (*), requests:access_requests (*)`).eq('id', id).single();
         if (error || !data) return null;
 
-        // Increment view count via RPC if available, or just ignore if not
+        // --- FILTER EXPIRED/SELF-DESTRUCTED FILES ---
+        const now = new Date();
+        const activeFiles = (data.files || []).filter((f: any) => {
+            // 1. Max Downloads
+            if (f.max_downloads && (f.download_count || 0) >= f.max_downloads) return false;
+            
+            // 2. Fixed Expiry
+            if (f.expires_at && new Date(f.expires_at) < now) return false;
+            
+            // 3. Time Limit after First View
+            if (f.delete_after_minutes && f.first_viewed_at) {
+                const viewsAt = new Date(f.first_viewed_at);
+                const expiry = new Date(viewsAt.getTime() + f.delete_after_minutes * 60000);
+                if (expiry < now) return false;
+            }
+            
+            return true;
+        });
+
+        // Trigger cleanup for those files in background (optional, but good for storage)
+        // In a real backend, we'd have a cron job. Here we just filter them out.
+        data.files = activeFiles;
+
+        // Increment vault view count via RPC if available
         supabase.rpc('increment_vault_view', { vault_id: id }).then(({ error }: { error: any }) => {
             if (error) console.warn("View increment failed:", error.message);
         });
 
         return mapDbVault(data);
+    },
+
+    incrementFileDownload: async (fileId: string) => {
+        // Increment download count in DB
+        const { data: file } = await supabase.from('files').select('download_count').eq('id', fileId).single();
+        if (file) {
+            await supabase.from('files').update({ download_count: (file.download_count || 0) + 1 }).eq('id', fileId);
+        }
+    },
+
+    recordFileView: async (fileId: string) => {
+        // Record first view time
+        const { data: file } = await supabase.from('files').select('first_viewed_at').eq('id', fileId).single();
+        if (file && !file.first_viewed_at) {
+            await supabase.from('files').update({ first_viewed_at: new Date().toISOString() }).eq('id', fileId);
+        }
     },
 
     createVault: async (userId: string, name: string, files: File[], links: string[], accessLevel: AccessLevel, email?: string, expiresAt?: string, maxViews?: number, password?: string): Promise<Vault> => {
@@ -163,7 +226,8 @@ const supabaseImpl = {
 
             const { data: { publicUrl } } = supabase.storage.from('vault-files').getPublicUrl(path);
 
-            await supabase.from('files').insert(createFileRecord(vault.id, file, publicUrl));
+            const fileSettings = (file as any).settings;
+            await supabase.from('files').insert(createFileRecord(vault.id, file, publicUrl, fileSettings));
         }
 
         // 3. Add Links
@@ -208,7 +272,11 @@ const supabaseImpl = {
                     size: f.size,
                     type: f.type || (f.mimeType?.startsWith('video/') ? FileType.VIDEO : FileType.OTHER),
                     mime_type: f.mimeType || 'application/octet-stream',
-                    url: f.url
+                    url: f.url,
+                    max_downloads: f.maxDownloads,
+                    expires_at: f.expiresAt,
+                    delete_after_minutes: f.deleteAfterMinutes,
+                    download_count: f.downloadCount || 0
                 });
                 continue;
             }
@@ -220,7 +288,8 @@ const supabaseImpl = {
             if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
 
             const { data: { publicUrl } } = supabase.storage.from('vault-files').getPublicUrl(path);
-            await supabase.from('files').insert(createFileRecord(id, file, publicUrl));
+            const fileSettings = (file as any).settings;
+            await supabase.from('files').insert(createFileRecord(id, file, publicUrl, fileSettings));
         }
 
         // Add new links

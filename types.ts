@@ -30,6 +30,11 @@ export interface VaultFile {
   type: FileType;
   url: string; // Mock url
   mimeType: string;
+  maxDownloads?: number;                             // NEW: Self-destruct after X downloads
+  downloadCount: number;                             // Tracked downloads
+  expiresAt?: string;                                // NEW: Self-destruct at fixed time
+  deleteAfterMinutes?: number;                       // NEW: Self-destruct X mins after first view
+  firstViewedAt?: string;                            // Tracked first view time
 }
 
 export enum AccessLevel {
