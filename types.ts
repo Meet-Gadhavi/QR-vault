@@ -19,6 +19,7 @@ export enum FileType {
   PDF = 'PDF',
   ZIP = 'ZIP',
   LINK = 'LINK',
+  VIDEO = 'VIDEO',
   OTHER = 'OTHER'
 }
 

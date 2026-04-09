@@ -78,18 +78,18 @@ const VaultTimer: React.FC<{
   );
 
   if (timeLeft === 'Expired') return (
-    <div className="bg-red-50 py-2 px-4 border-t border-red-100 flex items-center justify-center gap-2">
+    <div className="bg-red-50 dark:bg-red-900/10 py-2 px-4 border-t border-red-100 dark:border-red-900/30 flex items-center justify-center gap-2">
       <AlertCircle className="w-3.5 h-3.5 text-red-500" />
-      <span className="text-red-600 font-bold text-[10px] uppercase tracking-wider">Vault Expired</span>
+      <span className="text-red-600 dark:text-red-400 font-bold text-[10px] uppercase tracking-wider">Vault Expired</span>
     </div>
   );
 
   return (
-    <div className="bg-amber-50/60 py-2.5 px-4 border-t border-amber-100/50 flex items-center justify-center gap-2 group/timer transition-colors hover:bg-amber-50">
+    <div className="bg-amber-50/60 dark:bg-amber-900/10 py-2.5 px-4 border-t border-amber-100/50 dark:border-amber-900/30 flex items-center justify-center gap-2 group/timer transition-colors hover:bg-amber-50 dark:hover:bg-amber-900/20">
       <Clock className="w-3.5 h-3.5 text-amber-500 group-hover/timer:animate-spin-slow" />
       <div className="flex items-center gap-2">
-        <span className="text-[10px] text-amber-700 font-bold uppercase tracking-widest">Valid for:</span>
-        <span className="text-sm font-mono font-bold text-amber-600 tabular-nums">{timeLeft}</span>
+        <span className="text-[10px] text-amber-700 dark:text-amber-400 font-bold uppercase tracking-widest">Valid for:</span>
+        <span className="text-sm font-mono font-bold text-amber-600 dark:text-amber-500 tabular-nums">{timeLeft}</span>
       </div>
     </div>
   );
@@ -613,7 +613,11 @@ export const Dashboard: React.FC = () => {
         finalFiles = driveResults.map((driveFile, i) => ({
           name: driveFile.name,
           size: driveFile.size || selectedFiles[i].size,
-          type: selectedFiles[i].type.startsWith('image/') ? FileType.IMAGE : (selectedFiles[i].type === 'application/pdf' ? FileType.PDF : FileType.OTHER),
+          type: selectedFiles[i].type.startsWith('image/') 
+            ? FileType.IMAGE 
+            : (selectedFiles[i].type.startsWith('video/') 
+              ? FileType.VIDEO 
+              : (selectedFiles[i].type === 'application/pdf' ? FileType.PDF : FileType.OTHER)),
           mimeType: selectedFiles[i].type,
           url: driveFile.webViewLink
         }));
@@ -1010,14 +1014,19 @@ export const Dashboard: React.FC = () => {
     { name: 'Used', value: storageUsedDisplay },
     { name: 'Free', value: Math.max(0, appUser.storageLimit - storageUsedDisplay) },
   ] : [];
-  const COLORS = isOverLimit ? ['#ef4444', '#fee2e2'] : ['#7c3aed', '#e5e7eb'];
+  
+  // Use current theme to set pie colors
+  const { theme } = useTheme();
+  const COLORS = isOverLimit 
+    ? ['#ef4444', theme === 'dark' ? '#450a0a' : '#fee2e2'] 
+    : ['#7c3aed', theme === 'dark' ? '#1e1b4b' : '#f5f3ff'];
 
   if (isLoading) return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary-600 w-10 h-10" /></div>;
   if (!isAuthenticated && !isLoading) return null; // Wait for redirect
   if (!appUser) return null; // Wait for load
 
   return (
-    <div className="bg-gray-50 min-h-screen pb-12 relative">
+    <div className="bg-gray-50 dark:bg-[#0a0a0a] min-h-screen pb-12 relative transition-colors duration-300">
 
 
 
@@ -1041,18 +1050,18 @@ export const Dashboard: React.FC = () => {
 
         {/* Welcome & Stats */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <div className="md:col-span-2 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden flex flex-col justify-between">
+          <div className="md:col-span-2 bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm relative overflow-hidden flex flex-col justify-between">
             <div className="flex justify-between items-start relative z-10">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Welcome back, {appUser.name}</h1>
-                <p className="text-gray-500 mt-1">Manage your vaults and storage.</p>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Welcome back, {appUser.name}</h1>
+                <p className="text-gray-500 dark:text-gray-400 mt-1">Manage your vaults and storage.</p>
               </div>
               <div className="flex flex-col items-end gap-2">
-                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${appUser.plan === PlanType.PRO ? 'bg-purple-100 text-purple-700' : appUser.plan === PlanType.STARTER ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-600'}`}>
+                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${appUser.plan === PlanType.PRO ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400' : appUser.plan === PlanType.STARTER ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
                   {appUser.plan === PlanType.STARTER ? 'Plus' : appUser.plan} Plan
                 </span>
                 {timeLeft && (
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded-lg">
+                  <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded-lg">
                     <Clock className="w-3 h-3" /> {timeLeft}
                   </div>
                 )}
@@ -1108,7 +1117,7 @@ export const Dashboard: React.FC = () => {
                   {!googleTokens && isPaidPlan && (
                     <button
                       onClick={handleConnectGoogleDrive}
-                      className="flex items-center gap-2 px-5 py-3 rounded-xl font-medium shadow-md transition-all bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
+                      className="flex items-center gap-2 px-5 py-3 rounded-xl font-medium shadow-md transition-all bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
                     >
                       <GoogleDriveImg className="w-5 h-5" />
                       Connect Google Drive
@@ -1119,12 +1128,12 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
-            <div className="flex items-center gap-2 text-gray-900 font-semibold mb-2">
+          <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col justify-between">
+            <div className="flex items-center gap-2 text-gray-900 dark:text-white font-semibold mb-2">
               {isPaidPlan && googleTokens ? (
                 <GoogleDriveImg className="w-5 h-5" />
               ) : (
-                <HardDrive className={`w-5 h-5 ${isOverLimit ? 'text-red-500' : 'text-gray-400'}`} />
+                <HardDrive className={`w-5 h-5 ${isOverLimit ? 'text-red-500' : 'text-gray-400 dark:text-gray-500'}`} />
               )}
               {isPaidPlan && googleTokens ? 'Drive Storage' : 'Storage Usage'}
             </div>
@@ -1204,15 +1213,15 @@ export const Dashboard: React.FC = () => {
 
         {/* Google Drive Folders Section (if connected) */}
         {googleTokens && (
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm mb-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm mb-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className="bg-blue-50 p-2 rounded-xl">
+                <div className="bg-blue-50 dark:bg-blue-900/30 p-2 rounded-xl">
                   <GoogleDriveImg className="w-6 h-6" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-gray-900">Google Drive</h2>
-                  <p className="text-xs text-gray-500">Folders synced from your connected Drive</p>
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">Google Drive</h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Folders synced from your connected Drive</p>
                 </div>
               </div>
               <button
@@ -1226,13 +1235,13 @@ export const Dashboard: React.FC = () => {
             </div>
 
             {isFetchingDrive ? (
-              <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+              <div className="flex flex-col items-center justify-center py-12 text-gray-400 dark:text-gray-500">
                 <Loader2 className="w-8 h-8 animate-spin mb-2" />
                 <p className="text-sm">Fetching folders...</p>
               </div>
             ) : googleDriveFiles.length === 0 ? (
-              <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                <p className="text-sm text-gray-500">No folders found. Create a vault to auto-sync to Drive.</p>
+              <div className="text-center py-12 bg-gray-50 dark:bg-[#0a0a0a] rounded-xl border border-dashed border-gray-200 dark:border-gray-800">
+                <p className="text-sm text-gray-500 dark:text-gray-400">No folders found. Create a vault to auto-sync to Drive.</p>
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -1242,14 +1251,14 @@ export const Dashboard: React.FC = () => {
                     href={file.webViewLink}
                     target="_blank"
                     rel="noreferrer"
-                    className="group p-4 bg-gray-50 hover:bg-amber-50 hover:shadow-md border border-transparent hover:border-amber-200 rounded-xl transition-all duration-200 flex flex-col items-center text-center cursor-pointer"
+                    className="group p-4 bg-gray-50 dark:bg-gray-800/50 hover:bg-amber-50 dark:hover:bg-amber-900/20 hover:shadow-md border border-transparent hover:border-amber-200 dark:hover:border-amber-900/40 rounded-xl transition-all duration-200 flex flex-col items-center text-center cursor-pointer"
                   >
                     <svg className="w-12 h-12 mb-3 text-amber-400 group-hover:text-amber-500 transition-colors drop-shadow-sm" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M4 10C4 7.79086 5.79086 6 8 6H18.3431C19.404 6 20.4214 6.42143 21.1716 7.17157L23 9H40C42.2091 9 44 10.7909 44 13V38C44 40.2091 42.2091 42 40 42H8C5.79086 42 4 40.2091 4 38V10Z" fill="currentColor" />
                       <path d="M4 14H44V38C44 40.2091 42.2091 42 40 42H8C5.79086 42 4 40.2091 4 38V14Z" fill="currentColor" opacity="0.85" />
                     </svg>
-                    <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900 truncate w-full">{file.name}</span>
-                    <span className="text-[10px] text-gray-400 mt-1 uppercase tracking-wider">Folder</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-gray-900 dark:group-hover:text-white truncate w-full">{file.name}</span>
+                    <span className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 uppercase tracking-wider">Folder</span>
                   </a>
                 ))}
               </div>
@@ -1258,14 +1267,14 @@ export const Dashboard: React.FC = () => {
         )}
 
         {/* Tools Bar (Search & Filter) */}
-        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
+        <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
           {/* Search */}
           <div className="relative w-full md:w-96 group">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary-500 transition-colors w-5 h-5" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 group-focus-within:text-primary-500 transition-colors w-5 h-5" />
             <input
               type="text"
               placeholder="Search vaults..."
-              className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-transparent hover:bg-white hover:border-gray-200 focus:bg-white focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 rounded-xl text-sm outline-none transition-all duration-200"
+              className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-black/50 border border-transparent hover:bg-white dark:hover:bg-black hover:border-gray-200 dark:hover:border-gray-800 focus:bg-white dark:focus:bg-black focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 rounded-xl text-sm dark:text-white outline-none transition-all duration-200"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -1285,28 +1294,28 @@ export const Dashboard: React.FC = () => {
                   <button
                     onClick={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === 'filter-time' ? null : 'filter-time'); }}
                     className={`w-full flex items-center gap-2.5 pl-3.5 pr-3 py-2.5 rounded-xl text-sm font-medium cursor-pointer transition-all duration-200 border ${menuOpenId === 'filter-time'
-                      ? 'bg-primary-50 border-primary-300 text-primary-700 shadow-md shadow-primary-100 ring-2 ring-primary-200'
-                      : 'bg-white border-gray-200 text-gray-700 hover:border-primary-200 hover:bg-gray-50 shadow-sm hover:shadow-md'
+                      ? 'bg-primary-50 dark:bg-primary-900/30 border-primary-300 dark:border-primary-800 text-primary-700 dark:text-primary-400 shadow-md shadow-primary-100 dark:shadow-none ring-2 ring-primary-200 dark:ring-primary-900/30'
+                      : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-primary-200 dark:hover:border-primary-800 hover:bg-gray-50 dark:hover:bg-gray-750 shadow-sm hover:shadow-md'
                       }`}
                   >
-                    <Filter className={`w-4 h-4 transition-colors ${menuOpenId === 'filter-time' ? 'text-primary-500' : 'text-gray-400'}`} />
+                    <Filter className={`w-4 h-4 transition-colors ${menuOpenId === 'filter-time' ? 'text-primary-500' : 'text-gray-400 dark:text-gray-500'}`} />
                     <div className={`w-2 h-2 rounded-full ${selectedFilter.dot}`} />
                     <span className="flex-1 text-left">{selectedFilter.label}</span>
-                    <ChevronDown className={`w-4 h-4 transition-all duration-200 ${menuOpenId === 'filter-time' ? 'rotate-180 text-primary-500' : 'text-gray-400'}`} />
+                    <ChevronDown className={`w-4 h-4 transition-all duration-200 ${menuOpenId === 'filter-time' ? 'rotate-180 text-primary-500' : 'text-gray-400 dark:text-gray-500'}`} />
                   </button>
                   {menuOpenId === 'filter-time' && (
-                    <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden ring-1 ring-black/5 animate-in fade-in slide-in-from-top-2 duration-150">
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-100 dark:border-gray-800 z-50 overflow-hidden ring-1 ring-black/5 animate-in fade-in slide-in-from-top-2 duration-150">
                       <div className="p-1.5">
                         {filterOptions.map((option) => (
                           <button
                             key={option.value}
                             onClick={(e) => { e.stopPropagation(); setFilterTime(option.value); setMenuOpenId(null); }}
                             className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm transition-all duration-150 ${filterTime === option.value
-                              ? 'bg-primary-50 text-primary-700 font-semibold'
-                              : 'text-gray-600 hover:bg-gray-50 font-medium'
+                              ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 font-semibold'
+                              : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 font-medium'
                               }`}
                           >
-                            <div className={`w-2 h-2 rounded-full ${option.dot} ${filterTime === option.value ? 'ring-2 ring-offset-1 ring-primary-300' : ''}`} />
+                            <div className={`w-2 h-2 rounded-full ${option.dot} ${filterTime === option.value ? 'ring-2 ring-offset-1 ring-primary-300 dark:ring-primary-900' : ''}`} />
                             <span className="flex-1 text-left">{option.label}</span>
                             {filterTime === option.value && <Check className="w-4 h-4 text-primary-500" />}
                           </button>
@@ -1389,13 +1398,13 @@ export const Dashboard: React.FC = () => {
         {/* Vaults List */}
         {activeTab === 'vaults' ? (
           <div className="space-y-4">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Your Vaults ({filteredVaults.length})</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Your Vaults ({filteredVaults.length})</h2>
 
             {filteredVaults.length === 0 ? (
-              <div className="text-center py-20 bg-white rounded-2xl border-2 border-dashed border-gray-200">
-                <UploadCloud className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900">No vaults found</h3>
-                <p className="text-gray-500 mb-6">Try adjusting your filters or search terms.</p>
+              <div className="text-center py-20 bg-white dark:bg-gray-900 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-800">
+                <UploadCloud className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">No vaults found</h3>
+                <p className="text-gray-500 dark:text-gray-400 mb-6">Try adjusting your filters or search terms.</p>
                 {vaults.length === 0 && (
                   <button
                     onClick={openCreateModal}
@@ -1412,7 +1421,7 @@ export const Dashboard: React.FC = () => {
                   <div key={vault.id} className="relative z-10 w-full h-full perspective-[1000px]">
                     <div 
                       onClick={(e) => toggleMenu(e, vault.id)} 
-                      className={`cursor-pointer relative w-full h-full flex flex-col rounded-xl border-2 transition-all duration-500 shadow-sm hover:shadow-md transform-gpu ${vault.reportCount && vault.reportCount > 0 ? 'bg-red-50 border-red-100 shadow-lg shadow-red-50/40 scale-[1.01]' : 'bg-white border-gray-100'}`}
+                      className={`cursor-pointer relative w-full h-full flex flex-col rounded-xl border-2 transition-all duration-500 shadow-sm hover:shadow-md transform-gpu ${vault.reportCount && vault.reportCount > 0 ? 'bg-red-50 dark:bg-red-900/10 border-red-100 dark:border-red-900/30 shadow-lg shadow-red-50/40 dark:shadow-red-900/20 scale-[1.01]' : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800'}`}
                       style={{ transformStyle: 'preserve-3d', transform: menuOpenId === vault.id ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
                     >
                       {/* FRONT FACE */}
@@ -1421,8 +1430,8 @@ export const Dashboard: React.FC = () => {
                           {/* Card Header */}
                           <div className="flex justify-between items-start mb-4">
                             <div className="flex flex-col gap-2">
-                              <div className="bg-primary-50 p-2 rounded-lg">
-                                <QrCode className="w-6 h-6 text-primary-600" />
+                              <div className="bg-primary-50 dark:bg-primary-900/30 p-2 rounded-lg">
+                                <QrCode className="w-6 h-6 text-primary-600 dark:text-primary-400" />
                               </div>
                               {getPendingRequestCount(vault) > 0 && (
                                 <button
@@ -1438,7 +1447,7 @@ export const Dashboard: React.FC = () => {
                             <div className="relative">
                               <button
                                 onClick={(e) => toggleMenu(e, vault.id)}
-                                className={`p-2 rounded-full cursor-pointer hover:bg-gray-100 transition-colors ${menuOpenId === vault.id ? 'bg-gray-100 text-gray-900' : 'text-gray-400'}`}
+                                className={`p-2 rounded-full cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${menuOpenId === vault.id ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'}`}
                                 title="Click Card or Menu to Flip"
                               >
                                 <Shuffle className="w-5 h-5" />
@@ -1446,10 +1455,10 @@ export const Dashboard: React.FC = () => {
                             </div>
                           </div>
 
-                          <h3 className="font-bold text-gray-900 truncate pr-8">{vault.name}</h3>
-                          <div className="text-sm text-gray-500 mt-1 mb-4">
+                          <h3 className="font-bold text-gray-900 dark:text-white truncate pr-8">{vault.name}</h3>
+                          <div className="text-sm text-gray-500 dark:text-gray-400 mt-1 mb-4">
                             <div className="flex items-center gap-3">
-                              <div className="flex items-center gap-1.5 text-gray-400">
+                              <div className="flex items-center gap-1.5 text-gray-400 dark:text-gray-500">
                                 <Clock className="w-3.5 h-3.5" />
                                 <span>{new Date(vault.createdAt).toLocaleDateString()}</span>
                               </div>
@@ -1483,10 +1492,10 @@ export const Dashboard: React.FC = () => {
                             )}
                           </div>
 
-                          <div className="mt-auto pt-4 border-t border-gray-50 flex gap-2">
+                          <div className="mt-auto pt-4 border-t border-gray-50 dark:border-gray-800 flex gap-2">
                             <button
                               onClick={(e) => { e.stopPropagation(); setViewQrVault(vault); }}
-                              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-primary-50 text-primary-600 rounded-xl text-sm font-semibold hover:bg-primary-100 transition-all border border-primary-100 cursor-pointer"
+                              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-xl text-sm font-semibold hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-all border border-primary-100 dark:border-primary-800 cursor-pointer"
                             >
                               <QrCode className="w-4 h-4" /> View QR
                             </button>
@@ -1510,17 +1519,17 @@ export const Dashboard: React.FC = () => {
                       </div>
 
                       {/* BACK FACE */}
-                      <div className="absolute inset-0 w-full h-full bg-white border-2 border-gray-100 rounded-xl flex flex-col justify-center items-center text-gray-900 p-6 shadow-xl" style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
-                           <button onClick={(e) => toggleMenu(e, vault.id)} className="absolute top-4 right-4 bg-gray-100 cursor-pointer text-gray-500 hover:text-gray-900 hover:bg-gray-200 p-2 rounded-full transition-colors"><Shuffle className="w-4 h-4"/></button>
-                           <h3 className="text-lg font-black tracking-tight mb-4 text-gray-900 truncate w-full text-center pr-8">{vault.name}</h3>
+                      <div className="absolute inset-0 w-full h-full bg-white dark:bg-gray-900 border-2 border-gray-100 dark:border-gray-800 rounded-xl flex flex-col justify-center items-center text-gray-900 dark:text-white p-6 shadow-xl" style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
+                           <button onClick={(e) => toggleMenu(e, vault.id)} className="absolute top-4 right-4 bg-gray-100 dark:bg-gray-800 cursor-pointer text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-750 p-2 rounded-full transition-colors"><Shuffle className="w-4 h-4"/></button>
+                           <h3 className="text-lg font-black tracking-tight mb-4 text-gray-900 dark:text-white truncate w-full text-center pr-8">{vault.name}</h3>
                            
                            <div className="w-full space-y-2.5">
-                               <button disabled={isOverLimit} onClick={(e) => openEditModal(vault, e)} className={`w-full py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest cursor-pointer font-black flex items-center justify-center gap-2 transition-all shadow-md ${isOverLimit ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700 text-white shadow-primary-500/20 active:scale-95'}`}><Edit2 className="w-4 h-4"/> Edit Vault</button>
-                               <button onClick={(e) => openManageAccess(vault, e)} className="w-full bg-gray-50 border cursor-pointer border-gray-100 hover:bg-gray-100 active:scale-95 text-gray-700 py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-black flex items-center justify-center gap-2 transition-all"><Users className="w-4 h-4"/> Manage Access</button>
-                               <button onClick={(e) => { e.stopPropagation(); setReportVault(vault); setMenuOpenId(null); }} className="w-full bg-red-50 border cursor-pointer border-red-100 hover:bg-red-100 active:scale-95 text-red-600 py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-black flex items-center justify-center gap-2 transition-all"><AlertTriangle className="w-4 h-4"/> View Reports {vault.reportCount || 0 > 0 && <span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-[10px] ml-1">{vault.reportCount}</span>}</button>
+                               <button disabled={isOverLimit} onClick={(e) => openEditModal(vault, e)} className={`w-full py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest cursor-pointer font-black flex items-center justify-center gap-2 transition-all shadow-md ${isOverLimit ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700 text-white shadow-primary-500/20 active:scale-95'}`}><Edit2 className="w-4 h-4"/> Edit Vault</button>
+                               <button onClick={(e) => openManageAccess(vault, e)} className="w-full bg-gray-50 dark:bg-gray-800 border cursor-pointer border-gray-100 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-750 active:scale-95 text-gray-700 dark:text-gray-300 py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-black flex items-center justify-center gap-2 transition-all"><Users className="w-4 h-4"/> Manage Access</button>
+                               <button onClick={(e) => { e.stopPropagation(); setReportVault(vault); setMenuOpenId(null); }} className="w-full bg-red-50 dark:bg-red-900/10 border cursor-pointer border-red-100 dark:border-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/20 active:scale-95 text-red-600 dark:text-red-400 py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-black flex items-center justify-center gap-2 transition-all"><AlertTriangle className="w-4 h-4"/> View Reports {vault.reportCount || 0 > 0 && <span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-[10px] ml-1">{vault.reportCount}</span>}</button>
                            </div>
                            
-                           <button disabled={isOverLimit} onClick={(e) => handleDeleteVault(vault.id, e)} className={`w-full mt-auto py-3 px-4 rounded-xl text-[10px] cursor-pointer font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${isOverLimit ? 'text-gray-400 cursor-not-allowed' : 'text-red-500 hover:bg-red-50 active:scale-95'}`}><Trash2 className="w-3.5 h-3.5"/> Delete Vault</button>
+                           <button disabled={isOverLimit} onClick={(e) => handleDeleteVault(vault.id, e)} className={`w-full mt-auto py-3 px-4 rounded-xl text-[10px] cursor-pointer font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${isOverLimit ? 'text-gray-400 cursor-not-allowed' : 'text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 active:scale-95'}`}><Trash2 className="w-3.5 h-3.5"/> Delete Vault</button>
                       </div>
 
                     </div>
@@ -1529,12 +1538,12 @@ export const Dashboard: React.FC = () => {
 
                 {/* Ad Placeholders for Free/Plus users */}
                 {(appUser.plan === PlanType.FREE || appUser.plan === PlanType.STARTER) && (
-                  <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl p-6 flex flex-col items-center justify-center text-center min-h-[220px] group hover:border-primary-200 transition-colors">
-                    <div className="bg-white p-3 rounded-2xl shadow-sm mb-4 text-primary-600 group-hover:scale-110 transition-transform">
+                  <div className="bg-gray-50 dark:bg-gray-900 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-xl p-6 flex flex-col items-center justify-center text-center min-h-[220px] group hover:border-primary-200 dark:hover:border-primary-800 transition-colors">
+                    <div className="bg-white dark:bg-gray-800 p-3 rounded-2xl shadow-sm mb-4 text-primary-600 dark:text-primary-400 group-hover:scale-110 transition-transform">
                       <Zap className="w-6 h-6" />
                     </div>
-                    <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Advertisement</p>
-                    <p className="text-xs text-gray-500 mt-2 max-w-[160px]">Upgrade to <span className="text-primary-600 font-bold">PRO</span> to remove advertisements and unlock 20GB storage!</p>
+                    <p className="text-sm font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Advertisement</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 max-w-[160px]">Upgrade to <span className="text-primary-600 dark:text-primary-400 font-bold">PRO</span> to remove advertisements and unlock 20GB storage!</p>
                     <Link to="/pricing" className="mt-4 text-xs font-bold text-primary-600 hover:underline">Upgrade Now</Link>
                   </div>
                 )}
@@ -1544,11 +1553,11 @@ export const Dashboard: React.FC = () => {
         ) : (
           /* Recently Deleted Logs Tab */
           <div className="animate-in fade-in duration-300">
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-              <div className="p-6 border-b border-gray-50 bg-gray-50/50 flex items-center justify-between">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-gray-50 dark:border-gray-800 bg-gray-50/50 dark:bg-black/20 flex items-center justify-between">
                 <div>
-                  <h3 className="font-bold text-gray-900">Deletion History</h3>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <h3 className="font-bold text-gray-900 dark:text-white">Deletion History</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     Vaults auto-removed after {appUser?.plan === PlanType.STARTER ? '72 hours (Plus limit)' : '24 hours (Free limit)'}.
                   </p>
                 </div>
@@ -1557,33 +1566,33 @@ export const Dashboard: React.FC = () => {
                 </Link>
               </div>
 
-              <div className="divide-y divide-gray-50">
+              <div className="divide-y divide-gray-50 dark:divide-gray-800">
                 {deletedLogs.length === 0 ? (
                   <div className="p-12 text-center">
-                    <div className="bg-gray-50 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Trash2 className="text-gray-300 w-6 h-6" />
+                    <div className="bg-gray-50 dark:bg-gray-800 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Trash2 className="text-gray-300 dark:text-gray-600 w-6 h-6" />
                     </div>
-                    <p className="text-gray-500 text-sm">No vaults have been auto-deleted yet.</p>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">No vaults have been auto-deleted yet.</p>
                   </div>
                 ) : (
                   deletedLogs.map((log) => (
-                    <div key={log.id} className="p-4 sm:p-6 flex items-center justify-between hover:bg-gray-50/50 transition-colors">
+                    <div key={log.id} className="p-4 sm:p-6 flex items-center justify-between hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors">
                       <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center text-red-500 font-bold">
+                        <div className="w-10 h-10 bg-red-50 dark:bg-red-900/30 rounded-xl flex items-center justify-center text-red-500 dark:text-red-400 font-bold">
                           #
                         </div>
                         <div>
-                          <h4 className="font-bold text-gray-900 text-sm tracking-tight">{log.vault_name}</h4>
+                          <h4 className="font-bold text-gray-900 dark:text-white text-sm tracking-tight">{log.vault_name}</h4>
                           <div className="flex items-center gap-2 mt-1">
-                            <div className="flex items-center gap-1 text-[10px] font-black text-gray-400 uppercase tracking-tighter italic">
+                            <div className="flex items-center gap-1 text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-tighter italic">
                               <Clock className="w-3 h-3" /> {new Date(log.created_at).toLocaleDateString()}
                             </div>
-                            <span className="text-gray-200">|</span>
-                            <div className="flex items-center gap-1 text-[10px] font-black text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full border border-primary-100">
+                            <span className="text-gray-200 dark:text-gray-800">|</span>
+                            <div className="flex items-center gap-1 text-[10px] font-black text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 px-2 py-0.5 rounded-full border border-primary-100 dark:border-primary-800">
                               <Eye className="w-3 h-3" /> {log.views || 0} TOTAL SCANS
                             </div>
                             {log.deletion_reason && (
-                              <span className="text-[9px] bg-amber-50 text-amber-700 px-2 py-0.5 rounded font-black border border-amber-100 uppercase tracking-tighter whitespace-nowrap">
+                              <span className="text-[9px] bg-amber-50 dark:bg-amber-900/10 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded font-black border border-amber-100 dark:border-amber-900/30 uppercase tracking-tighter whitespace-nowrap">
                                 {log.deletion_reason}
                               </span>
                             )}
@@ -1629,23 +1638,23 @@ export const Dashboard: React.FC = () => {
       </div>
       {/* ... keeping Modals ... */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 bg-white z-10">
-              <h2 className="text-xl font-bold text-gray-900">
+        <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-800">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center sticky top-0 bg-white dark:bg-gray-900 z-10">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                 {modalMode === 'CREATE' ? 'Create New Vault' : 'Edit Vault'}
               </h2>
-              <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X className="text-gray-500 w-5 h-5" /></button>
+              <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"><X className="text-gray-500 dark:text-gray-400 w-5 h-5" /></button>
             </div>
 
             <div className="p-6 space-y-6">
 
               {/* Name Input */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Vault Name</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vault Name</label>
                 <input
                   type="text"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                  className="w-full p-3 bg-white dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all dark:text-white"
                   value={vaultName}
                   onChange={(e) => setVaultName(e.target.value)}
                   placeholder="e.g. Project Assets"
@@ -1653,11 +1662,11 @@ export const Dashboard: React.FC = () => {
               </div>
 
               {/* Security Section (NEW: Password) */}
-              <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
+              <div className="bg-gray-50 dark:bg-black/40 p-6 rounded-2xl border border-gray-100 dark:border-gray-800">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <Lock className="w-5 h-5 text-gray-900" />
-                    <h3 className="text-sm font-bold text-gray-900 uppercase tracking-tight">Security & Privacy</h3>
+                    <Lock className="w-5 h-5 text-gray-900 dark:text-white" />
+                    <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-tight">Security & Privacy</h3>
                   </div>
                   {appUser.plan !== PlanType.PRO && (
                     <span className="flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-black rounded-full shadow-lg shadow-amber-100 uppercase tracking-widest animate-pulse">
@@ -1675,13 +1684,13 @@ export const Dashboard: React.FC = () => {
                     placeholder={appUser.plan === PlanType.PRO ? "Set a vault password (optional)" : "Upgrade to Pro to set passwords"}
                     className={`w-full p-4 pl-12 border rounded-xl transition-all font-medium ${
                       appUser.plan === PlanType.PRO 
-                        ? 'bg-white border-gray-200 focus:ring-2 focus:ring-primary-500 hover:border-primary-200' 
-                        : 'bg-gray-100 border-gray-200 cursor-not-allowed text-gray-400'
+                        ? 'bg-white dark:bg-black border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary-500 hover:border-primary-200 dark:text-white' 
+                        : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 cursor-not-allowed text-gray-400 dark:text-gray-500'
                     }`}
                   />
-                  <ShieldCheck className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 ${appUser.plan === PlanType.PRO ? 'text-primary-500' : 'text-gray-300'}`} />
+                  <ShieldCheck className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 ${appUser.plan === PlanType.PRO ? 'text-primary-500' : 'text-gray-300 dark:text-gray-600'}`} />
                 </div>
-                <p className="text-[11px] text-gray-400 mt-3 flex items-center gap-1.5 px-1 font-medium">
+                <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-3 flex items-center gap-1.5 px-1 font-medium">
                   {appUser.plan === PlanType.PRO 
                     ? "Visitors must enter this password to view files." 
                     : "Password protection is only available for professional users."}
@@ -1690,36 +1699,36 @@ export const Dashboard: React.FC = () => {
 
               {/* Access Level */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Access Control</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Access Control</label>
                 <div className="flex gap-4">
                   <button
                     type="button"
                     onClick={() => setAccessLevel(AccessLevel.PUBLIC)}
-                    className={`flex-1 p-4 rounded-xl border-2 text-left transition-all ${accessLevel === AccessLevel.PUBLIC ? 'border-primary-500 bg-primary-50' : 'border-gray-200 hover:border-gray-300'}`}
+                    className={`flex-1 p-4 rounded-xl border-2 text-left transition-all ${accessLevel === AccessLevel.PUBLIC ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' : 'border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-white dark:bg-gray-900'}`}
                   >
                     <div className="flex items-center gap-2 mb-1">
                       <Users className={`w-5 h-5 ${accessLevel === AccessLevel.PUBLIC ? 'text-primary-600' : 'text-gray-400'}`} />
-                      <span className={`font-bold ${accessLevel === AccessLevel.PUBLIC ? 'text-primary-900' : 'text-gray-700'}`}>Public</span>
+                      <span className={`font-bold ${accessLevel === AccessLevel.PUBLIC ? 'text-primary-900 dark:text-white' : 'text-gray-700 dark:text-gray-400'}`}>Public</span>
                     </div>
-                    <p className="text-xs text-gray-500">Anyone with the link or QR code can view and download.</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Anyone with the link or QR code can view and download.</p>
                   </button>
                   <button
                     type="button"
                     onClick={() => setAccessLevel(AccessLevel.RESTRICTED)}
-                    className={`flex-1 p-4 rounded-xl border-2 text-left transition-all ${accessLevel === AccessLevel.RESTRICTED ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:border-gray-300'}`}
+                    className={`flex-1 p-4 rounded-xl border-2 text-left transition-all ${accessLevel === AccessLevel.RESTRICTED ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20' : 'border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-white dark:bg-gray-900'}`}
                   >
                     <div className="flex items-center gap-2 mb-1">
                       <Shield className={`w-5 h-5 ${accessLevel === AccessLevel.RESTRICTED ? 'text-orange-600' : 'text-gray-400'}`} />
-                      <span className={`font-bold ${accessLevel === AccessLevel.RESTRICTED ? 'text-orange-900' : 'text-gray-700'}`}>Restricted</span>
+                      <span className={`font-bold ${accessLevel === AccessLevel.RESTRICTED ? 'text-orange-900 dark:text-white' : 'text-gray-700 dark:text-gray-400'}`}>Restricted</span>
                     </div>
-                    <p className="text-xs text-gray-500">Users must request access. You approve who can view.</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Users must request access. You approve who can view.</p>
                   </button>
                 </div>
               </div>
 
               {/* Expiry Selection (Custom Dropdown) */}
               <div className="relative">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Vault Expiry</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Vault Expiry</label>
                 {(() => {
                     const expiryOptions = [
                         { value: 24, label: '24 Hours (Default)', disabled: false },
@@ -1737,8 +1746,8 @@ export const Dashboard: React.FC = () => {
                                 onClick={(e) => { e.stopPropagation(); setMenuOpenId(isOpen ? null : 'modal-expiry'); }}
                                 className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-all duration-200 border ${
                                     isOpen 
-                                    ? 'bg-primary-50 border-primary-300 text-primary-700 shadow-lg shadow-primary-100 ring-2 ring-primary-200' 
-                                    : 'bg-white border-gray-200 text-gray-700 hover:border-primary-300 hover:shadow-md'
+                                    ? 'bg-primary-50 dark:bg-primary-900/30 border-primary-300 dark:border-primary-800 text-primary-700 dark:text-primary-400 shadow-lg shadow-primary-100 dark:shadow-none ring-2 ring-primary-200 dark:ring-primary-900/30' 
+                                    : 'bg-white dark:bg-black border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-primary-300 dark:hover:border-primary-800 hover:shadow-md'
                                 } ${appUser?.plan === PlanType.FREE ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'}`}
                                 disabled={appUser?.plan === PlanType.FREE}
                             >
@@ -1748,7 +1757,7 @@ export const Dashboard: React.FC = () => {
                             </button>
 
                             {isOpen && (
-                                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 ring-1 ring-black/5">
+                                <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-950 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-800 z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 ring-1 ring-black/5">
                                     <div className="p-1.5">
                                         {expiryOptions.map((opt) => (
                                             <button
@@ -1758,8 +1767,8 @@ export const Dashboard: React.FC = () => {
                                                 onClick={() => { setExpiryHours(opt.value as any); setMenuOpenId(null); }}
                                                 className={`w-full flex items-center gap-2.5 px-3 py-3 rounded-lg text-sm text-left transition-all ${
                                                     expiryHours === opt.value 
-                                                    ? 'bg-primary-50 text-primary-700 font-bold' 
-                                                    : opt.disabled ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:bg-gray-50'
+                                                    ? 'bg-primary-50 dark:bg-primary-900/40 text-primary-700 dark:text-primary-400 font-bold' 
+                                                    : opt.disabled ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-900'
                                                 }`}
                                             >
                                                 {expiryHours === opt.value && <div className="w-1.5 h-1.5 rounded-full bg-primary-500" />}

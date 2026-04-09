@@ -24,6 +24,7 @@ function mapDbVault(v: any): Vault {
 function createFileRecord(vaultId: string, file: File, url: string) {
     let fType = FileType.OTHER;
     if (file.type.startsWith('image/')) fType = FileType.IMAGE;
+    else if (file.type.startsWith('video/')) fType = FileType.VIDEO;
     else if (file.type === 'application/pdf') fType = FileType.PDF;
     else if (file.type.includes('zip')) fType = FileType.ZIP;
     return { vault_id: vaultId, name: file.name, size: file.size, type: fType, mime_type: file.type, url };
@@ -147,7 +148,7 @@ const supabaseImpl = {
                     vault_id: vault.id,
                     name: f.name,
                     size: f.size,
-                    type: f.type || FileType.OTHER,
+                    type: f.type || (f.mimeType?.startsWith('video/') ? FileType.VIDEO : FileType.OTHER),
                     mime_type: f.mimeType || 'application/octet-stream',
                     url: f.url
                 });
@@ -205,7 +206,7 @@ const supabaseImpl = {
                     vault_id: id,
                     name: f.name,
                     size: f.size,
-                    type: f.type || FileType.OTHER,
+                    type: f.type || (f.mimeType?.startsWith('video/') ? FileType.VIDEO : FileType.OTHER),
                     mime_type: f.mimeType || 'application/octet-stream',
                     url: f.url
                 });
@@ -300,7 +301,8 @@ const supabaseImpl = {
             }
 
             const fType = f.mimeType?.startsWith('image/') ? FileType.IMAGE : 
-                         (f.mimeType === 'application/pdf' ? FileType.PDF : FileType.OTHER);
+                         (f.mimeType?.startsWith('video/') ? FileType.VIDEO :
+                         (f.mimeType === 'application/pdf' ? FileType.PDF : FileType.OTHER));
             
             await supabase.from('files').insert({
                 vault_id: vault.id,

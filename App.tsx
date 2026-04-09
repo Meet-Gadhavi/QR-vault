@@ -13,12 +13,15 @@ import { Privacy, Terms, RefundPolicy } from './pages/Legal';
 import { About, Contact, FAQ, Security } from './pages/InfoPages';
 import { AdminDashboard } from './pages/AdminDashboard';
 
+import { ThemeProvider } from './contexts/ThemeContext';
+
 function App() {
   return (
-    <AuthProvider>
-      <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <NotificationProvider>
-          <Layout>
+    <ThemeProvider>
+      <AuthProvider>
+        <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <NotificationProvider>
+            <Layout>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/pricing" element={<Pricing />} />
@@ -39,6 +42,7 @@ function App() {
         </NotificationProvider>
       </Router>
     </AuthProvider>
+  </ThemeProvider>
   );
 }
 

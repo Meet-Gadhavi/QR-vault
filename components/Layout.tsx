@@ -1,13 +1,15 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { QrCode, Menu, X, User, LogOut } from 'lucide-react';
+import { QrCode, Menu, X, User, LogOut, Moon, Sun } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   const isPublicPage = location.pathname.startsWith('/v/');
   const isDashboard = location.pathname === '/dashboard';
@@ -19,41 +21,52 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
     setIsMenuOpen(false);
   };
 
+  const ThemeToggle = () => (
+    <button
+      onClick={toggleTheme}
+      className="p-2 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all active:scale-90"
+      title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+    >
+      {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+    </button>
+  );
+
   if (isPublicPage || isAdminDashboard) {
-    return <main className="min-h-screen bg-gray-50">{children}</main>;
+    return <main className="min-h-screen bg-gray-50 dark:bg-[#0a0a0a] transition-colors duration-300">{children}</main>;
   }
 
   return (
-    <div className="min-h-screen flex flex-col font-sans">
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-50">
+    <div className="min-h-screen flex flex-col font-sans bg-white dark:bg-[#0a0a0a] transition-colors duration-300">
+      <header className="bg-white/80 dark:bg-[#0a0a0a]/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 sticky top-0 z-50 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="bg-primary-600 p-1.5 rounded-lg">
+            <Link to="/" className="flex items-center gap-2 group">
+              <div className="bg-primary-600 p-1.5 rounded-lg group-hover:rotate-6 transition-transform">
                 <QrCode className="w-6 h-6 text-white" />
               </div>
-              <span className="text-xl font-bold text-gray-900 tracking-tight">QR Vault</span>
+              <span className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">QR Vault</span>
             </Link>
 
             {/* Desktop Nav */}
-            <nav className="hidden md:flex items-center gap-8">
-              <Link to="/" className="text-gray-600 hover:text-primary-600 font-medium text-sm transition-colors">Features</Link>
-              <Link to="/pricing" className="text-gray-600 hover:text-primary-600 font-medium text-sm transition-colors">Pricing</Link>
+            <nav className="hidden md:flex items-center gap-6">
+              <Link to="/" className="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 font-medium text-sm transition-colors">Features</Link>
+              <Link to="/pricing" className="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 font-medium text-sm transition-colors">Pricing</Link>
               
-              <div className="h-6 w-px bg-gray-200 mx-2"></div>
+              <div className="h-6 w-px bg-gray-200 dark:bg-gray-800 mx-2"></div>
+
+              <ThemeToggle />
               
-              {isAuthenticated ? (
                 <>
-                  <Link to="/dashboard" className={`font-medium text-sm transition-colors ${isDashboard ? 'text-primary-600' : 'text-gray-600 hover:text-primary-600'}`}>
+                  <Link to="/dashboard" className={`font-medium text-sm transition-colors ${isDashboard ? 'text-primary-600' : 'text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400'}`}>
                       My Dashboard
                   </Link>
                   <div className="flex items-center gap-4 pl-2">
-                    <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 border border-primary-200 cursor-default">
+                    <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-700 dark:text-primary-400 border border-primary-200 dark:border-primary-800 cursor-default">
                       <User className="w-4 h-4" />
                     </div>
                     <button 
                       onClick={handleLogout}
-                      className="text-gray-400 hover:text-gray-600 transition-colors"
+                      className="text-gray-400 dark:text-gray-600 hover:text-gray-600 dark:hover:text-gray-400 transition-colors"
                       title="Sign Out"
                     >
                       <LogOut className="w-5 h-5" />
@@ -69,13 +82,16 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               )}
             </nav>
 
-            {/* Mobile Menu Button */}
-            <button 
-              className="md:hidden p-2 text-gray-600"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              {isMenuOpen ? <X /> : <Menu />}
-            </button>
+            {/* Mobile Actions */}
+            <div className="flex items-center gap-2 md:hidden">
+              <ThemeToggle />
+              <button 
+                className="p-2 text-gray-600 dark:text-gray-400"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+              >
+                {isMenuOpen ? <X /> : <Menu />}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -109,23 +125,23 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
         {children}
       </main>
 
-      <footer className="bg-white border-t border-gray-100 py-16 mt-auto">
+      <footer className="bg-white dark:bg-gray-900 border-t border-gray-100 dark:border-gray-800 py-16 mt-auto transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-2 md:grid-cols-5 gap-12">
           <div className="col-span-2 md:col-span-1">
              <div className="flex items-center gap-2 mb-6">
                 <div className="bg-primary-600 p-1.5 rounded-lg">
                   <QrCode className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-xl font-bold text-gray-900 tracking-tight">QR Vault</span>
+                <span className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">QR Vault</span>
               </div>
-              <p className="text-sm text-gray-500 leading-relaxed">
+              <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
                 Securely store and share your files with instantly generated QR codes. Fast, reliable, and accessible anywhere.
               </p>
           </div>
           
           <div>
-            <h4 className="font-bold text-gray-900 mb-6 text-sm uppercase tracking-wider">Product</h4>
-            <ul className="space-y-4 text-sm text-gray-500">
+            <h4 className="font-bold text-gray-900 dark:text-white mb-6 text-sm uppercase tracking-wider">Product</h4>
+            <ul className="space-y-4 text-sm text-gray-500 dark:text-gray-400">
               <li><Link to="/" className="hover:text-primary-600 transition-colors">Features</Link></li>
               <li><Link to="/pricing" className="hover:text-primary-600 transition-colors">Pricing</Link></li>
               {isAuthenticated && <li><Link to="/dashboard" className="hover:text-primary-600 transition-colors">Dashboard</Link></li>}
@@ -133,16 +149,16 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           </div>
 
           <div>
-            <h4 className="font-bold text-gray-900 mb-6 text-sm uppercase tracking-wider">Company</h4>
-            <ul className="space-y-4 text-sm text-gray-500">
+            <h4 className="font-bold text-gray-900 dark:text-white mb-6 text-sm uppercase tracking-wider">Company</h4>
+            <ul className="space-y-4 text-sm text-gray-500 dark:text-gray-400">
               <li><Link to="/about" className="hover:text-primary-600 transition-colors">About Us</Link></li>
               <li><Link to="/contact" className="hover:text-primary-600 transition-colors">Contact</Link></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-bold text-gray-900 mb-6 text-sm uppercase tracking-wider">Legal</h4>
-            <ul className="space-y-4 text-sm text-gray-500">
+            <h4 className="font-bold text-gray-900 dark:text-white mb-6 text-sm uppercase tracking-wider">Legal</h4>
+            <ul className="space-y-4 text-sm text-gray-500 dark:text-gray-400">
               <li><Link to="/privacy" className="hover:text-primary-600 transition-colors">Privacy Policy</Link></li>
               <li><Link to="/terms" className="hover:text-primary-600 transition-colors">Terms & Conditions</Link></li>
               <li><Link to="/refund" className="hover:text-primary-600 transition-colors">Refund Policy</Link></li>
@@ -150,15 +166,15 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           </div>
 
           <div>
-            <h4 className="font-bold text-gray-900 mb-6 text-sm uppercase tracking-wider">Resources</h4>
-            <ul className="space-y-4 text-sm text-gray-500">
+            <h4 className="font-bold text-gray-900 dark:text-white mb-6 text-sm uppercase tracking-wider">Resources</h4>
+            <ul className="space-y-4 text-sm text-gray-500 dark:text-gray-400">
               <li><Link to="/faq" className="hover:text-primary-600 transition-colors">FAQ</Link></li>
               <li><Link to="/security" className="hover:text-primary-600 transition-colors">Security</Link></li>
             </ul>
           </div>
         </div>
         
-        <div className="max-w-7xl mx-auto px-4 mt-16 pt-8 border-t border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-400">
+        <div className="max-w-7xl mx-auto px-4 mt-16 pt-8 border-t border-gray-100 dark:border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-400 dark:text-gray-600">
           <p>© {new Date().getFullYear()} QR Vault. All rights reserved.</p>
           <div className="flex items-center gap-6">
             <span className="flex items-center gap-1.5">

@@ -18,7 +18,7 @@
 
 @layer base {
   body {
-    @apply bg-gray-50 text-slate-900 font-sans antialiased;
+    @apply bg-white dark:bg-[#0a0a0a] text-slate-900 dark:text-slate-100 font-sans antialiased transition-colors duration-300;
   }
 }
 
@@ -53,6 +53,23 @@
 
   .animate-fade-out {
     animation: fadeOut 0.3s ease-in forwards;
+  }
+
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+
+  .animation-delay-4000 {
+    animation-delay: 4s;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }
 
