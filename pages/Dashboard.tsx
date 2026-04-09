@@ -140,6 +140,7 @@ export const Dashboard: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [vaultPassword, setVaultPassword] = useState('');
   const [uploadTask, setUploadTask] = useState<0 | 1 | 2 | 3>(0);
+  const [estimatedSeconds, setEstimatedSeconds] = useState<number>(0);
 
   // Drag and Drop State
   const [isDragging, setIsDragging] = useState(false);
@@ -525,6 +526,10 @@ export const Dashboard: React.FC = () => {
         const eased = 1 - Math.pow(1 - Math.min(raw, 1), 2);
         const currentProgress = Math.min(Math.round(eased * 90), 90);
         setUploadProgress(currentProgress);
+
+        // Calculate remaining seconds
+        const remaining = Math.max(0, Math.ceil((estimatedMs - elapsed) / 1000));
+        setEstimatedSeconds(remaining);
 
         // Update tasks based on progress
         if (currentProgress > 30 && currentProgress <= 70) setUploadTask(2); // Task 2: Encryption
@@ -1395,10 +1400,10 @@ export const Dashboard: React.FC = () => {
                             <div className="relative">
                               <button
                                 onClick={(e) => toggleMenu(e, vault.id)}
-                                className={`p-2 rounded-full hover:bg-gray-100 transition-colors ${menuOpenId === vault.id ? 'bg-gray-100 text-gray-900' : 'text-gray-400'}`}
+                                className={`p-2 rounded-full cursor-pointer hover:bg-gray-100 transition-colors ${menuOpenId === vault.id ? 'bg-gray-100 text-gray-900' : 'text-gray-400'}`}
                                 title="Click Card or Menu to Flip"
                               >
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 9l-6 6"/><path d="M9 9l6 6"/></svg>
+                                <Shuffle className="w-5 h-5" />
                               </button>
                             </div>
                           </div>
@@ -1432,7 +1437,7 @@ export const Dashboard: React.FC = () => {
                               <Link 
                                 to="/pricing" 
                                 onClick={(e) => e.stopPropagation()}
-                                className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-primary-600 hover:text-primary-700 bg-primary-50 hover:bg-primary-100 px-2.5 py-1.5 rounded-lg transition-colors border border-primary-100 w-fit"
+                                className="mt-3 inline-flex items-center cursor-pointer gap-1.5 text-xs font-bold text-primary-600 hover:text-primary-700 bg-primary-50 hover:bg-primary-100 px-2.5 py-1.5 rounded-lg transition-colors border border-primary-100 w-fit"
                               >
                                 <Zap className="w-3 h-3" /> 
                                 Upgrade to Keep Permanent
@@ -1450,7 +1455,7 @@ export const Dashboard: React.FC = () => {
                             <Link
                               to={`/v/${vault.id}`}
                               onClick={(e) => e.stopPropagation()}
-                              className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-semibold hover:bg-gray-800 transition-all shadow-md active:scale-95"
+                              className="flex-1 flex items-center justify-center cursor-pointer gap-2 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-semibold hover:bg-gray-800 transition-all shadow-md active:scale-95"
                             >
                               <ExternalLink className="w-4 h-4" /> Open
                             </Link>
@@ -1468,16 +1473,16 @@ export const Dashboard: React.FC = () => {
 
                       {/* BACK FACE */}
                       <div className="absolute inset-0 w-full h-full bg-white border-2 border-gray-100 rounded-xl flex flex-col justify-center items-center text-gray-900 p-6 shadow-xl" style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
-                           <button onClick={(e) => toggleMenu(e, vault.id)} className="absolute top-4 right-4 bg-gray-100 text-gray-500 hover:text-gray-900 hover:bg-gray-200 p-2 rounded-full transition-colors"><Shuffle className="w-4 h-4"/></button>
+                           <button onClick={(e) => toggleMenu(e, vault.id)} className="absolute top-4 right-4 bg-gray-100 cursor-pointer text-gray-500 hover:text-gray-900 hover:bg-gray-200 p-2 rounded-full transition-colors"><Shuffle className="w-4 h-4"/></button>
                            <h3 className="text-lg font-black tracking-tight mb-4 text-gray-900 truncate w-full text-center pr-8">{vault.name}</h3>
                            
                            <div className="w-full space-y-2.5">
-                               <button disabled={isOverLimit} onClick={(e) => openEditModal(vault, e)} className={`w-full py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-black flex items-center justify-center gap-2 transition-all shadow-md ${isOverLimit ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700 text-white shadow-primary-500/20 active:scale-95'}`}><Edit2 className="w-4 h-4"/> Edit Vault</button>
-                               <button onClick={(e) => openManageAccess(vault, e)} className="w-full bg-gray-50 border border-gray-100 hover:bg-gray-100 active:scale-95 text-gray-700 py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-black flex items-center justify-center gap-2 transition-all"><Users className="w-4 h-4"/> Manage Access</button>
-                               <button onClick={(e) => { e.stopPropagation(); setReportVault(vault); setMenuOpenId(null); }} className="w-full bg-red-50 border border-red-100 hover:bg-red-100 active:scale-95 text-red-600 py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-black flex items-center justify-center gap-2 transition-all"><AlertTriangle className="w-4 h-4"/> View Reports {vault.reportCount || 0 > 0 && <span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-[10px] ml-1">{vault.reportCount}</span>}</button>
+                               <button disabled={isOverLimit} onClick={(e) => openEditModal(vault, e)} className={`w-full py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest cursor-pointer font-black flex items-center justify-center gap-2 transition-all shadow-md ${isOverLimit ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700 text-white shadow-primary-500/20 active:scale-95'}`}><Edit2 className="w-4 h-4"/> Edit Vault</button>
+                               <button onClick={(e) => openManageAccess(vault, e)} className="w-full bg-gray-50 border cursor-pointer border-gray-100 hover:bg-gray-100 active:scale-95 text-gray-700 py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-black flex items-center justify-center gap-2 transition-all"><Users className="w-4 h-4"/> Manage Access</button>
+                               <button onClick={(e) => { e.stopPropagation(); setReportVault(vault); setMenuOpenId(null); }} className="w-full bg-red-50 border cursor-pointer border-red-100 hover:bg-red-100 active:scale-95 text-red-600 py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-black flex items-center justify-center gap-2 transition-all"><AlertTriangle className="w-4 h-4"/> View Reports {vault.reportCount || 0 > 0 && <span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-[10px] ml-1">{vault.reportCount}</span>}</button>
                            </div>
                            
-                           <button disabled={isOverLimit} onClick={(e) => handleDeleteVault(vault.id, e)} className={`w-full mt-auto py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${isOverLimit ? 'text-gray-400 cursor-not-allowed' : 'text-red-500 hover:bg-red-50 active:scale-95'}`}><Trash2 className="w-3.5 h-3.5"/> Delete Vault</button>
+                           <button disabled={isOverLimit} onClick={(e) => handleDeleteVault(vault.id, e)} className={`w-full mt-auto py-3 px-4 rounded-xl text-[10px] cursor-pointer font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${isOverLimit ? 'text-gray-400 cursor-not-allowed' : 'text-red-500 hover:bg-red-50 active:scale-95'}`}><Trash2 className="w-3.5 h-3.5"/> Delete Vault</button>
                       </div>
 
                     </div>
@@ -1933,7 +1938,7 @@ export const Dashboard: React.FC = () => {
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-xs font-semibold text-primary-600 flex items-center gap-1.5">
                       <Loader2 className="animate-spin w-3 h-3" />
-                      {uploadProgress < 100 ? 'Uploading files...' : 'Finalizing...'}
+                      {uploadProgress < 100 ? `Uploading... (~${estimatedSeconds}s)` : 'Finalizing...'}
                     </span>
                     <span className="text-xs font-bold text-primary-700">{uploadProgress}%</span>
                   </div>
