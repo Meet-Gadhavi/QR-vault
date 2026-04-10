@@ -12,6 +12,17 @@ import { useTheme } from '../contexts/ThemeContext';
 type SortOption = 'date-newest' | 'date-oldest' | 'name-asc' | 'name-desc' | 'size-desc' | 'size-asc';
 type FilterTime = 'all' | '10-days' | '30-days';
 
+const generateTrendData = (vaultId: string, level: 'high' | 'medium' | 'low') => {
+  const seed = vaultId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const data = [];
+  const baseValue = level === 'high' ? 60 : level === 'medium' ? 35 : 15;
+  for (let i = 0; i < 10; i++) {
+    const variance = Math.sin(seed + i * 0.8) * 25;
+    data.push({ value: Math.max(5, baseValue + variance + (i * 2)) });
+  }
+  return data;
+};
+
 const GoogleDriveImg = ({ className }: { className?: string }) => (
   <img src="/GD.png" alt="Google Drive" className={className} />
 );
@@ -1522,24 +1533,53 @@ export const Dashboard: React.FC = () => {
                             </div>
                           </div>
 
-                          {/* Engagement Indicator Square - REQUESTED */}
-                          <div className="mb-6">
-                            <div className={`w-full aspect-square max-w-[140px] mx-auto rounded-3xl border flex flex-col items-center justify-center gap-3 transition-all duration-500 group/engage hover:scale-105 shadow-sm ${
+                          {/* Engagement Indicator Box - Dynamic Graph */}
+                          <div className="mb-6 px-1 relative group/container">
+                            <div className={`w-full aspect-[16/8] rounded-[2rem] border flex flex-col items-center justify-center relative transition-all duration-500 group/engage hover:scale-[1.02] shadow-sm overflow-hidden ${
                                 vault.views > 80 
-                                ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-600 dark:text-emerald-400' 
+                                ? 'bg-emerald-500/[0.03] border-emerald-500/10 text-emerald-500' 
                                 : vault.views > 30 
-                                ? 'bg-orange-500/5 border-orange-500/20 text-orange-600 dark:text-orange-400' 
-                                : 'bg-red-500/5 border-red-500/20 text-red-600 dark:text-red-400'
+                                ? 'bg-orange-500/[0.03] border-orange-500/10 text-orange-500' 
+                                : 'bg-red-500/[0.03] border-red-500/10 text-red-500'
                             }`}>
-                                <div className={`p-4 rounded-2xl ${
-                                    vault.views > 80 ? 'bg-emerald-500/10' : vault.views > 30 ? 'bg-orange-500/10' : 'bg-red-500/10'
-                                }`}>
-                                    <TrendingUp className="w-10 h-10 group-hover/engage:scale-110 transition-transform" />
+                                {/* Action Arrow */}
+                                <button 
+                                  onClick={(e) => { e.stopPropagation(); setSelectedAnalyticsVault(vault); }}
+                                  className="absolute top-4 right-4 z-20 w-8 h-8 flex items-center justify-center bg-white dark:bg-black/40 backdrop-blur-md rounded-xl border border-gray-200 dark:border-white/10 text-gray-400 hover:text-primary-500 dark:hover:text-primary-400 hover:bg-white dark:hover:bg-white/10 hover:shadow-xl transition-all active:scale-90 group/arrow cursor-pointer"
+                                  title="View Detailed Analytics"
+                                >
+                                  <ArrowUp className="w-4 h-4 rotate-45 group-hover/arrow:scale-110 transition-transform" />
+                                </button>
+
+                                <div className="absolute inset-x-0 top-0 h-full w-full opacity-40 dark:opacity-60 -mb-4">
+                                  <ResponsiveContainer width="100%" height="100%">
+                                     <AreaChart data={generateTrendData(vault.id, vault.views > 80 ? 'high' : vault.views > 30 ? 'medium' : 'low')}>
+                                        <defs>
+                                           <linearGradient id={`grad-${vault.id}`} x1="0" y1="0" x2="0" y2="1">
+                                              <stop offset="0%" stopColor="currentColor" stopOpacity={0.6}/>
+                                              <stop offset="100%" stopColor="currentColor" stopOpacity={0}/>
+                                           </linearGradient>
+                                        </defs>
+                                        <Area 
+                                           type="monotone" 
+                                           dataKey="value" 
+                                           stroke="currentColor" 
+                                           strokeWidth={4} 
+                                           fill={`url(#grad-${vault.id})`} 
+                                           isAnimationActive={true}
+                                           animationDuration={2000}
+                                        />
+                                     </AreaChart>
+                                  </ResponsiveContainer>
                                 </div>
-                                <div className="text-center">
-                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Engagement</span>
-                                    <div className="text-xl font-black tabular-nums mt-0.5">
-                                        {vault.views > 80 ? 'High' : vault.views > 30 ? 'Medium' : 'Low'}
+                                <div className="relative z-10 flex flex-col items-center pointer-events-none -mt-2">
+                                    <div className={`px-2 py-0.5 rounded-lg mb-1 text-[8px] font-black uppercase tracking-[0.2em] border ${
+                                       vault.views > 80 ? 'bg-emerald-500/10 border-emerald-500/20' : vault.views > 30 ? 'bg-orange-500/10 border-orange-500/20' : 'bg-red-500/10 border-red-500/20'
+                                    }`}>
+                                       Active Trend
+                                    </div>
+                                    <div className="text-lg font-black tabular-nums tracking-tighter">
+                                        {vault.views > 80 ? 'HIGH' : vault.views > 30 ? 'MEDIUM' : 'LOW'}
                                     </div>
                                 </div>
                             </div>
@@ -1561,13 +1601,6 @@ export const Dashboard: React.FC = () => {
                                   <ExternalLink className="w-4 h-4" /> Open
                                 </Link>
                              </div>
-                             
-                             <button
-                               onClick={(e) => { e.stopPropagation(); setSelectedAnalyticsVault(vault); }}
-                               className="w-full flex items-center justify-center gap-2 py-2 bg-gray-50 dark:bg-white/5 text-gray-400 dark:text-gray-500 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:text-primary-600 dark:hover:text-primary-400 transition-all border border-dashed border-gray-200 dark:border-gray-800 hover:border-primary-500/50 cursor-pointer"
-                             >
-                               Intelligent Insights <ArrowUp className="w-3 h-3 group-hover:-translate-y-1 transition-transform" />
-                             </button>
                           </div>
                         </div>
                         <VaultTimer 
