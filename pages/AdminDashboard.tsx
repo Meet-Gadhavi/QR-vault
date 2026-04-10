@@ -562,7 +562,8 @@ export const AdminDashboard: React.FC = () => {
                 <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-2xl border border-gray-100 dark:border-white/10">
                    <p className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest mb-1">QR Code Quota</p>
                    <p className="text-sm font-black text-gray-900 dark:text-white">{selectedUser.used} / {selectedUser.quota}</p>
-              <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-2xl border border-gray-100 dark:border-white/10">
+                </div>
+                <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-2xl border border-gray-100 dark:border-white/10">
                    <p className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest mb-1">Joined Date</p>
                    <p className="text-sm font-black text-gray-900 dark:text-white">{new Date(selectedUser.created_at).toLocaleDateString()}</p>
                 </div>

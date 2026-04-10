@@ -398,24 +398,26 @@ export const PublicView: React.FC = () => {
         <div className="bg-amber-50 text-amber-800 p-5 rounded-2xl text-sm mb-8 border border-amber-100 leading-relaxed font-medium">
           This vault has been automatically deleted based on our security and storage policy.
         </div>
-        <div className="space-y-4">
-          <Link to="/" className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-6 rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
-            Create Your Own Vault
-          </Link>
-          <p className="text-xs text-gray-400">
-            Want to keep files forever? <Link to="/pricing" className="text-primary-600 font-bold hover:underline">Check Pro Plans</Link>
-          </p>
-        </div>
+        {(vault.userPlan === PlanType.FREE || vault.userPlan === PlanType.STARTER) && (
+          <div className="space-y-4">
+            <Link to="/" className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-6 rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
+              Create Your Own Vault
+            </Link>
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              Want to keep files forever? <Link to="/pricing" className="text-primary-600 font-bold hover:underline">Check Pro Plans</Link>
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
 
   if (!vault) return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-gray-50">
-      <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200 max-w-md">
-        <AlertCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <h1 className="text-2xl font-bold text-gray-900">Vault Not Found</h1>
-        <p className="text-gray-500 mt-2 mb-6">This vault may have been deleted, the link is incorrect, or you don't have permission to view it.</p>
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-gray-50 dark:bg-[#0a0a0a]">
+      <div className="bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-sm border border-gray-200 dark:border-white/10 max-w-md">
+        <AlertCircle className="w-16 h-16 text-gray-300 dark:text-gray-700 mx-auto mb-4" />
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Vault Not Found</h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-2 mb-6">This vault may have been deleted, the link is incorrect, or you don't have permission to view it.</p>
       </div>
     </div>
   );
@@ -540,10 +542,10 @@ export const PublicView: React.FC = () => {
   ];
 
   const AdPlaceholder = () => (
-    <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl p-6 flex flex-col items-center justify-center text-center min-h-[240px] animate-pulse">
-      <div className="bg-gray-100 p-3 rounded-xl mb-4 text-gray-400"><Zap className="w-8 h-8" /></div>
-      <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">Advertisement</p>
-      <p className="text-xs text-gray-500 mt-2 max-w-[160px]">Support QR Vault by upgrading your plan today!</p>
+    <div className="bg-gray-50 dark:bg-white/5 border-2 border-dashed border-gray-200 dark:border-white/10 rounded-2xl p-6 flex flex-col items-center justify-center text-center min-h-[240px] animate-pulse">
+      <div className="bg-gray-100 dark:bg-white/10 p-3 rounded-xl mb-4 text-gray-400 dark:text-gray-500"><Zap className="w-8 h-8" /></div>
+      <p className="text-sm font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Advertisement</p>
+      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 max-w-[160px]">Support QR Vault by upgrading your plan today!</p>
     </div>
   );
 
@@ -697,7 +699,7 @@ export const PublicView: React.FC = () => {
                     className={`
                       px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap border
                       ${activeTab === tab.id
-                        ? 'bg-primary-600 text-white shadow-lg shadow-primary-200 dark:shadow-primary-900/20 border-primary-500'
+                        ? 'bg-primary-600 text-white shadow-md shadow-primary-500/10 dark:shadow-none border-primary-500'
                         : 'bg-white/50 dark:bg-white/5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-200 border-gray-100 dark:border-gray-800'
                       }
                     `}
@@ -1075,11 +1077,11 @@ export const PublicView: React.FC = () => {
 
       {/* Auto-Destruct Warning Modal */}
       {warningFile && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-black/60 dark:bg-black/90 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="bg-white dark:bg-gray-900 rounded-[2rem] p-8 max-w-md w-full shadow-2xl border border-red-100 dark:border-red-900/20 animate-in zoom-in-95 duration-500 relative overflow-hidden">
+        <div className="fixed inset-0 bg-black/60 dark:bg-black/90 backdrop-blur-xl z-[100] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] w-full max-w-2xl shadow-2xl animate-in fade-in zoom-in-95 duration-300 border border-white/20 dark:border-white/5 overflow-hidden relative">
             <div className="absolute top-0 left-0 w-full h-1 bg-red-500"></div>
             
-            <div className="flex flex-col items-center text-center">
+            <div className="flex flex-col items-center text-center p-10">
               <div className="w-16 h-16 bg-red-50 dark:bg-red-500/10 rounded-2xl flex items-center justify-center text-red-500 mb-6">
                 <AlertCircle className="w-8 h-8 animate-pulse" />
               </div>
@@ -1099,7 +1101,11 @@ export const PublicView: React.FC = () => {
 
               <button
                 onClick={() => {
-                  setAcknowledgedFiles(prev => new Set([...prev, warningFile.id]));
+                  setAcknowledgedFiles(prev => {
+                    const next = new Set(Array.from(prev));
+                    next.add(warningFile.id);
+                    return next;
+                  });
                   const fileToPreview = warningFile;
                   setWarningFile(null);
                   // Call handleOpenPreview again with acknowledgment bypass

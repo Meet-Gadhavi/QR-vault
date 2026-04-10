@@ -5,7 +5,7 @@ import { supabase } from '../services/supabaseClient';
 import { Vault, User, PlanType, VaultFile, FileType, PLAN_LIMITS, AccessLevel, AccessRequest, RequestStatus, Invoice } from '../types';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import QRCode from 'react-qr-code';
-import { UploadCloud, File as FileIcon, Link as LinkIcon, Trash2, ExternalLink, Plus, X, Loader2, Eye, HardDrive, QrCode, Copy, Check, MoreVertical, Edit2, Search, Filter, ArrowUpDown, Download, Zap, ChevronDown, Lock, Users, Shield, UserCheck, UserX, Clock, ShieldCheck, AlertTriangle, AlertCircle, RotateCcw, FileText, Shuffle } from 'lucide-react';
+import { UploadCloud, File as FileIcon, Link as LinkIcon, Trash2, ExternalLink, Plus, X, Loader2, Eye, HardDrive, QrCode, Copy, Check, MoreVertical, Edit2, Search, Filter, ArrowUpDown, Download, Zap, ChevronDown, Lock, Users, Shield, UserCheck, UserX, Clock, ShieldCheck, AlertTriangle, AlertCircle, RotateCcw, FileText, Shuffle, Settings, Calendar } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -1516,17 +1516,17 @@ export const Dashboard: React.FC = () => {
                               <span>{vault.files.length} files • {formatBytes(vault.files.reduce((acc, f) => acc + f.size, 0))}</span>
                               <span>•</span>
                               <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {vault.views}</span>
+                              {appUser?.plan === PlanType.FREE && (
+                                <Link 
+                                  to="/pricing" 
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="mt-3 inline-flex items-center cursor-pointer gap-1.5 text-xs font-bold text-primary-600 hover:text-primary-700 bg-primary-50 hover:bg-primary-100 px-2.5 py-1.5 rounded-lg transition-colors border border-primary-100 w-fit"
+                                >
+                                  <Zap className="w-3 h-3" /> 
+                                  Upgrade to Keep Permanent
+                                </Link>
+                              )}
                             </div>
-                            {appUser.plan === PlanType.FREE && (
-                              <Link 
-                                to="/pricing" 
-                                onClick={(e) => e.stopPropagation()}
-                                className="mt-3 inline-flex items-center cursor-pointer gap-1.5 text-xs font-bold text-primary-600 hover:text-primary-700 bg-primary-50 hover:bg-primary-100 px-2.5 py-1.5 rounded-lg transition-colors border border-primary-100 w-fit"
-                              >
-                                <Zap className="w-3 h-3" /> 
-                                Upgrade to Keep Permanent
-                              </Link>
-                            )}
                           </div>
 
                           <div className="mt-auto pt-4 border-t border-gray-50 dark:border-gray-800 flex gap-2">
@@ -1598,9 +1598,11 @@ export const Dashboard: React.FC = () => {
                     Vaults auto-removed after {appUser?.plan === PlanType.STARTER ? '72 hours (Plus limit)' : '24 hours (Free limit)'}.
                   </p>
                 </div>
-                <Link to="/pricing" className="text-xs font-bold text-primary-600 hover:underline flex items-center gap-1 uppercase tracking-wider">
-                  Stop Auto-Deletion <ExternalLink className="w-3 h-3" />
-                </Link>
+                {appUser?.plan !== PlanType.PRO && (
+                  <Link to="/pricing" className="text-xs font-bold text-primary-600 hover:underline flex items-center gap-1 uppercase tracking-wider">
+                    Stop Auto-Deletion <ExternalLink className="w-3 h-3" />
+                  </Link>
+                )}
               </div>
 
               <div className="divide-y divide-gray-50 dark:divide-gray-800">
@@ -1642,13 +1644,13 @@ export const Dashboard: React.FC = () => {
                           <p className="text-[10px] text-gray-400">{new Date(log.deleted_at).toLocaleDateString()}</p>
                         </div>
                         {(appUser?.plan === PlanType.STARTER || appUser?.plan === PlanType.PRO) && (
-                          <button
-                            onClick={() => handleRecoverVault(log)}
-                            disabled={isSubmitting}
-                            className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary-100 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2"
-                          >
-                            <RotateCcw className="w-3 h-3" /> Recover
-                          </button>
+                            <button
+                             onClick={() => handleRecoverVault(log)}
+                             disabled={isSubmitting}
+                             className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary-500/20 dark:shadow-none transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2"
+                           >
+                             <RotateCcw className="w-3 h-3" /> Recover
+                           </button>
                         )}
                       </div>
                     </div>
@@ -1705,8 +1707,8 @@ export const Dashboard: React.FC = () => {
                     <Lock className="w-5 h-5 text-gray-900 dark:text-white" />
                     <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-tight">Security & Privacy</h3>
                   </div>
-                  {appUser.plan !== PlanType.PRO && (
-                    <span className="flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-black rounded-full shadow-lg shadow-amber-100 uppercase tracking-widest animate-pulse">
+                  {appUser?.plan !== PlanType.PRO && (
+                    <span className="flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-black rounded-full shadow-lg shadow-amber-500/20 uppercase tracking-widest animate-pulse">
                       <Zap className="w-3 h-3 fill-current" /> Pro Feature
                     </span>
                   )}
@@ -1715,20 +1717,20 @@ export const Dashboard: React.FC = () => {
                 <div className="relative">
                   <input
                     type="password"
-                    disabled={appUser.plan !== PlanType.PRO}
+                    disabled={appUser?.plan !== PlanType.PRO}
                     value={vaultPassword}
                     onChange={(e) => setVaultPassword(e.target.value)}
-                    placeholder={appUser.plan === PlanType.PRO ? "Set a vault password (optional)" : "Upgrade to Pro to set passwords"}
+                    placeholder={appUser?.plan === PlanType.PRO ? "Set a vault password (optional)" : "Upgrade to Pro to set passwords"}
                     className={`w-full p-4 pl-12 border rounded-xl transition-all font-medium ${
-                      appUser.plan === PlanType.PRO 
+                      appUser?.plan === PlanType.PRO 
                         ? 'bg-white dark:bg-black border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary-500 hover:border-primary-200 dark:text-white' 
                         : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 cursor-not-allowed text-gray-400 dark:text-gray-500'
                     }`}
                   />
-                  <ShieldCheck className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 ${appUser.plan === PlanType.PRO ? 'text-primary-500' : 'text-gray-300 dark:text-gray-600'}`} />
+                  <ShieldCheck className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 ${appUser?.plan === PlanType.PRO ? 'text-primary-500' : 'text-gray-300 dark:text-gray-600'}`} />
                 </div>
                 <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-3 flex items-center gap-1.5 px-1 font-medium">
-                  {appUser.plan === PlanType.PRO 
+                  {appUser?.plan === PlanType.PRO 
                     ? "Visitors must enter this password to view files." 
                     : "Password protection is only available for professional users."}
                 </p>
