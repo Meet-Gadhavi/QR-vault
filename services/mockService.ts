@@ -3,7 +3,50 @@ import { supabase } from './supabaseClient';
 
 // --- DB HELPERS ---
 
+function generateMockAnalytics(vaultName: string, views: number, files: any[]): any {
+    const uniqueViewers = Math.floor(views * 0.7);
+    const totalScans = Math.floor(views * 1.2);
+    const totalDownloads = files.reduce((acc, f) => acc + (f.downloadCount || 0), 0);
+    
+    const timestampComparison = [
+        { time: '00:00', engagement: Math.floor(Math.random() * 10) },
+        { time: '04:00', engagement: Math.floor(Math.random() * 5) },
+        { time: '08:00', engagement: Math.floor(Math.random() * 30) },
+        { time: '12:00', engagement: Math.floor(Math.random() * 50) },
+        { time: '16:00', engagement: Math.floor(Math.random() * 40) },
+        { time: '20:00', engagement: Math.floor(Math.random() * 20) },
+    ];
+
+    const fileEngagement = files.map(f => ({
+        fileName: f.name,
+        engagement: Math.floor(Math.random() * views),
+        downloads: f.downloadCount || 0
+    }));
+
+    return {
+        uniqueViewers,
+        totalScans,
+        totalDownloads,
+        timestampComparison,
+        fileEngagement
+    };
+}
+
 function mapDbVault(v: any): Vault {
+    const files = (v.files || []).map((f: any) => ({ 
+        id: f.id, 
+        name: f.name, 
+        size: f.size, 
+        type: f.type, 
+        url: f.url, 
+        mimeType: f.mime_type,
+        maxDownloads: f.max_downloads,
+        downloadCount: f.download_count || 0,
+        expiresAt: f.expires_at,
+        deleteAfterMinutes: f.delete_after_minutes,
+        firstViewedAt: f.first_viewed_at
+    }));
+
     return {
         id: v.id,
         userId: v.user_id,
@@ -12,24 +55,13 @@ function mapDbVault(v: any): Vault {
         views: v.views,
         active: v.active,
         accessLevel: v.access_level || AccessLevel.PUBLIC,
-        files: (v.files || []).map((f: any) => ({ 
-            id: f.id, 
-            name: f.name, 
-            size: f.size, 
-            type: f.type, 
-            url: f.url, 
-            mimeType: f.mime_type,
-            maxDownloads: f.max_downloads,
-            downloadCount: f.download_count || 0,
-            expiresAt: f.expires_at,
-            deleteAfterMinutes: f.delete_after_minutes,
-            firstViewedAt: f.first_viewed_at
-        })),
+        files: files,
         requests: (v.requests || []).map((r: any) => ({ id: r.id, email: r.email, status: r.status, requestedAt: r.requested_at })),
         userPlan: v.profiles?.plan as PlanType,
         expiresAt: v.expires_at,
         maxViews: v.max_views,
-        password: v.password
+        password: v.password,
+        analytics: generateMockAnalytics(v.name, v.views, files)
     };
 }
 

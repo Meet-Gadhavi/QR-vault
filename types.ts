@@ -55,6 +55,14 @@ export interface AccessRequest {
   requestedAt: string;
 }
 
+export interface EngagementData {
+  uniqueViewers: number;
+  totalScans: number;
+  totalDownloads: number;
+  timestampComparison: { time: string; engagement: number }[];
+  fileEngagement: { fileName: string; engagement: number; downloads: number }[];
+}
+
 export interface Vault {
   id: string;
   userId: string;
@@ -71,6 +79,7 @@ export interface Vault {
   password?: string;                               // NEW: Shared password for access
   reportCount?: number;                            // TOTAL flags received
   lockedUntil?: string;                            // NEW: ISO Date for temporary block
+  analytics?: EngagementData;                      // NEW: Engagement analytics
 }
 
 export interface Report {
