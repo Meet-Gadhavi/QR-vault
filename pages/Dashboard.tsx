@@ -102,203 +102,7 @@ const VaultTimer: React.FC<{
         <span className="text-[10px] text-amber-700 dark:text-amber-400 font-bold uppercase tracking-widest">Valid for:</span>
         <span className="text-sm font-mono font-bold text-amber-600 dark:text-amber-500 tabular-nums">{timeLeft}</span>
       </div>
-      {/* Analytics Modal */}
-      {selectedAnalyticsVault && (
-        <div className="fixed inset-0 bg-black/60 dark:bg-black/90 backdrop-blur-md z-[60] flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#0a0a0b] rounded-[2.5rem] w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl border border-gray-100 dark:border-white/5 flex flex-col animate-in fade-in zoom-in-95 duration-300">
-            {/* Modal Header */}
-            <div className="p-8 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02] flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-3 mb-1">
-                   <div className="p-2 bg-primary-500 text-white rounded-xl shadow-lg shadow-primary-500/20">
-                      <TrendingUp className="w-5 h-5" />
-                   </div>
-                   <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Vault Analytics</h2>
-                </div>
-                <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-11">Real-time Intelligence for <span className="text-primary-500">{selectedAnalyticsVault.name}</span></p>
-              </div>
-              <button 
-                onClick={() => setSelectedAnalyticsVault(null)} 
-                className="p-3 bg-white dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-2xl transition-all border border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white group"
-              >
-                <X className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />
-              </button>
-            </div>
 
-            {/* Modal Navigation */}
-            <div className="px-8 pt-6 pb-2 border-b border-gray-100 dark:border-white/5 flex gap-8">
-               {[
-                 { id: 'overview', label: 'Overview', icon: Box },
-                 { id: 'engagement', label: 'Engagement Timeline', icon: Clock },
-                 { id: 'files', label: 'File Performance', icon: FileText }
-               ].map((tab) => (
-                 <button
-                   key={tab.id}
-                   onClick={() => setActiveAnalyticsTab(tab.id as any)}
-                   className={`pb-4 text-[10px] font-black uppercase tracking-[0.2em] relative flex items-center gap-2.5 transition-all ${
-                     activeAnalyticsTab === tab.id 
-                     ? 'text-primary-600 dark:text-primary-400' 
-                     : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
-                   }`}
-                 >
-                   <tab.icon className="w-3.5 h-3.5" />
-                   {tab.label}
-                   {activeAnalyticsTab === tab.id && (
-                     <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-500 rounded-t-full shadow-[0_-4px_12px_rgba(124,58,237,0.4)]" />
-                   )}
-                 </button>
-               ))}
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-               {activeAnalyticsTab === 'overview' && (
-                 <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                       {[
-                         { label: 'Unique Viewers', value: selectedAnalyticsVault.analytics?.uniqueViewers, icon: Users, color: 'primary' },
-                         { label: 'Total Scans', value: selectedAnalyticsVault.analytics?.totalScans, icon: QrCode, color: 'blue' },
-                         { label: 'Views', value: selectedAnalyticsVault.views, icon: Eye, color: 'emerald' },
-                         { label: 'Total Downloads', value: selectedAnalyticsVault.analytics?.totalDownloads, icon: Download, color: 'amber' }
-                       ].map((stat) => (
-                         <div key={stat.label} className="p-6 bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-3xl hover:bg-white dark:hover:bg-white/[0.04] transition-all hover:shadow-xl group">
-                            <div className={`w-10 h-10 rounded-2xl mb-4 flex items-center justify-center transition-transform group-hover:scale-110 ${
-                              stat.color === 'primary' ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/20' :
-                              stat.color === 'blue' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' :
-                              stat.color === 'emerald' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' :
-                              'bg-amber-500 text-white shadow-lg shadow-amber-500/20'
-                            }`}>
-                               <stat.icon className="w-5 h-5" />
-                            </div>
-                            <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{stat.label}</div>
-                            <div className="text-2xl font-black text-gray-900 dark:text-white tabular-nums">{stat.value}</div>
-                         </div>
-                       ))}
-                    </div>
-
-                    <div className="p-8 bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-[2rem]">
-                       <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] mb-8 flex items-center gap-2">
-                          <TrendingUp className="w-4 h-4 text-primary-500" /> Mixed engagement trends
-                       </h3>
-                       <div className="h-[300px] w-full">
-                          <ResponsiveContainer width="100%" height="100%">
-                             <AreaChart data={selectedAnalyticsVault.analytics?.timestampComparison}>
-                                <defs>
-                                   <linearGradient id="colorEngage" x1="0" y1="0" x2="0" y2="1">
-                                      <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.3}/>
-                                      <stop offset="95%" stopColor="#7c3aed" stopOpacity={0}/>
-                                   </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#88888822" />
-                                <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 900}} />
-                                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 900}} />
-                                <Tooltip 
-                                  contentStyle={{ backgroundColor: '#000', border: 'none', borderRadius: '12px', padding: '12px' }}
-                                  labelStyle={{ color: '#888', marginBottom: '4px', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase' }}
-                                  itemStyle={{ color: '#fff', fontSize: '14px', fontWeight: 900 }}
-                                />
-                                <Area type="monotone" dataKey="engagement" stroke="#7c3aed" strokeWidth={4} fillOpacity={1} fill="url(#colorEngage)" />
-                             </AreaChart>
-                          </ResponsiveContainer>
-                       </div>
-                    </div>
-                 </div>
-               )}
-
-               {activeAnalyticsTab === 'engagement' && (
-                 <div className="animate-in slide-in-from-bottom-4 duration-500">
-                    <div className="bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-[2rem] p-8">
-                       <div className="flex items-center justify-between mb-8">
-                          <div>
-                             <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] mb-1">Peak Engagement Hours</h3>
-                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">At which time vault have more engagement</p>
-                          </div>
-                          <div className="px-4 py-2 bg-primary-50 dark:bg-primary-900/30 rounded-full border border-primary-100 dark:border-primary-800">
-                             <span className="text-[9px] font-black text-primary-600 dark:text-primary-400 uppercase tracking-widest">Live Updates</span>
-                          </div>
-                       </div>
-                       <div className="h-[350px]">
-                          <ResponsiveContainer width="100%" height="100%">
-                             <BarChart data={selectedAnalyticsVault.analytics?.timestampComparison}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#88888822" />
-                                <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 900}} />
-                                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 900}} />
-                                <Tooltip 
-                                  cursor={{fill: '#88888811'}}
-                                  contentStyle={{ backgroundColor: '#000', border: 'none', borderRadius: '12px' }}
-                                  itemStyle={{ color: '#fff' }}
-                                />
-                                <Bar dataKey="engagement" fill="#7c3aed" radius={[8, 8, 0, 0]} barSize={40} />
-                             </BarChart>
-                          </ResponsiveContainer>
-                       </div>
-                    </div>
-                 </div>
-               )}
-
-               {activeAnalyticsTab === 'files' && (
-                 <div className="animate-in slide-in-from-bottom-4 duration-500 space-y-6">
-                    <div className="bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-[2rem] p-8">
-                       <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] mb-8">File Engagement vs Downloads</h3>
-                       <div className="h-[350px]">
-                          <ResponsiveContainer width="100%" height="100%">
-                             <BarChart data={selectedAnalyticsVault.analytics?.fileEngagement} layout="vertical">
-                                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#88888822" />
-                                <XAxis type="number" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 900}} />
-                                <YAxis dataKey="fileName" type="category" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 900}} width={120} />
-                                <Tooltip 
-                                  contentStyle={{ backgroundColor: '#000', border: 'none', borderRadius: '12px' }}
-                                  itemStyle={{ color: '#fff' }}
-                                />
-                                <Legend wrapperStyle={{ paddingTop: '20px', textTransform: 'uppercase', fontSize: '9px', fontWeight: 900, letterSpacing: '1px' }} />
-                                <Bar dataKey="engagement" name="Engagement" fill="#7c3aed" radius={[0, 4, 4, 0]} />
-                                <Bar dataKey="downloads" name="Downloads" fill="#10b981" radius={[0, 4, 4, 0]} />
-                             </BarChart>
-                          </ResponsiveContainer>
-                       </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                       {selectedAnalyticsVault.analytics?.fileEngagement.slice(0, 4).map((file, i) => (
-                         <div key={i} className="p-5 bg-white dark:bg-white/[0.01] border border-gray-100 dark:border-white/5 rounded-3xl flex items-center justify-between group">
-                            <div className="flex items-center gap-4">
-                               <div className="w-10 h-10 bg-gray-100 dark:bg-white/5 rounded-2xl flex items-center justify-center text-gray-500 group-hover:bg-primary-500 group-hover:text-white transition-all">
-                                  <FileIcon className="w-5 h-5" />
-                               </div>
-                               <div>
-                                  <div className="text-xs font-bold text-gray-900 dark:text-white truncate max-w-[150px]">{file.fileName}</div>
-                                  <div className="text-[9px] text-gray-400 font-black uppercase tracking-widest mt-0.5">{file.downloads} Downloads</div>
-                               </div>
-                            </div>
-                            <div className="text-right">
-                               <div className="text-lg font-black text-primary-600 tabular-nums">{file.engagement}</div>
-                               <div className="text-[8px] text-gray-400 font-bold uppercase tracking-tight">ENGAGEMENT</div>
-                            </div>
-                         </div>
-                       ))}
-                    </div>
-                 </div>
-               )}
-            </div>
-            
-            <div className="p-8 border-t border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02] flex items-center justify-between">
-               <div className="flex items-center gap-4">
-                  <div className="flex -space-x-2">
-                     {[1,2,3].map(i => (
-                        <div key={i} className="w-8 h-8 rounded-full border-2 border-white dark:border-[#0a0a0b] bg-gray-200 dark:bg-gray-800 flex items-center justify-center text-[10px] font-black">{i}</div>
-                     ))}
-                  </div>
-                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Active nodes monitoring traffic</span>
-               </div>
-               <button 
-                 onClick={() => setSelectedAnalyticsVault(null)}
-                 className="px-8 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl transition-all hover:scale-105 active:shadow-inner"
-               >
-                 Close Report
-               </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
@@ -2192,20 +1996,20 @@ export const Dashboard: React.FC = () => {
                 })()}
 
                 {maxViews === 'custom' && appUser?.plan === PlanType.PRO && (
-                  <div className="mt-3 relative animate-in fade-in slide-in-from-top-1 duration-200">
-                    <div className="relative">
-                      <input
-                        type="number"
-                        min="1"
-                        placeholder="Enter custom scan limit"
-                        value={customMaxViews}
-                        onChange={(e) => setCustomMaxViews(e.target.value)}
-                        className="w-full p-4 bg-gray-50 dark:bg-black/50 border border-transparent focus:bg-white dark:focus:bg-black focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 rounded-xl text-sm dark:text-white outline-none transition-all duration-200"
-                      />
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-bold uppercase tracking-wider">Scans</div>
-                    </div>
-                    <p className="mt-2 text-[10px] text-primary-600 dark:text-primary-400 font-medium italic pl-1">Vault will auto-deactivate after reaching this many views.</p>
-                  </div>
+                   <div className="mt-3 relative animate-in fade-in slide-in-from-top-1 duration-200">
+                     <div className="relative">
+                       <input
+                         type="number"
+                         min="1"
+                         placeholder="Enter custom scan limit"
+                         value={customMaxViews}
+                         onChange={(e) => setCustomMaxViews(e.target.value)}
+                         className="w-full p-4 bg-gray-50 dark:bg-black/50 border border-transparent focus:bg-white dark:focus:bg-black focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 rounded-xl text-sm dark:text-white outline-none transition-all duration-200"
+                       />
+                       <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-bold uppercase tracking-wider">Scans</div>
+                     </div>
+                     <p className="mt-2 text-[10px] text-primary-600 dark:text-primary-400 font-medium italic pl-1">Vault will auto-deactivate after reaching this many views.</p>
+                   </div>
                 )}
                 
                 <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-2 font-medium">Vault wipes itself once scan limit is reached.</p>
