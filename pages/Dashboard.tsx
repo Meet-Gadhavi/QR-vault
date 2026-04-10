@@ -1532,31 +1532,37 @@ export const Dashboard: React.FC = () => {
                                )}
                             </div>
                           </div>
+                          <div className="mt-2 text-[11px] text-gray-400 font-bold flex items-center gap-2">
+                            <span>{vault.files.length} objects</span>
+                            <span className="opacity-30">•</span>
+                            <span>{formatBytes(vault.files.reduce((acc, f) => acc + f.size, 0))} Protected</span>
+                            <span className="opacity-30">•</span>
+                            <span className="flex items-center gap-1 text-primary-500/80"><Eye className="w-3 h-3" /> {vault.views}</span>
+                          </div>
 
-                          {/* Engagement Indicator Box - Dynamic Graph */}
-                          <div className="mb-6 px-1 relative group/container">
-                            <div className={`w-full aspect-[16/8] rounded-[2rem] border flex flex-col items-center justify-center relative transition-all duration-500 group/engage hover:scale-[1.02] shadow-sm overflow-hidden ${
+                          {/* Engagement Indicator Box - Compact Dynamic Graph */}
+                            <div className={`w-full h-24 rounded-[1.5rem] border relative transition-all duration-500 group/engage hover:scale-[1.01] shadow-sm overflow-hidden ${
                                 vault.views > 80 
-                                ? 'bg-emerald-500/[0.03] border-emerald-500/10 text-emerald-500' 
+                                ? 'bg-emerald-500/[0.02] border-emerald-500/10 text-emerald-500' 
                                 : vault.views > 30 
-                                ? 'bg-orange-500/[0.03] border-orange-500/10 text-orange-500' 
-                                : 'bg-red-500/[0.03] border-red-500/10 text-red-500'
+                                ? 'bg-orange-500/[0.02] border-orange-500/10 text-orange-500' 
+                                : 'bg-red-500/[0.02] border-red-500/10 text-red-500'
                             }`}>
                                 {/* Action Arrow */}
                                 <button 
                                   onClick={(e) => { e.stopPropagation(); setSelectedAnalyticsVault(vault); }}
-                                  className="absolute top-4 right-4 z-20 w-8 h-8 flex items-center justify-center bg-white dark:bg-black/40 backdrop-blur-md rounded-xl border border-gray-200 dark:border-white/10 text-gray-400 hover:text-primary-500 dark:hover:text-primary-400 hover:bg-white dark:hover:bg-white/10 hover:shadow-xl transition-all active:scale-90 group/arrow cursor-pointer"
+                                  className="absolute top-3 right-3 z-20 w-7 h-7 flex items-center justify-center bg-white/80 dark:bg-black/40 backdrop-blur-md rounded-lg border border-gray-200 dark:border-white/10 text-gray-400 hover:text-primary-500 dark:hover:text-primary-400 hover:bg-white dark:hover:bg-white/10 transition-all active:scale-90 group/arrow cursor-pointer"
                                   title="View Detailed Analytics"
                                 >
-                                  <ArrowUp className="w-4 h-4 rotate-45 group-hover/arrow:scale-110 transition-transform" />
+                                  <ArrowUp className="w-3.5 h-3.5 rotate-45 group-hover/arrow:scale-110 transition-transform" />
                                 </button>
 
-                                <div className="absolute inset-x-0 top-0 h-full w-full opacity-40 dark:opacity-60 -mb-4">
+                                <div className="absolute inset-0 w-full h-full opacity-30 dark:opacity-50 -mb-2">
                                   <ResponsiveContainer width="100%" height="100%">
                                      <AreaChart data={generateTrendData(vault.id, vault.views > 80 ? 'high' : vault.views > 30 ? 'medium' : 'low')}>
                                         <defs>
                                            <linearGradient id={`grad-${vault.id}`} x1="0" y1="0" x2="0" y2="1">
-                                              <stop offset="0%" stopColor="currentColor" stopOpacity={0.6}/>
+                                              <stop offset="0%" stopColor="currentColor" stopOpacity={0.5}/>
                                               <stop offset="100%" stopColor="currentColor" stopOpacity={0}/>
                                            </linearGradient>
                                         </defs>
@@ -1564,23 +1570,12 @@ export const Dashboard: React.FC = () => {
                                            type="monotone" 
                                            dataKey="value" 
                                            stroke="currentColor" 
-                                           strokeWidth={4} 
+                                           strokeWidth={3} 
                                            fill={`url(#grad-${vault.id})`} 
                                            isAnimationActive={true}
-                                           animationDuration={2000}
                                         />
                                      </AreaChart>
                                   </ResponsiveContainer>
-                                </div>
-                                <div className="relative z-10 flex flex-col items-center pointer-events-none -mt-2">
-                                    <div className={`px-2 py-0.5 rounded-lg mb-1 text-[8px] font-black uppercase tracking-[0.2em] border ${
-                                       vault.views > 80 ? 'bg-emerald-500/10 border-emerald-500/20' : vault.views > 30 ? 'bg-orange-500/10 border-orange-500/20' : 'bg-red-500/10 border-red-500/20'
-                                    }`}>
-                                       Active Trend
-                                    </div>
-                                    <div className="text-lg font-black tabular-nums tracking-tighter">
-                                        {vault.views > 80 ? 'HIGH' : vault.views > 30 ? 'MEDIUM' : 'LOW'}
-                                    </div>
                                 </div>
                             </div>
                           </div>
