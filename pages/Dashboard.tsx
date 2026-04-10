@@ -1503,15 +1503,13 @@ export const Dashboard: React.FC = () => {
                               <span>{vault.files.length} files • {formatBytes(vault.files.reduce((acc, f) => acc + f.size, 0))}</span>
                               <span>•</span>
                               <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {vault.views}</span>
-                            </div>
-                            <div className="mt-3 flex items-center justify-between">
                               {appUser?.plan === PlanType.FREE && (
                                 <Link 
                                   to="/pricing" 
                                   onClick={(e) => e.stopPropagation()}
-                                  className="ml-auto inline-flex items-center cursor-pointer gap-1.5 px-3 py-1.5 rounded-lg bg-primary-600 text-[10px] font-black text-white shadow-lg shadow-primary-500/20 uppercase tracking-widest hover:bg-primary-700 transition-all active:scale-95 border border-primary-500"
+                                  className="ml-2 inline-flex items-center cursor-pointer gap-1 px-1.5 py-0.5 rounded-md bg-amber-50 dark:bg-amber-500/10 text-[9px] font-black text-amber-600 dark:text-amber-500 border border-amber-100 dark:border-amber-500/20 uppercase tracking-tighter"
                                 >
-                                  <Zap className="w-3 h-3 fill-current" /> Keep Permanent
+                                  <Zap className="w-2 h-2" /> Upgrade
                                 </Link>
                               )}
                             </div>
@@ -1673,7 +1671,7 @@ export const Dashboard: React.FC = () => {
               </h2>
               <button 
                 onClick={() => setIsModalOpen(false)} 
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors border border-transparent hover:border-gray-200 dark:hover:border-gray-700 shadow-sm"
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"
               >
                 <X className="text-gray-500 dark:text-gray-400 w-5 h-5" />
               </button>
@@ -1736,154 +1734,171 @@ export const Dashboard: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setAccessLevel(AccessLevel.PUBLIC)}
-                    className={`flex-1 p-4 rounded-xl border-2 text-left transition-all ${accessLevel === AccessLevel.PUBLIC ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/10' : 'border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-white dark:bg-black'}`}
+                    className={`flex-1 p-4 rounded-xl border-2 text-left transition-all ${accessLevel === AccessLevel.PUBLIC ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' : 'border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-white dark:bg-gray-900'}`}
                   >
                     <div className="flex items-center gap-2 mb-1">
                       <Users className={`w-5 h-5 ${accessLevel === AccessLevel.PUBLIC ? 'text-primary-600' : 'text-gray-400'}`} />
                       <span className={`font-bold ${accessLevel === AccessLevel.PUBLIC ? 'text-primary-900 dark:text-white' : 'text-gray-700 dark:text-gray-400'}`}>Public</span>
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 leading-tight">Anyone with the link or QR code can view and download.</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Anyone with the link or QR code can view and download.</p>
                   </button>
                   <button
                     type="button"
                     onClick={() => setAccessLevel(AccessLevel.RESTRICTED)}
-                    className={`flex-1 p-4 rounded-xl border-2 text-left transition-all ${accessLevel === AccessLevel.RESTRICTED ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/10' : 'border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-white dark:bg-black'}`}
+                    className={`flex-1 p-4 rounded-xl border-2 text-left transition-all ${accessLevel === AccessLevel.RESTRICTED ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20' : 'border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-white dark:bg-gray-900'}`}
                   >
                     <div className="flex items-center gap-2 mb-1">
                       <Shield className={`w-5 h-5 ${accessLevel === AccessLevel.RESTRICTED ? 'text-orange-600' : 'text-gray-400'}`} />
                       <span className={`font-bold ${accessLevel === AccessLevel.RESTRICTED ? 'text-orange-900 dark:text-white' : 'text-gray-700 dark:text-gray-400'}`}>Restricted</span>
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 leading-tight">Users must request access. You approve who can view.</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Users must request access. You approve who can view.</p>
                   </button>
                 </div>
               </div>
 
-              {/* Expiry Selection (Custom Dropdown) */}
-              <div className="relative">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Vault Lifetime (Expiry)</label>
+              {/* Self-Destruct Settings Group */}
+              <div className="bg-primary-50/50 dark:bg-primary-950/20 p-6 rounded-2xl border border-primary-100 dark:border-primary-900/30 space-y-6">
+                <div className="flex items-center gap-2 mb-2">
+                   <Zap className="w-5 h-5 text-primary-500" />
+                   <h3 className="text-xs font-black text-primary-700 dark:text-primary-400 uppercase tracking-widest">Global Self-Destruction</h3>
+                </div>
+
+                {/* Expiry Selection (Custom Dropdown) */}
+                <div className="relative">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Vault Lifetime (Expiry)</label>
                 {(() => {
-                  const expiryOptions = [
-                    { value: 24, label: '24 Hours (Default)', disabled: false },
-                    { value: 48, label: '48 Hours', disabled: appUser?.plan === PlanType.FREE },
-                    { value: 72, label: '72 Hours', disabled: appUser?.plan === PlanType.FREE },
-                    { value: 'never', label: `Permanent Storage (Never Expire) ${appUser?.plan === PlanType.STARTER ? '(PRO Only)' : ''}`, disabled: appUser?.plan !== PlanType.PRO },
-                  ];
-                  const selected = expiryOptions.find(o => o.value === expiryHours) || expiryOptions[0];
-                  const isOpen = menuOpenId === 'modal-expiry';
+                    const expiryOptions = [
+                        { value: 24, label: '24 Hours (Default)', disabled: false },
+                        { value: 48, label: '48 Hours', disabled: appUser?.plan === PlanType.FREE },
+                        { value: 72, label: '72 Hours', disabled: appUser?.plan === PlanType.FREE },
+                        { value: 'never', label: `Permanent Storage (Never Expire) ${appUser?.plan === PlanType.STARTER ? '(PRO Only)' : ''}`, disabled: appUser?.plan !== PlanType.PRO },
+                    ];
+                    const selected = expiryOptions.find(o => o.value === expiryHours) || expiryOptions[0];
+                    const isOpen = menuOpenId === 'modal-expiry';
 
-                  return (
-                    <>
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); setMenuOpenId(isOpen ? null : 'modal-expiry'); }}
-                        className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-all duration-200 border ${
-                          isOpen 
-                          ? 'bg-primary-50 dark:bg-primary-900/30 border-primary-300 dark:border-primary-800 text-primary-700 dark:text-primary-400 shadow-lg shadow-primary-100 dark:shadow-none ring-2 ring-primary-200 dark:ring-primary-900/30' 
-                          : 'bg-white dark:bg-black border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-primary-300 dark:hover:border-primary-800 hover:shadow-md'
-                        } ${appUser?.plan === PlanType.FREE ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'}`}
-                        disabled={appUser?.plan === PlanType.FREE}
-                      >
-                        <Clock className={`w-5 h-5 transition-colors ${isOpen ? 'text-primary-500' : 'text-gray-400'}`} />
-                        <span className="flex-1 text-left">{selected.label}</span>
-                        <ChevronDown className={`w-4 h-4 transition-all duration-200 ${isOpen ? 'rotate-180 text-primary-500' : 'text-gray-400'}`} />
-                      </button>
-
-                      {isOpen && (
-                        <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-800 z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 ring-1 ring-black/5">
-                          <div className="p-1.5">
-                            {expiryOptions.map((opt) => (
-                              <button
-                                key={opt.value}
+                    return (
+                        <>
+                            <button
                                 type="button"
-                                disabled={opt.disabled}
-                                onClick={() => { setExpiryHours(opt.value as any); setMenuOpenId(null); }}
-                                className={`w-full flex items-center gap-2.5 px-3 py-3 rounded-lg text-sm text-left transition-all ${
-                                  expiryHours === opt.value 
-                                  ? 'bg-primary-50 dark:bg-primary-900/40 text-primary-700 dark:text-primary-400 font-bold' 
-                                  : opt.disabled ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-950'
-                                }`}
-                              >
-                                {expiryHours === opt.value && <div className="w-1.5 h-1.5 rounded-full bg-primary-500" />}
-                                <span className={expiryHours === opt.value ? 'ml-0' : 'ml-4'}>{opt.label}</span>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  );
+                                onClick={(e) => { e.stopPropagation(); setMenuOpenId(isOpen ? null : 'modal-expiry'); }}
+                                className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-all duration-200 border ${
+                                    isOpen 
+                                    ? 'bg-primary-50 dark:bg-primary-900/30 border-primary-300 dark:border-primary-800 text-primary-700 dark:text-primary-400 shadow-lg shadow-primary-100 dark:shadow-none ring-2 ring-primary-200 dark:ring-primary-900/30' 
+                                    : 'bg-white dark:bg-black border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-primary-300 dark:hover:border-primary-800 hover:shadow-md'
+                                } ${appUser?.plan === PlanType.FREE ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'}`}
+                                disabled={appUser?.plan === PlanType.FREE}
+                            >
+                                <Clock className={`w-5 h-5 transition-colors ${isOpen ? 'text-primary-500' : 'text-gray-400'}`} />
+                                <span className="flex-1 text-left">{selected.label}</span>
+                                <ChevronDown className={`w-4 h-4 transition-all duration-200 ${isOpen ? 'rotate-180 text-primary-500' : 'text-gray-400'}`} />
+                            </button>
+
+                            {isOpen && (
+                                <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-950 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-800 z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 ring-1 ring-black/5">
+                                    <div className="p-1.5">
+                                        {expiryOptions.map((opt) => (
+                                            <button
+                                                key={opt.value}
+                                                type="button"
+                                                disabled={opt.disabled}
+                                                onClick={() => { setExpiryHours(opt.value as any); setMenuOpenId(null); }}
+                                                className={`w-full flex items-center gap-2.5 px-3 py-3 rounded-lg text-sm text-left transition-all ${
+                                                    expiryHours === opt.value 
+                                                    ? 'bg-primary-50 dark:bg-primary-900/40 text-primary-700 dark:text-primary-400 font-bold' 
+                                                    : opt.disabled ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-900'
+                                                }`}
+                                            >
+                                                {expiryHours === opt.value && <div className="w-1.5 h-1.5 rounded-full bg-primary-500" />}
+                                                <span className={expiryHours === opt.value ? 'ml-0' : 'ml-4'}>{opt.label}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    );
                 })()}
-                <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-2 font-medium">Auto-destruction triggered once vault expires.</p>
-              </div>
+                
+                {appUser?.plan === PlanType.STARTER && expiryHours !== 'never' && (
+                    <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                        <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                        <p className="text-xs text-amber-800 leading-relaxed font-medium">
+                            <strong>Notice:</strong> This vault will be deleted after <strong>{expiryHours} hours</strong> because of the auto-expiry limits of your Plus account.
+                        </p>
+                    </div>
+                )}
+                
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-2 font-medium">Auto-destruction triggered once vault expires.</p>
+                </div>
 
-              {/* Scan Count Limit (Custom Dropdown) */}
-              <div className="relative">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Scan Count Limit</label>
+                {/* Scan Count Limit (Custom Dropdown) */}
+                <div className="relative">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Scan Count Limit (Self-Destruct after X Scans)</label>
                 {(() => {
-                  const scanOptions = [
-                    { value: 'none', label: 'Unlimited Scans', disabled: appUser?.plan !== PlanType.PRO, proOnly: appUser?.plan !== PlanType.PRO },
-                    { value: 25, label: '25 Scans', disabled: false },
-                    { value: 45, label: '45 Scans', disabled: false },
-                    { value: 65, label: '65 Scans', disabled: appUser?.plan === PlanType.FREE, plusOnly: appUser?.plan === PlanType.FREE },
-                    { value: 85, label: '85 Scans', disabled: appUser?.plan === PlanType.FREE, plusOnly: appUser?.plan === PlanType.FREE },
-                    { value: 105, label: '105 Scans', disabled: appUser?.plan !== PlanType.PRO, proOnly: appUser?.plan !== PlanType.PRO },
-                    { value: 125, label: '125 Scans', disabled: appUser?.plan !== PlanType.PRO, proOnly: appUser?.plan !== PlanType.PRO },
-                    { value: 'custom', label: 'Custom Limit', disabled: appUser?.plan !== PlanType.PRO, proOnly: appUser?.plan !== PlanType.PRO },
-                  ];
-                  
-                  const currentValue = maxViews === null ? 'none' : maxViews;
-                  const selected = scanOptions.find(o => o.value === currentValue) || scanOptions[1];
-                  const isOpen = menuOpenId === 'modal-scans';
+                    const scanOptions = [
+                        { value: 'none', label: 'Unlimited Scans', disabled: appUser?.plan !== PlanType.PRO, proOnly: appUser?.plan !== PlanType.PRO },
+                        { value: 25, label: '25 Scans', disabled: false },
+                        { value: 45, label: '45 Scans', disabled: false },
+                        { value: 65, label: '65 Scans', disabled: appUser?.plan === PlanType.FREE, plusOnly: appUser?.plan === PlanType.FREE },
+                        { value: 85, label: '85 Scans', disabled: appUser?.plan === PlanType.FREE, plusOnly: appUser?.plan === PlanType.FREE },
+                        { value: 105, label: '105 Scans', disabled: appUser?.plan !== PlanType.PRO, proOnly: appUser?.plan !== PlanType.PRO },
+                        { value: 125, label: '125 Scans', disabled: appUser?.plan !== PlanType.PRO, proOnly: appUser?.plan !== PlanType.PRO },
+                        { value: 'custom', label: 'Custom Limit', disabled: appUser?.plan !== PlanType.PRO, proOnly: appUser?.plan !== PlanType.PRO },
+                    ];
+                    
+                    const currentValue = maxViews === null ? 'none' : maxViews;
+                    const selected = scanOptions.find(o => o.value === currentValue) || scanOptions[1];
+                    const isOpen = menuOpenId === 'modal-scans';
 
-                  return (
-                    <>
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); setMenuOpenId(isOpen ? null : 'modal-scans'); }}
-                        className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-all duration-200 border ${
-                          isOpen 
-                          ? 'bg-primary-50 dark:bg-primary-900/40 border-primary-300 dark:border-primary-800 text-primary-700 dark:text-primary-400 shadow-lg shadow-primary-100 dark:shadow-none ring-2 ring-primary-200 dark:ring-primary-900/30' 
-                          : 'bg-white dark:bg-black border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-primary-300 dark:hover:border-primary-800 hover:shadow-md'
-                        } cursor-pointer`}
-                      >
-                        <Eye className={`w-5 h-5 transition-colors ${isOpen ? 'text-primary-500' : 'text-gray-400 dark:text-gray-500'}`} />
-                        <span className="flex-1 text-left">
-                          {selected.value === 'custom' && customMaxViews ? `${customMaxViews} Scans (Custom)` : selected.label}
-                        </span>
-                        <ChevronDown className={`w-4 h-4 transition-all duration-200 ${isOpen ? 'rotate-180 text-primary-500' : 'text-gray-400'}`} />
-                      </button>
-
-                      {isOpen && (
-                        <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-800 z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 ring-1 ring-black/5">
-                          <div className="p-1.5 max-h-60 overflow-y-auto">
-                            {scanOptions.map((opt) => (
-                              <button
-                                key={opt.value}
+                    return (
+                        <>
+                            <button
                                 type="button"
-                                disabled={opt.disabled}
-                                onClick={() => { 
-                                  setMaxViews(opt.value === 'none' ? null : (opt.value === 'custom' ? 'custom' : Number(opt.value))); 
-                                  setMenuOpenId(null); 
-                                }}
-                                className={`w-full flex items-center gap-2.5 px-3 py-3 rounded-lg text-sm text-left transition-all ${
-                                  currentValue === opt.value 
-                                  ? 'bg-primary-50 dark:bg-primary-900/40 text-primary-700 dark:text-primary-400 font-bold' 
-                                  : opt.disabled ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed opacity-60' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-950'
-                                }`}
-                              >
-                                {currentValue === opt.value && <div className="w-1.5 h-1.5 rounded-full bg-primary-500" />}
-                                <span className={`${currentValue === opt.value ? 'ml-0' : 'ml-4'} flex-1`}>
-                                  {opt.label}
+                                onClick={(e) => { e.stopPropagation(); setMenuOpenId(isOpen ? null : 'modal-scans'); }}
+                                className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-all duration-200 border ${
+                                    isOpen 
+                                    ? 'bg-primary-50 dark:bg-primary-900/40 border-primary-300 dark:border-primary-800 text-primary-700 dark:text-primary-400 shadow-lg shadow-primary-100 dark:shadow-none ring-2 ring-primary-200 dark:ring-primary-900/30' 
+                                    : 'bg-white dark:bg-black border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-primary-300 dark:hover:border-primary-800 hover:shadow-md'
+                                } cursor-pointer`}
+                            >
+                                <Eye className={`w-5 h-5 transition-colors ${isOpen ? 'text-primary-500' : 'text-gray-400 dark:text-gray-500'}`} />
+                                <span className="flex-1 text-left">
+                                    {selected.value === 'custom' && customMaxViews ? `${customMaxViews} Scans (Custom)` : selected.label}
                                 </span>
-                                {opt.proOnly && <span className="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-400">PRO</span>}
-                                {opt.plusOnly && <span className="text-[10px] bg-primary-50 px-1.5 py-0.5 rounded text-primary-400">PLUS</span>}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  );
+                                <ChevronDown className={`w-4 h-4 transition-all duration-200 ${isOpen ? 'rotate-180 text-primary-500' : 'text-gray-400'}`} />
+                            </button>
+
+                            {isOpen && (
+                                <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-800 z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 ring-1 ring-black/5">
+                                    <div className="p-1.5 max-h-60 overflow-y-auto">
+                                        {scanOptions.map((opt) => (
+                                            <button
+                                                key={opt.value}
+                                                type="button"
+                                                disabled={opt.disabled}
+                                                onClick={() => { 
+                                                    setMaxViews(opt.value === 'none' ? null : (opt.value === 'custom' ? 'custom' : Number(opt.value))); 
+                                                    setMenuOpenId(null); 
+                                                }}
+                                                className={`w-full flex items-center gap-2.5 px-3 py-3 rounded-lg text-sm text-left transition-all ${
+                                                    currentValue === opt.value 
+                                                    ? 'bg-primary-50 dark:bg-primary-900/40 text-primary-700 dark:text-primary-400 font-bold' 
+                                                    : opt.disabled ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed opacity-60' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                                                }`}
+                                            >
+                                                {currentValue === opt.value && <div className="w-1.5 h-1.5 rounded-full bg-primary-500" />}
+                                                <span className={`${currentValue === opt.value ? 'ml-0' : 'ml-4'} flex-1`}>
+                                                    {opt.label}
+                                                </span>
+                                                {opt.proOnly && <span className="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-400">PRO</span>}
+                                                {opt.plusOnly && <span className="text-[10px] bg-primary-50 px-1.5 py-0.5 rounded text-primary-400">PLUS</span>}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    );
                 })()}
 
                 {maxViews === 'custom' && appUser?.plan === PlanType.PRO && (
@@ -1895,14 +1910,16 @@ export const Dashboard: React.FC = () => {
                         placeholder="Enter custom scan limit"
                         value={customMaxViews}
                         onChange={(e) => setCustomMaxViews(e.target.value)}
-                        className="w-full p-4 bg-gray-50 dark:bg-black/60 border border-transparent focus:bg-white dark:focus:bg-black focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 rounded-xl text-sm dark:text-white outline-none transition-all duration-200"
+                        className="w-full p-4 bg-gray-50 dark:bg-black/50 border border-transparent focus:bg-white dark:focus:bg-black focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 rounded-xl text-sm dark:text-white outline-none transition-all duration-200"
                       />
                       <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-bold uppercase tracking-wider">Scans</div>
                     </div>
+                    <p className="mt-2 text-[10px] text-primary-600 dark:text-primary-400 font-medium italic pl-1">Vault will auto-deactivate after reaching this many views.</p>
                   </div>
                 )}
                 
                 <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-2 font-medium">Vault wipes itself once scan limit is reached.</p>
+              </div>
               </div>
 
               {/* Existing Files List (Edit Mode Only) */}
@@ -2271,7 +2288,7 @@ export const Dashboard: React.FC = () => {
                   <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em]">{reportVault.name}</p>
                 </div>
               </div>
-              <button onClick={() => setReportVault(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg border border-transparent hover:border-gray-200 dark:hover:border-gray-700 transition-colors text-gray-400 shadow-sm"><X className="w-6 h-6" /></button>
+              <button onClick={() => setReportVault(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors text-gray-400"><X className="w-6 h-6" /></button>
             </div>
 
             <div className="flex-1 overflow-y-auto pr-2 space-y-4 no-scrollbar">
@@ -2352,7 +2369,7 @@ export const Dashboard: React.FC = () => {
                   <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tighter uppercase italic">File Destruct</h3>
                   <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-1">Advanced Security Protocol</p>
                 </div>
-                <button onClick={() => setSelectedFileForSettings(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg border border-transparent hover:border-gray-200 dark:hover:border-gray-700 transition-colors shadow-sm"><X className="text-gray-400 w-6 h-6" /></button>
+                <button onClick={() => setSelectedFileForSettings(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"><X className="text-gray-400 w-6 h-6" /></button>
               </div>
 
               <div className="space-y-6">
