@@ -1636,26 +1636,19 @@ export const Dashboard: React.FC = () => {
                                </button>
 
                                <div className="pt-2">
-                                  <button onClick={(e) => handleDeleteVault(vault.id, e)} className="w-full bg-red-600 hover:bg-red-700 text-white cursor-pointer py-4 px-6 rounded-2xl text-[11px] uppercase tracking-widest font-black flex items-center justify-center gap-3 transition-all shadow-xl shadow-red-500/20 dark:shadow-none active:scale-95">
+<button onClick={(e) => handleDeleteVault(vault.id, e)} className="w-full bg-red-600 hover:bg-red-700 text-white cursor-pointer py-4 px-6 rounded-2xl text-[11px] uppercase tracking-widest font-black flex items-center justify-center gap-3 transition-all shadow-xl shadow-red-500/20 dark:shadow-none active:scale-95">
                                      <Trash2 className="w-4 h-4"/> Self Destruct Protocol
                                   </button>
                                </div>
                            </div>
-                           
-                           <div className="mt-auto w-full pt-6 flex flex-col items-center gap-2">
-                              <div className="h-0.5 w-12 bg-gray-100 dark:bg-gray-800 rounded-full"></div>
-                              <p className="text-[9px] text-gray-400 dark:text-gray-600 font-black uppercase tracking-[0.4em]">Protocol: Absolute Deletion</p>
-                           </div>
-                      </div>
-
-                      </div>
+                                         </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        ) : activeTab === 'analytics' ? (
+                  )}
+                </div>
+              ) : activeTab === 'analytics' ? (
            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-700 pb-20">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                  {/* Main Overview Stat */}
