@@ -1156,7 +1156,7 @@ export const PublicView: React.FC = () => {
                       else if (fileToPreview.type === FileType.VIDEO) setPreviewVideo(fileToPreview);
                       else handleSingleDownload(fileToPreview, { stopPropagation: () => {} } as any);
                     }}
-                    className="w-full bg-primary-600 hover:bg-primary-700 text-white font-black py-4 rounded-2xl shadow-xl shadow-primary-500/20 transition-all active:scale-[0.98] uppercase text-xs tracking-widest flex items-center justify-center gap-2 group"
+                    className="w-full bg-primary-600 hover:bg-primary-700 text-white font-black py-4 rounded-2xl shadow-xl shadow-primary-500/20 dark:shadow-none transition-all active:scale-[0.98] uppercase text-xs tracking-widest flex items-center justify-center gap-2 group"
                   >
                     Enter Vault Access <ExternalLink className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </button>
