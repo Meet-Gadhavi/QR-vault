@@ -1578,9 +1578,8 @@ export const Dashboard: React.FC = () => {
                                   </ResponsiveContainer>
                                 </div>
                             </div>
-                          </div>
 
-                          <div className="mt-auto pt-4 border-t border-gray-50 dark:border-gray-800 flex flex-col gap-3">
+                            <div className="mt-auto pt-4 border-t border-gray-50 dark:border-gray-800 flex flex-col gap-3">
                              <div className="flex gap-2">
                                 <button
                                   onClick={(e) => { e.stopPropagation(); setViewQrVault(vault); }}
@@ -1649,6 +1648,7 @@ export const Dashboard: React.FC = () => {
                            </div>
                       </div>
 
+                      </div>
                     </div>
                   </div>
                 ))}
