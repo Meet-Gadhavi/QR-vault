@@ -1581,7 +1581,7 @@ export const Dashboard: React.FC = () => {
                     </div>
                     <p className="text-sm font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Advertisement</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 max-w-[160px]">Upgrade to <span className="text-primary-600 dark:text-primary-400 font-bold">PRO</span> to remove advertisements and unlock 20GB storage!</p>
-                    <Link to="/pricing" className="mt-4 text-xs font-bold text-primary-600 hover:underline">Upgrade Now</Link>
+                    <Link to="/pricing" className="mt-4 text-xs font-bold text-primary-600 dark:text-primary-400 hover:underline">Upgrade Now</Link>
                   </div>
                 )}
               </div>

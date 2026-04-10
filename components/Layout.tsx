@@ -98,17 +98,17 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="md:hidden bg-white border-b border-gray-100 py-4 px-4 space-y-4 shadow-xl">
-             <Link to="/" className="block text-gray-600 font-medium" onClick={() => setIsMenuOpen(false)}>Features</Link>
-             <Link to="/pricing" className="block text-gray-600 font-medium" onClick={() => setIsMenuOpen(false)}>Pricing</Link>
-             <div className="border-t border-gray-100 my-2"></div>
+          <div className="md:hidden bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 py-4 px-4 space-y-4 shadow-xl">
+             <Link to="/" className="block text-gray-600 dark:text-gray-400 font-medium hover:text-primary-600" onClick={() => setIsMenuOpen(false)}>Features</Link>
+             <Link to="/pricing" className="block text-gray-600 dark:text-gray-400 font-medium hover:text-primary-600" onClick={() => setIsMenuOpen(false)}>Pricing</Link>
+             <div className="border-t border-gray-100 dark:border-gray-800 my-2"></div>
              
              {isAuthenticated ? (
                <>
-                 <Link to="/dashboard" className="block text-primary-600 font-medium" onClick={() => setIsMenuOpen(false)}>My Dashboard</Link>
+                 <Link to="/dashboard" className="block text-primary-600 dark:text-primary-400 font-medium" onClick={() => setIsMenuOpen(false)}>My Dashboard</Link>
                  <button 
                     onClick={handleLogout}
-                    className="flex items-center gap-2 text-gray-600 font-medium w-full text-left"
+                    className="flex items-center gap-2 text-gray-600 dark:text-gray-400 font-medium w-full text-left hover:text-red-500"
                  >
                    <LogOut className="w-4 h-4" /> Sign Out
                  </button>

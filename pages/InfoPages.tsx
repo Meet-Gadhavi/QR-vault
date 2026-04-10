@@ -4,9 +4,9 @@ import { mockService } from '../services/mockService';
 import { useNotification } from '../contexts/NotificationContext';
 
 const InfoLayout: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-  <div className="max-w-4xl mx-auto px-4 py-16">
-    <h1 className="text-3xl font-bold text-gray-900 mb-8 border-b pb-4">{title}</h1>
-    <div className="text-gray-600 space-y-8">
+  <div className="max-w-4xl mx-auto px-4 py-16 dark:bg-[#0a0a0a] transition-colors duration-300">
+    <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8 border-b dark:border-white/10 pb-4">{title}</h1>
+    <div className="text-gray-600 dark:text-gray-400 space-y-8">
       {children}
     </div>
   </div>
@@ -18,30 +18,30 @@ export const About: React.FC = () => (
       <p className="text-lg">QR Vault is a cloud-based platform designed to simplify file sharing using QR technology.</p>
       <p>Our platform allows users to upload files such as images, PDFs, ZIP files, and links, then instantly generate QR codes that can be scanned from any device for quick access and downloading.</p>
       
-      <div className="bg-primary-50 p-8 rounded-2xl border border-primary-100">
-        <h2 className="text-xl font-bold text-primary-900 mb-4">The idea behind QR Vault is simple:</h2>
-        <p className="text-primary-800 text-lg italic">"Make sharing files fast, secure, and accessible anywhere."</p>
+      <div className="bg-primary-50 dark:bg-primary-900/20 p-8 rounded-2xl border border-primary-100 dark:border-primary-800">
+        <h2 className="text-xl font-bold text-primary-900 dark:text-primary-300 mb-4">The idea behind QR Vault is simple:</h2>
+        <p className="text-primary-800 dark:text-primary-400 text-lg italic">"Make sharing files fast, secure, and accessible anywhere."</p>
       </div>
 
       <p>We aim to provide an easy-to-use solution for individuals, students, creators, and businesses who need a reliable way to store and share digital content.</p>
       <p>Our mission is to build a secure and efficient file-sharing ecosystem powered by QR technology and modern cloud infrastructure.</p>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
-        <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100 text-center">
+        <div className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-white/10 text-center">
           <div className="w-12 h-12 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center mx-auto mb-4">
             <Zap className="w-6 h-6" />
           </div>
           <h3 className="font-bold text-gray-900 mb-2">Fast</h3>
           <p className="text-sm">Instant QR generation and high-speed downloads.</p>
         </div>
-        <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100 text-center">
+        <div className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-white/10 text-center">
           <div className="w-12 h-12 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center mx-auto mb-4">
             <Shield className="w-6 h-6" />
           </div>
           <h3 className="font-bold text-gray-900 mb-2">Secure</h3>
           <p className="text-sm">Enterprise-grade encryption for all your files.</p>
         </div>
-        <div className="p-6 bg-white rounded-xl shadow-sm border border-gray-100 text-center">
+        <div className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-white/10 text-center">
           <div className="w-12 h-12 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center mx-auto mb-4">
             <Globe className="w-6 h-6" />
           </div>
@@ -82,27 +82,27 @@ export const Contact: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50/50 py-16 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50/50 dark:bg-[#0a0a0a] py-16 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
       <div className="max-w-7xl mx-auto">
         <div className="grid lg:grid-cols-2 gap-16 items-start">
           {/* Left Side: Contact Info */}
           <div className="space-y-12">
             <div>
-              <h1 className="text-4xl font-extrabold text-gray-900 mb-6 tracking-tight">
+              <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-6 tracking-tight">
                 Let's <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-primary-400">Start a Conversation</span>
               </h1>
-              <p className="text-xl text-gray-600 leading-relaxed max-w-lg">
+              <p className="text-xl text-gray-600 dark:text-gray-400 leading-relaxed max-w-lg">
                 Have questions about our enterprise features, storage limits, or custom solutions? 
                 Our team is here to help you secure your digital vault.
               </p>
             </div>
 
             <div className="grid sm:grid-cols-2 gap-8">
-              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                <div className="w-12 h-12 bg-primary-50 text-primary-600 rounded-xl flex items-center justify-center mb-4">
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 hover:shadow-md transition-all">
+                <div className="w-12 h-12 bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-xl flex items-center justify-center mb-4">
                   <Mail className="w-6 h-6" />
                 </div>
-                <h3 className="font-bold text-gray-900 mb-1">Email Us</h3>
+                <h3 className="font-bold text-gray-900 dark:text-white mb-1">Email Us</h3>
                 <p className="text-sm text-gray-500 mb-2">For general inquiries</p>
                 <a href="mailto:support@qrvault.app" className="text-primary-600 font-semibold hover:underline">support@qrvault.app</a>
               </div>
@@ -139,8 +139,8 @@ export const Contact: React.FC = () => {
           </div>
 
           {/* Right Side: Form */}
-          <div className="bg-white rounded-3xl p-8 lg:p-10 shadow-2xl shadow-gray-200/50 border border-gray-100 relative">
-            <h2 className="text-2xl font-bold text-gray-900 mb-8">Send Us a Message</h2>
+          <div className="bg-white dark:bg-gray-900 rounded-3xl p-8 lg:p-10 shadow-2xl shadow-gray-200/50 dark:shadow-black/50 border border-gray-100 dark:border-white/10 relative">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-8">Send Us a Message</h2>
             
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid sm:grid-cols-2 gap-6">
@@ -154,7 +154,7 @@ export const Contact: React.FC = () => {
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    className="w-full bg-gray-50 border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 rounded-xl px-4 py-3 outline-none transition-all"
+                    className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:border-primary-500 dark:text-white focus:ring-2 focus:ring-primary-500/20 rounded-xl px-4 py-3 outline-none transition-all placeholder-gray-400 dark:placeholder-gray-600"
                     placeholder="Enter your name"
                   />
                 </div>
@@ -223,9 +223,9 @@ export const Contact: React.FC = () => {
               </button>
             </form>
 
-            <div className="mt-8 flex items-center gap-3 p-4 bg-amber-50 rounded-2xl border border-amber-100">
-              <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0" />
-              <p className="text-xs text-amber-800 font-medium leading-relaxed">
+            <div className="mt-8 flex items-center gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-100 dark:border-amber-900/30">
+              <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+              <p className="text-xs text-amber-800 dark:text-amber-400 font-medium leading-relaxed">
                 Our sales team typically responds to enterprise inquiries within half a business day. 
                 For emergency technical support, please use the help center in your dashboard.
               </p>
@@ -288,7 +288,7 @@ export const Security: React.FC = () => (
       <p className="text-lg">QR Vault prioritizes data protection and platform security.</p>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="p-8 bg-white rounded-2xl shadow-sm border border-gray-100">
+        <div className="p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-white/10">
           <div className="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6">
             <Lock className="w-6 h-6" />
           </div>
@@ -296,7 +296,7 @@ export const Security: React.FC = () => (
           <p>Files are stored using modern cloud infrastructure powered by Supabase, ensuring high availability and durability.</p>
         </div>
 
-        <div className="p-8 bg-white rounded-2xl shadow-sm border border-gray-100">
+        <div className="p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-white/10">
           <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-6">
             <Shield className="w-6 h-6" />
           </div>
@@ -304,7 +304,7 @@ export const Security: React.FC = () => (
           <p>All data transfers between your device and our servers occur over secure encrypted (HTTPS) connections.</p>
         </div>
 
-        <div className="p-8 bg-white rounded-2xl shadow-sm border border-gray-100">
+        <div className="p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-white/10">
           <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center mb-6">
             <Zap className="w-6 h-6" />
           </div>
@@ -312,7 +312,7 @@ export const Security: React.FC = () => (
           <p>QR codes generate unique, obfuscated links that allow users to preview and download files safely without exposing internal paths.</p>
         </div>
 
-        <div className="p-8 bg-white rounded-2xl shadow-sm border border-gray-100">
+        <div className="p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-white/10">
           <div className="w-12 h-12 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mb-6">
             <Globe className="w-6 h-6" />
           </div>

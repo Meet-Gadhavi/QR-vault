@@ -1,9 +1,9 @@
 import React from 'react';
 
 const LegalLayout: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-  <div className="max-w-4xl mx-auto px-4 py-16">
-    <h1 className="text-3xl font-bold text-gray-900 mb-8 border-b pb-4">{title}</h1>
-    <div className="prose prose-slate max-w-none text-gray-600 space-y-6">
+  <div className="max-w-4xl mx-auto px-4 py-16 dark:bg-[#0a0a0a] transition-colors duration-300">
+    <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8 border-b dark:border-white/10 pb-4">{title}</h1>
+    <div className="prose prose-slate max-w-none text-gray-600 dark:text-gray-400 space-y-6">
       {children}
     </div>
   </div>
@@ -14,7 +14,7 @@ export const Privacy: React.FC = () => (
     <p>Welcome to QR Vault. Your privacy is important to us. This Privacy Policy explains how we collect, use, and protect your information when you use our website and services.</p>
 
     <section>
-      <h2 className="text-xl font-bold text-gray-900 mb-3">1. Information We Collect</h2>
+      <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-3">1. Information We Collect</h2>
       <p>When you use QR Vault, we may collect the following types of information:</p>
       <div className="ml-4 space-y-4 mt-2">
         <div>
@@ -143,7 +143,7 @@ export const Terms: React.FC = () => (
     </section>
 
     <section>
-      <h2 className="text-xl font-bold text-gray-900 mb-3">4. Prohibited Content</h2>
+      <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-3">4. Prohibited Content</h2>
       <p>Users are not allowed to upload or distribute:</p>
       <ul className="list-disc ml-5">
         <li>Illegal files</li>
@@ -152,7 +152,7 @@ export const Terms: React.FC = () => (
         <li>Offensive or abusive material</li>
         <li>Content intended for phishing or scams</li>
       </ul>
-      <p className="mt-2 font-semibold text-red-600">Accounts violating these rules may be suspended.</p>
+      <p className="mt-2 font-semibold text-red-600 dark:text-red-400">Accounts violating these rules may be suspended.</p>
     </section>
 
     <section>

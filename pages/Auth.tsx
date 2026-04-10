@@ -52,9 +52,9 @@ export const Auth: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white flex">
+    <div className="min-h-screen bg-white dark:bg-[#0a0a0a] flex transition-colors duration-300">
       {/* Left Side: Form */}
-      <div className="flex-1 flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:flex-none lg:px-20 xl:px-24 bg-white z-10 w-full lg:w-1/2">
+      <div className="flex-1 flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:flex-none lg:px-20 xl:px-24 bg-white dark:bg-[#0a0a0a] z-10 w-full lg:w-1/2">
         <div className="w-full max-w-sm">
           <div className="mb-10 text-center lg:text-left">
             <Link to="/" className="inline-flex items-center gap-2 mb-8">
@@ -63,10 +63,10 @@ export const Auth: React.FC = () => {
                 </div>
                 <span className="text-xl font-bold text-gray-900 tracking-tight">QR Vault</span>
             </Link>
-            <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+            <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
               {isLogin ? 'Welcome back' : 'Create an account'}
             </h2>
-            <p className="mt-2 text-sm text-gray-500">
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                 {isLogin ? 'Access your secure vault dashboard.' : 'Start sharing files securely today.'}
             </p>
           </div>
@@ -76,7 +76,7 @@ export const Auth: React.FC = () => {
             <button 
                 onClick={handleGoogleLogin}
                 type="button"
-                className="w-full flex justify-center items-center gap-3 px-4 py-3 border border-gray-300 shadow-sm bg-white text-sm font-medium text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+                className="w-full flex justify-center items-center gap-3 px-4 py-3 border border-gray-300 dark:border-white/10 shadow-sm bg-white dark:bg-white/5 text-sm font-medium text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-white/10 transition-colors"
             >
                 <svg className="h-5 w-5" viewBox="0 0 24 24">
                     <path
@@ -101,19 +101,19 @@ export const Auth: React.FC = () => {
 
             <div className="mt-6 relative">
                 <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-300" />
+                    <div className="w-full border-t border-gray-300 dark:border-white/10" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-white text-gray-500">Or continue with email</span>
+                    <span className="px-2 bg-white dark:bg-[#0a0a0a] text-gray-500 dark:text-gray-400">Or continue with email</span>
                 </div>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4 mt-6">
-                {error && <div className="text-red-600 text-sm bg-red-50 p-3 rounded-lg border border-red-100 flex items-start gap-2"><Lock className="w-4 h-4 mt-0.5 shrink-0"/> {error}</div>}
-                {msg && <div className="text-green-600 text-sm bg-green-50 p-3 rounded-lg border border-green-100 flex items-start gap-2"><ShieldCheck className="w-4 h-4 mt-0.5 shrink-0"/> {msg}</div>}
+                {error && <div className="text-red-600 dark:text-red-400 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-100 dark:border-red-800 flex items-start gap-2"><Lock className="w-4 h-4 mt-0.5 shrink-0"/> {error}</div>}
+                {msg && <div className="text-green-600 dark:text-green-400 text-sm bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-100 dark:border-green-800 flex items-start gap-2"><ShieldCheck className="w-4 h-4 mt-0.5 shrink-0"/> {msg}</div>}
                 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email address</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email address</label>
                     <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <Mail className="h-5 w-5 text-gray-400" />
@@ -123,14 +123,14 @@ export const Auth: React.FC = () => {
                             required
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="appearance-none block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm transition-all"
+                            className="appearance-none block w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white rounded-lg placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm transition-all"
                             placeholder="you@example.com"
                         />
                     </div>
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password</label>
                     <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <Lock className="h-5 w-5 text-gray-400" />
@@ -140,7 +140,7 @@ export const Auth: React.FC = () => {
                             required
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="appearance-none block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm transition-all"
+                            className="appearance-none block w-full pl-10 pr-3 py-2.5 border border-gray-300 dark:border-white/10 bg-white dark:bg-white/5 text-gray-900 dark:text-white rounded-lg placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm transition-all"
                             placeholder="••••••••"
                         />
                     </div>
@@ -167,7 +167,7 @@ export const Auth: React.FC = () => {
             <div className="mt-6 text-center">
                 <button 
                     onClick={() => { setIsLogin(!isLogin); setError(''); setMsg(''); }}
-                    className="text-sm font-medium text-primary-600 hover:text-primary-500"
+                    className="text-sm font-medium text-primary-600 dark:text-primary-400 hover:text-primary-500"
                 >
                     {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
                 </button>

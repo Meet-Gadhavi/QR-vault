@@ -257,8 +257,8 @@ export const Payment: React.FC = () => {
     // Thank You Page
     if (paymentDone && invoiceData) {
         return (
-            <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
-                <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden text-center">
+            <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a0a] py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center transition-colors duration-300">
+                <div className="max-w-md w-full bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-white/10 overflow-hidden text-center">
                     <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-8">
                         <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
                             <CheckCircle2 className="w-10 h-10 text-white" />
@@ -268,22 +268,22 @@ export const Payment: React.FC = () => {
                     </div>
 
                     <div className="p-8">
-                        <div className="bg-gray-50 rounded-xl p-6 mb-6 text-left space-y-3">
+                        <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-6 mb-6 text-left space-y-3">
                             <div className="flex justify-between text-sm">
-                                <span className="text-gray-500">Invoice</span>
-                                <span className="font-medium text-gray-900">{invoiceData.id}</span>
+                                <span className="text-gray-500 dark:text-gray-400">Invoice</span>
+                                <span className="font-medium text-gray-900 dark:text-white">{invoiceData.id}</span>
                             </div>
                             <div className="flex justify-between text-sm">
-                                <span className="text-gray-500">Plan</span>
-                                <span className="font-medium text-gray-900">{invoiceData.plan} Plan</span>
+                                <span className="text-gray-500 dark:text-gray-400">Plan</span>
+                                <span className="font-medium text-gray-900 dark:text-white">{invoiceData.plan} Plan</span>
                             </div>
                             <div className="flex justify-between text-sm">
-                                <span className="text-gray-500">Amount</span>
-                                <span className="font-bold text-gray-900">₹{invoiceData.amount}</span>
+                                <span className="text-gray-500 dark:text-gray-400">Amount</span>
+                                <span className="font-bold text-gray-900 dark:text-white">₹{invoiceData.amount}</span>
                             </div>
                             <div className="flex justify-between text-sm">
-                                <span className="text-gray-500">Valid Until</span>
-                                <span className="font-medium text-gray-900">{invoiceData.expiry}</span>
+                                <span className="text-gray-500 dark:text-gray-400">Valid Until</span>
+                                <span className="font-medium text-gray-900 dark:text-white">{invoiceData.expiry}</span>
                             </div>
                         </div>
 
@@ -297,7 +297,7 @@ export const Payment: React.FC = () => {
 
                         <Link
                             to="/dashboard"
-                            className="w-full flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3.5 rounded-xl transition-all"
+                            className="w-full flex items-center justify-center gap-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold py-3.5 rounded-xl transition-all"
                         >
                             Go to Dashboard
                         </Link>
@@ -309,8 +309,8 @@ export const Payment: React.FC = () => {
 
     // Payment Page
     return (
-        <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
-            <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+        <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a0a] py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center transition-colors duration-300">
+            <div className="max-w-md w-full bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-white/10 overflow-hidden">
 
                 <div className="bg-primary-600 p-6">
                     <button
@@ -325,27 +325,27 @@ export const Payment: React.FC = () => {
                 </div>
 
                 <div className="p-8">
-                    <div className="flex justify-between items-center mb-6 pb-6 border-b border-gray-100">
+                    <div className="flex justify-between items-center mb-6 pb-6 border-b border-gray-100 dark:border-white/10">
                         <div>
-                            <p className="font-bold text-gray-900 text-lg">{planName} Plan</p>
-                            <p className="text-sm text-gray-500">Monthly Subscription</p>
+                            <p className="font-bold text-gray-900 dark:text-white text-lg">{planName} Plan</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Monthly Subscription</p>
                         </div>
                         <div className="text-right">
-                            <p className="font-bold text-gray-900 text-2xl">₹{prices[plan]}</p>
-                            <p className="text-xs text-gray-400">/month</p>
+                            <p className="font-bold text-gray-900 dark:text-white text-2xl">₹{prices[plan]}</p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500">/month</p>
                         </div>
                     </div>
 
                     <ul className="space-y-3 mb-8">
-                        <li className="flex items-center gap-3 text-sm text-gray-600">
+                        <li className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
                             <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
                             <span>{plan === PlanType.STARTER ? '10 GB' : '20 GB'} Secure Storage</span>
                         </li>
-                        <li className="flex items-center gap-3 text-sm text-gray-600">
+                        <li className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
                             <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
                             <span>Priority Support</span>
                         </li>
-                        <li className="flex items-center gap-3 text-sm text-gray-600">
+                        <li className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
                             <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />
                             <span>Cancel Anytime</span>
                         </li>

@@ -30,7 +30,6 @@ const planData = [
     period: '/month',
     features: [
       '10 GB Secure Storage',
-      'Self-Destructing Files (Vanishing)',
       'Expiration Rules (Auto-expire)',
       'Unlimited QR Vaults',
       'Priority Speed & Performance',
@@ -51,7 +50,6 @@ const planData = [
     period: '/month',
     features: [
       '20 GB Secure Storage',
-      'Self-Destructing Files (Priority)',
       'Permanent Storage (Optional Expiry)',
       'Password Protected Vaults',
       'Fastest Global Delivery',
@@ -162,17 +160,17 @@ export const Pricing: React.FC = () => {
 
   return (
     <>
-      <div className="py-24 bg-gray-50 min-h-[calc(100vh-64px)] relative overflow-hidden">
+      <div className="py-24 bg-gray-50 dark:bg-[#0a0a0a] min-h-[calc(100vh-64px)] relative overflow-hidden transition-colors duration-300">
         {/* Decorative Blobs */}
-        <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-[500px] h-[500px] bg-primary-100/50 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-primary-100/50 rounded-full blur-3xl" />
-
+        <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-[500px] h-[500px] bg-primary-100/50 dark:bg-primary-900/20 rounded-full blur-3xl opacity-50" />
+        <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-primary-100/50 dark:bg-primary-900/20 rounded-full blur-3xl opacity-50" />
+ 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center max-w-3xl mx-auto mb-20 animate-fade-in-up">
-            <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 mb-6 tracking-tight">
-              Powerful Plans for <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-primary-400">Total Control</span>
+            <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 dark:text-white mb-6 tracking-tight">
+              Powerful Plans for <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-primary-400 dark:from-primary-400 dark:to-primary-600">Total Control</span>
             </h1>
-            <p className="text-xl text-gray-600 leading-relaxed">
+            <p className="text-xl text-gray-600 dark:text-gray-400 leading-relaxed">
               Secure your digital assets with the vault that fits your lifestyle. 
               Upgrade anytime to unlock permanent storage and premium features.
             </p>
@@ -188,8 +186,8 @@ export const Pricing: React.FC = () => {
                   key={plan.name} 
                   className={`group relative rounded-3xl transition-all duration-300 flex flex-col animate-fade-in-up-delay-${idx} ${
                     plan.primary 
-                      ? 'bg-white border-2 border-primary-500 shadow-2xl shadow-primary-200/50 scale-105 z-10' 
-                      : 'bg-white/80 backdrop-blur-sm border border-gray-200 hover:border-gray-300 hover:shadow-xl'
+                      ? 'bg-white dark:bg-gray-800 border-2 border-primary-500 shadow-2xl shadow-primary-200/50 dark:shadow-primary-900/20 scale-105 z-10' 
+                      : 'bg-white/80 dark:bg-white/5 backdrop-blur-sm border border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20 hover:shadow-xl'
                   }`}
                 >
                   {plan.tag && (
@@ -201,23 +199,23 @@ export const Pricing: React.FC = () => {
                   <div className="p-8 sm:p-10">
                     <div className="flex justify-between items-start mb-6">
                       <div>
-                        <h3 className="text-2xl font-bold text-gray-900">{plan.name}</h3>
-                        <p className="text-sm text-gray-500 mt-1 font-medium">{plan.highlight}</p>
+                        <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{plan.name}</h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-medium">{plan.highlight}</p>
                       </div>
                       {isFree && (
-                        <div className="p-2 bg-amber-50 rounded-lg" title="Temporary Storage">
-                          <XCircle className="w-5 h-5 text-amber-600" />
+                        <div className="p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg" title="Temporary Storage">
+                          <XCircle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                         </div>
                       )}
                     </div>
 
                     <div className="mb-8">
                       {plan.originalPrice && (
-                        <span className="text-sm text-gray-400 line-through block mb-1">{plan.originalPrice}</span>
+                        <span className="text-sm text-gray-400 dark:text-gray-500 line-through block mb-1">{plan.originalPrice}</span>
                       )}
                       <div className="flex items-baseline gap-1">
-                        <span className="text-5xl font-black text-gray-900 tracking-tight">{plan.price}</span>
-                        <span className="text-gray-500 font-medium">{plan.period}</span>
+                        <span className="text-5xl font-black text-gray-900 dark:text-white tracking-tight">{plan.price}</span>
+                        <span className="text-gray-500 dark:text-gray-400 font-medium">{plan.period}</span>
                       </div>
                     </div>
 
@@ -225,16 +223,16 @@ export const Pricing: React.FC = () => {
                       {plan.features.map((feature) => (
                         <li key={feature} className="flex items-start gap-3">
                           <div className={`mt-1 flex-shrink-0 p-0.5 rounded-full ${
-                            feature.includes('delete') ? 'bg-amber-100' : 'bg-primary-50'
+                            feature.includes('delete') ? 'bg-amber-100 dark:bg-amber-900/30' : 'bg-primary-50 dark:bg-primary-900/30'
                           }`}>
                             {feature.includes('delete') ? (
-                              <XCircle className="h-3 w-3 text-amber-600" />
+                              <XCircle className="h-3 w-3 text-amber-600 dark:text-amber-400" />
                             ) : (
-                              <Check className="h-3 w-3 text-primary-600" />
+                              <Check className="h-3 w-3 text-primary-600 dark:text-primary-400" />
                             )}
                           </div>
                           <span className={`text-sm leading-tight ${
-                            feature.includes('delete') ? 'text-amber-700 font-semibold' : 'text-gray-600'
+                            feature.includes('delete') ? 'text-amber-700 dark:text-amber-400 font-semibold' : 'text-gray-600 dark:text-gray-300'
                           }`}>
                             {feature}
                           </span>
@@ -245,8 +243,8 @@ export const Pricing: React.FC = () => {
                     <div className="mt-auto">
                       {state.isCurrentPlan && state.showExpiry && planExpiry ? (
                         <div className="space-y-3">
-                          <div className="w-full py-4 px-6 bg-green-50 border border-green-100 rounded-2xl text-center">
-                            <div className="flex items-center justify-center gap-2 text-green-700 font-bold text-sm">
+                          <div className="w-full py-4 px-6 bg-green-50 dark:bg-green-900/10 border border-green-100 dark:border-green-800 rounded-2xl text-center">
+                            <div className="flex items-center justify-center gap-2 text-green-700 dark:text-green-400 font-bold text-sm">
                               <Clock className="w-4 h-4" />
                               {formatExpiry(planExpiry)}
                             </div>
@@ -254,18 +252,18 @@ export const Pricing: React.FC = () => {
                           <button
                             onClick={handleCancel}
                             disabled={cancelling}
-                            className="w-full py-3 text-red-500 hover:text-red-700 font-bold text-sm transition-all hover:tracking-wide flex items-center justify-center gap-2"
+                            className="w-full py-3 text-red-500 hover:text-red-700 dark:hover:text-red-400 font-bold text-sm transition-all hover:tracking-wide flex items-center justify-center gap-2"
                           >
                             <XCircle className="w-4 h-4" />
                             {cancelling ? 'Cancelling...' : 'Cancel Subscription'}
                           </button>
                         </div>
                       ) : state.isCurrentPlan ? (
-                        <div className="w-full py-4 bg-green-500 text-white rounded-2xl text-center font-bold shadow-lg shadow-green-200 cursor-default">
+                        <div className="w-full py-4 bg-green-500 text-white rounded-2xl text-center font-bold shadow-lg shadow-green-200 dark:shadow-green-900/20 cursor-default">
                           Your Active Plan
                         </div>
                       ) : state.needsCancel ? (
-                        <div className="w-full py-4 bg-gray-100 text-gray-500 rounded-2xl text-center text-xs font-bold leading-relaxed px-4">
+                        <div className="w-full py-4 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-2xl text-center text-xs font-bold leading-relaxed px-4">
                           Cancel your {state.currentPlanName} plan before switching
                         </div>
                       ) : (
@@ -273,8 +271,8 @@ export const Pricing: React.FC = () => {
                           to={plan.link}
                           className={`group/btn relative w-full inline-flex items-center justify-center py-4 px-8 font-bold text-lg transition-all duration-300 rounded-2xl overflow-hidden ${
                             plan.primary
-                              ? 'bg-primary-600 text-white hover:bg-primary-700 shadow-xl shadow-primary-200'
-                              : 'bg-white border-2 border-primary-500 text-primary-600 hover:bg-primary-50'
+                              ? 'bg-primary-600 text-white hover:bg-primary-700 shadow-xl shadow-primary-200 dark:shadow-primary-900'
+                              : 'bg-white dark:bg-gray-800 border-2 border-primary-500 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/10'
                           }`}
                         >
                           <span className="relative z-10">{plan.cta}</span>
@@ -289,8 +287,8 @@ export const Pricing: React.FC = () => {
 
           {/* Detailed Comparison Link */}
           <div className="mt-20 text-center animate-fade-in-up-delay-2">
-            <p className="text-gray-500 text-sm font-medium">
-              Need more storage for enterprise? <Link to="/contact" className="text-primary-600 hover:underline">Contact our sales team</Link>
+            <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">
+              Need more storage for enterprise? <Link to="/contact" className="text-primary-600 dark:text-primary-400 hover:underline">Contact our sales team</Link>
             </p>
           </div>
         </div>
@@ -299,16 +297,16 @@ export const Pricing: React.FC = () => {
       {/* Cancel Subscription Modal */}
       {showCancelModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowCancelModal(false)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+          <div className="absolute inset-0 bg-black/50 dark:bg-black/80 backdrop-blur-sm" onClick={() => setShowCancelModal(false)} />
+          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-in fade-in zoom-in-95 duration-200 border border-transparent dark:border-white/10">
             {cancelStep === 'confirm' ? (
               <>
-                <div className="bg-red-50 p-6 text-center">
-                  <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="bg-red-50 dark:bg-red-900/20 p-6 text-center">
+                  <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                     <AlertTriangle className="w-8 h-8 text-red-500" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900">Cancel Subscription?</h3>
-                  <p className="text-sm text-gray-600 mt-2">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">Cancel Subscription?</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                     You will receive a <strong>verification code</strong> via email to confirm this action.
                   </p>
                 </div>
@@ -326,7 +324,7 @@ export const Pricing: React.FC = () => {
                   </button>
                   <button
                     onClick={() => setShowCancelModal(false)}
-                    className="w-full py-3 text-gray-500 hover:text-gray-700 font-semibold"
+                    className="w-full py-3 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 font-semibold transition-colors"
                   >
                     Keep My Subscription
                   </button>
@@ -334,24 +332,24 @@ export const Pricing: React.FC = () => {
               </>
             ) : (
               <>
-                <div className="bg-primary-50 p-6 text-center">
-                  <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Mail className="w-8 h-8 text-primary-600" />
+                <div className="bg-primary-50 dark:bg-primary-900/20 p-6 text-center">
+                  <div className="w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Mail className="w-8 h-8 text-primary-600 dark:text-primary-400" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900">Enter Verification Code</h3>
-                  <p className="text-sm text-gray-600 mt-2">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">Enter Verification Code</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                     We've sent a code to <strong>{userEmail}</strong>. 
                   </p>
                 </div>
                 <div className="p-6 space-y-4">
                   <div>
-                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">6-Digit Code</label>
+                    <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">6-Digit Code</label>
                     <input
                       type="text"
                       maxLength={6}
                       value={verificationCode}
                       onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
-                      className={`w-full bg-gray-50 border-2 ${verificationError ? 'border-red-500' : 'border-gray-100 focus:border-primary-500'} rounded-xl px-4 py-3 text-center text-2xl font-bold tracking-widest focus:outline-none transition-all`}
+                      className={`w-full bg-gray-50 dark:bg-gray-800 border-2 ${verificationError ? 'border-red-500' : 'border-gray-100 dark:border-gray-700 focus:border-primary-500'} rounded-xl px-4 py-3 text-center text-2xl font-bold tracking-widest focus:outline-none transition-all dark:text-white`}
                       placeholder="000000"
                     />
                     {verificationError && (
@@ -361,7 +359,7 @@ export const Pricing: React.FC = () => {
                   <div className="flex gap-3">
                     <button
                       onClick={() => setCancelStep('confirm')}
-                      className="flex-1 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-colors"
+                      className="flex-1 py-3 px-4 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold rounded-xl transition-colors"
                     >
                       Back
                     </button>
