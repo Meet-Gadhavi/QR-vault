@@ -16,6 +16,8 @@ export const PublicView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>('ALL');
   const { theme, toggleTheme } = useTheme();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+
 
   // Gatekeeper State
   const [viewerEmail, setViewerEmail] = useState<string>(() => localStorage.getItem('qrvault_viewer_email') || '');
@@ -512,12 +514,22 @@ export const PublicView: React.FC = () => {
   }
 
   const filterFiles = (tab: Tab) => {
+    let files = vault.files;
+    
+    // First filter by tab
     switch (tab) {
-      case 'PHOTOS': return vault.files.filter(f => f.type === FileType.IMAGE || f.type === FileType.VIDEO);
-      case 'DOCS': return vault.files.filter(f => f.type === FileType.PDF || f.type === FileType.ZIP || f.type === FileType.OTHER);
-      case 'LINKS': return vault.files.filter(f => f.type === FileType.LINK);
-      default: return vault.files;
+      case 'PHOTOS': files = files.filter(f => f.type === FileType.IMAGE || f.type === FileType.VIDEO); break;
+      case 'DOCS': files = files.filter(f => f.type === FileType.PDF || f.type === FileType.ZIP || f.type === FileType.OTHER); break;
+      case 'LINKS': files = files.filter(f => f.type === FileType.LINK); break;
     }
+
+    // Then filter by search term
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      files = files.filter(f => f.name.toLowerCase().includes(term));
+    }
+
+    return files;
   };
 
   const currentFiles = filterFiles(activeTab);
@@ -623,20 +635,26 @@ export const PublicView: React.FC = () => {
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
-                className="p-2.5 rounded-xl bg-gray-100/50 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 transition-all active:scale-95 border border-white/20 dark:border-white/5 shadow-sm"
+                className="group/theme flex items-center bg-gray-100/50 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 px-4 py-2.5 rounded-xl transition-all active:scale-95 border border-white/20 dark:border-white/5 shadow-sm overflow-hidden"
                 title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
               >
-                {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                {theme === 'dark' ? <Sun className="w-5 h-5 flex-shrink-0" /> : <Moon className="w-5 h-5 flex-shrink-0" />}
+                <span className="max-w-0 opacity-0 group-hover/theme:max-w-[4rem] group-hover/theme:opacity-100 group-hover/theme:ml-2 transition-all duration-300 pointer-events-none text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
+                  {theme === 'dark' ? 'Light' : 'Dark'}
+                </span>
               </button>
-
+              
               {/* Refresh Button */}
               <button
                 onClick={fetchVault}
                 disabled={isRefreshing}
-                className="p-2.5 rounded-xl bg-gray-100/50 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 transition-all active:scale-95 border border-white/20 dark:border-white/5 shadow-sm disabled:opacity-50"
+                className="group/refresh flex items-center bg-gray-100/50 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 px-4 py-2.5 rounded-xl transition-all active:scale-95 border border-white/20 dark:border-white/5 shadow-sm disabled:opacity-50 overflow-hidden"
                 title="Refresh Vault Content"
               >
-                <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-5 h-5 flex-shrink-0 ${isRefreshing ? 'animate-spin' : ''}`} />
+                <span className="max-w-0 opacity-0 group-hover/refresh:max-w-[4rem] group-hover/refresh:opacity-100 group-hover/refresh:ml-2 transition-all duration-300 pointer-events-none text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
+                  Refresh
+                </span>
               </button>
 
               <button
@@ -669,25 +687,38 @@ export const PublicView: React.FC = () => {
 
             </div>
           </div>
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between mb-6">
+            <div className="flex space-x-1 overflow-x-auto no-scrollbar py-1 flex-grow">
+              {tabs.map(tab => (
+                (tab.count > 0 || tab.id === 'ALL') && (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`
+                      px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap border
+                      ${activeTab === tab.id
+                        ? 'bg-primary-600 text-white shadow-lg shadow-primary-200 dark:shadow-primary-900/20 border-primary-500'
+                        : 'bg-white/50 dark:bg-white/5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-200 border-gray-100 dark:border-gray-800'
+                      }
+                    `}
+                  >
+                    {tab.label} <span className={`ml-1 font-bold ${activeTab === tab.id ? 'opacity-60' : 'opacity-40'}`}>[{tab.count}]</span>
+                  </button>
+                )
+              ))}
+            </div>
 
-          <div className="flex space-x-1 overflow-x-auto no-scrollbar py-1">
-            {tabs.map(tab => (
-              (tab.count > 0 || tab.id === 'ALL') && (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`
-                    px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap border
-                    ${activeTab === tab.id
-                      ? 'bg-primary-600 text-white shadow-xl shadow-primary-200 dark:shadow-primary-900/40 border-primary-500'
-                      : 'bg-white/50 dark:bg-white/5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 border-gray-100 dark:border-gray-800'
-                    }
-                  `}
-                >
-                  {tab.label} <span className="ml-1 opacity-40 font-bold">[{tab.count}]</span>
-                </button>
-              )
-            ))}
+            {/* Search Bar */}
+            <div className="relative w-full md:w-72 group">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 group-focus-within:text-primary-500 transition-colors w-4 h-4" />
+              <input
+                type="text"
+                placeholder="Search files..."
+                className="w-full pl-9 pr-4 py-2.5 bg-gray-100/50 dark:bg-white/5 border border-transparent hover:bg-white dark:hover:bg-white/10 hover:border-gray-200 dark:hover:border-white/10 focus:bg-white dark:focus:bg-white/10 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 rounded-xl text-xs font-medium dark:text-white outline-none transition-all duration-200"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -799,7 +830,7 @@ export const PublicView: React.FC = () => {
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Community Moderation System</p>
                 </div>
               </div>
-              <button onClick={() => setIsReportModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400"><X className="w-6 h-6" /></button>
+              <button onClick={() => setIsReportModalOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors text-gray-400"><X className="w-6 h-6" /></button>
             </div>
 
             <form onSubmit={handleReportSubmit} className="flex-1 flex flex-col md:flex-row gap-10 overflow-hidden">
@@ -909,7 +940,7 @@ export const PublicView: React.FC = () => {
                  <button onClick={() => handleSingleDownload(previewPdf!, { stopPropagation: () => {} } as any)} className="bg-primary-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-700 shadow-lg shadow-primary-100 transition-all flex items-center gap-2">
                     <Download className="w-3 h-3" /> Download
                  </button>
-                 <button onClick={() => setPreviewPdf(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-all"><X className="w-6 h-6 dark:text-gray-400" /></button>
+                 <button onClick={() => setPreviewPdf(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all"><X className="w-6 h-6 dark:text-gray-400" /></button>
               </div>
             </div>
             <iframe 
@@ -925,8 +956,8 @@ export const PublicView: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setInfoFile(null)}>
           <div className="bg-white rounded-[2.5rem] p-10 w-full max-w-sm shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-8">
-              <h3 className="text-2xl font-black text-gray-900 tracking-tight">Asset Info</h3>
-              <button onClick={() => setInfoFile(null)} className="p-2 rounded-full hover:bg-gray-100 text-gray-400 transition-colors"><X className="w-6 h-6" /></button>
+              <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Asset Info</h3>
+              <button onClick={() => setInfoFile(null)} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 transition-colors"><X className="w-6 h-6" /></button>
             </div>
             <div className="flex flex-col items-center text-center mb-8">
               <div className="w-24 h-24 bg-gray-50 rounded-[2rem] flex items-center justify-center text-gray-900 mb-4 shadow-inner">
@@ -950,7 +981,7 @@ export const PublicView: React.FC = () => {
       {/* Download Manager Modal */}
       {isDownloadingAll && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm">
-          <div className="bg-white dark:bg-black w-full max-w-md mx-4 rounded-2xl border border-gray-100 dark:border-white/10 shadow-2xl overflow-hidden">
+          <div className="bg-white dark:bg-black w-full max-w-2xl mx-4 rounded-3xl border border-gray-100 dark:border-white/10 shadow-2xl overflow-hidden">
             {/* Header */}
             <div className="bg-primary-600 dark:bg-primary-700 px-6 py-5 flex items-center gap-4">
               <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">

@@ -1380,24 +1380,24 @@ export const Dashboard: React.FC = () => {
                   <button
                     onClick={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === 'filter-sort' ? null : 'filter-sort'); }}
                     className={`w-full flex items-center gap-2.5 pl-3.5 pr-3 py-2.5 rounded-xl text-sm font-medium cursor-pointer transition-all duration-200 border ${menuOpenId === 'filter-sort'
-                      ? 'bg-primary-50 border-primary-300 text-primary-700 shadow-md shadow-primary-100 ring-2 ring-primary-200'
-                      : 'bg-white border-gray-200 text-gray-700 hover:border-primary-200 hover:bg-gray-50 shadow-sm hover:shadow-md'
+                      ? 'bg-primary-50 dark:bg-primary-900/30 border-primary-300 dark:border-primary-800 text-primary-700 dark:text-primary-400 shadow-md shadow-primary-100 dark:shadow-none ring-2 ring-primary-200 dark:ring-primary-900/30'
+                      : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-primary-200 dark:hover:border-primary-800 hover:bg-gray-50 dark:hover:bg-gray-750 shadow-sm hover:shadow-md'
                       }`}
                   >
-                    <ArrowUpDown className={`w-4 h-4 transition-colors ${menuOpenId === 'filter-sort' ? 'text-primary-500' : 'text-gray-400'}`} />
+                    <ArrowUpDown className={`w-4 h-4 transition-colors ${menuOpenId === 'filter-sort' ? 'text-primary-500' : 'text-gray-400 dark:text-gray-500'}`} />
                     <span className="flex-1 text-left">{selectedSort.label}</span>
-                    <ChevronDown className={`w-4 h-4 transition-all duration-200 ${menuOpenId === 'filter-sort' ? 'rotate-180 text-primary-500' : 'text-gray-400'}`} />
+                    <ChevronDown className={`w-4 h-4 transition-all duration-200 ${menuOpenId === 'filter-sort' ? 'rotate-180 text-primary-500' : 'text-gray-400 dark:text-gray-500'}`} />
                   </button>
                   {menuOpenId === 'filter-sort' && (
-                    <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden ring-1 ring-black/5 animate-in fade-in slide-in-from-top-2 duration-150">
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-100 dark:border-gray-800 z-50 overflow-hidden ring-1 ring-black/5 animate-in fade-in slide-in-from-top-2 duration-150">
                       <div className="p-1.5">
                         {sortOptions.map((option) => (
                           <button
                             key={option.value}
                             onClick={(e) => { e.stopPropagation(); setSortOption(option.value); setMenuOpenId(null); }}
                             className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm transition-all duration-150 ${sortOption === option.value
-                              ? 'bg-primary-50 text-primary-700 font-semibold'
-                              : 'text-gray-600 hover:bg-gray-50 font-medium'
+                              ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 font-semibold'
+                              : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 font-medium'
                               }`}
                           >
                             <span className="flex-1 text-left">{option.label}</span>
@@ -1414,20 +1414,20 @@ export const Dashboard: React.FC = () => {
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex items-center gap-6 border-b border-gray-200 mb-8">
+        <div className="flex items-center gap-6 border-b border-gray-200 dark:border-gray-800 mb-8">
           <button
             onClick={() => setActiveTab('vaults')}
-            className={`pb-4 text-sm font-bold transition-all relative ${activeTab === 'vaults' ? 'text-primary-600' : 'text-gray-400 hover:text-gray-600'}`}
+            className={`pb-4 text-sm font-bold transition-all relative ${activeTab === 'vaults' ? 'text-primary-600' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'}`}
           >
             Active Vaults
             {activeTab === 'vaults' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-600 rounded-t-full" />}
           </button>
           <button
             onClick={() => setActiveTab('deleted')}
-            className={`pb-4 text-sm font-bold transition-all relative flex items-center gap-2 ${activeTab === 'deleted' ? 'text-primary-600' : 'text-gray-400 hover:text-gray-600'}`}
+            className={`pb-4 text-sm font-bold transition-all relative flex items-center gap-2 ${activeTab === 'deleted' ? 'text-primary-600' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'}`}
           >
             Recently Deleted
-            {deletedLogs.length > 0 && <span className="bg-primary-100 text-primary-600 text-[10px] px-1.5 py-0.5 rounded-full">{deletedLogs.length}</span>}
+            {deletedLogs.length > 0 && <span className="bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400 text-[10px] px-1.5 py-0.5 rounded-full">{deletedLogs.length}</span>}
             {activeTab === 'deleted' && <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-600 rounded-t-full" />}
           </button>
         </div>
@@ -1484,7 +1484,7 @@ export const Dashboard: React.FC = () => {
                             <div className="relative">
                               <button
                                 onClick={(e) => toggleMenu(e, vault.id)}
-                                className={`p-2 rounded-full cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${menuOpenId === vault.id ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'}`}
+                                className={`p-2 rounded-xl cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${menuOpenId === vault.id ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'}`}
                                 title="Click Card or Menu to Flip"
                               >
                                 <Shuffle className="w-5 h-5" />
@@ -1557,7 +1557,7 @@ export const Dashboard: React.FC = () => {
 
                       {/* BACK FACE */}
                       <div className="absolute inset-0 w-full h-full bg-white dark:bg-gray-900 border-2 border-gray-100 dark:border-gray-800 rounded-xl flex flex-col justify-center items-center text-gray-900 dark:text-white p-6 shadow-xl" style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
-                           <button onClick={(e) => toggleMenu(e, vault.id)} className="absolute top-4 right-4 bg-gray-100 dark:bg-gray-800 cursor-pointer text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-750 p-2 rounded-full transition-colors"><Shuffle className="w-4 h-4"/></button>
+                           <button onClick={(e) => toggleMenu(e, vault.id)} className="absolute top-4 right-4 bg-gray-100 dark:bg-gray-800 cursor-pointer text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-750 p-2 rounded-xl transition-colors"><Shuffle className="w-4 h-4"/></button>
                            <h3 className="text-lg font-black tracking-tight mb-4 text-gray-900 dark:text-white truncate w-full text-center pr-8">{vault.name}</h3>
                            
                            <div className="w-full space-y-2.5">
@@ -1681,7 +1681,7 @@ export const Dashboard: React.FC = () => {
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                 {modalMode === 'CREATE' ? 'Create New Vault' : 'Edit Vault'}
               </h2>
-              <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"><X className="text-gray-500 dark:text-gray-400 w-5 h-5" /></button>
+              <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"><X className="text-gray-500 dark:text-gray-400 w-5 h-5" /></button>
             </div>
 
             <div className="p-6 space-y-6">
@@ -1727,7 +1727,7 @@ export const Dashboard: React.FC = () => {
                   />
                   <ShieldCheck className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 ${appUser.plan === PlanType.PRO ? 'text-primary-500' : 'text-gray-300 dark:text-gray-600'}`} />
                 </div>
-                <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-3 flex items-center gap-1.5 px-1 font-medium">
+                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-3 flex items-center gap-1.5 px-1 font-medium">
                   {appUser.plan === PlanType.PRO 
                     ? "Visitors must enter this password to view files." 
                     : "Password protection is only available for professional users."}
@@ -1829,7 +1829,7 @@ export const Dashboard: React.FC = () => {
                 )}
                 
                 {appUser?.plan === PlanType.FREE && (
-                    <p className="mt-2 text-[10px] text-gray-400 italic">Free plan vaults are removed after 24 hours. Upgrade for up to 72 hours.</p>
+                    <p className="mt-2 text-[10px] text-gray-500 dark:text-gray-400 italic font-medium">Free plan vaults are removed after 24 hours. Upgrade for up to 72 hours.</p>
                 )}
               </div>
 
@@ -1859,11 +1859,11 @@ export const Dashboard: React.FC = () => {
                                 onClick={(e) => { e.stopPropagation(); setMenuOpenId(isOpen ? null : 'modal-scans'); }}
                                 className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-all duration-200 border ${
                                     isOpen 
-                                    ? 'bg-primary-50 border-primary-300 text-primary-700 shadow-lg shadow-primary-100 ring-2 ring-primary-200' 
-                                    : 'bg-white border-gray-200 text-gray-700 hover:border-primary-300 hover:shadow-md'
+                                    ? 'bg-primary-50 dark:bg-primary-900/40 border-primary-300 dark:border-primary-800 text-primary-700 dark:text-primary-400 shadow-lg shadow-primary-100 dark:shadow-none ring-2 ring-primary-200 dark:ring-primary-900/30' 
+                                    : 'bg-white dark:bg-black border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-primary-300 dark:hover:border-primary-800 hover:shadow-md'
                                 } cursor-pointer`}
                             >
-                                <Eye className={`w-5 h-5 transition-colors ${isOpen ? 'text-primary-500' : 'text-gray-400'}`} />
+                                <Eye className={`w-5 h-5 transition-colors ${isOpen ? 'text-primary-500' : 'text-gray-400 dark:text-gray-500'}`} />
                                 <span className="flex-1 text-left">
                                     {selected.value === 'custom' && customMaxViews ? `${customMaxViews} Scans (Custom)` : selected.label}
                                 </span>
@@ -1871,7 +1871,7 @@ export const Dashboard: React.FC = () => {
                             </button>
 
                             {isOpen && (
-                                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-100 z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 ring-1 ring-black/5">
+                                <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-800 z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 ring-1 ring-black/5">
                                     <div className="p-1.5 max-h-60 overflow-y-auto">
                                         {scanOptions.map((opt) => (
                                             <button
@@ -1882,10 +1882,10 @@ export const Dashboard: React.FC = () => {
                                                     setMaxViews(opt.value === 'none' ? null : (opt.value === 'custom' ? 'custom' : Number(opt.value))); 
                                                     setMenuOpenId(null); 
                                                 }}
-                                                className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm text-left transition-all ${
+                                                className={`w-full flex items-center gap-2.5 px-3 py-3 rounded-lg text-sm text-left transition-all ${
                                                     currentValue === opt.value 
-                                                    ? 'bg-primary-50 text-primary-700 font-bold' 
-                                                    : opt.disabled ? 'text-gray-300 cursor-not-allowed opacity-60' : 'text-gray-600 hover:bg-gray-50'
+                                                    ? 'bg-primary-50 dark:bg-primary-900/40 text-primary-700 dark:text-primary-400 font-bold' 
+                                                    : opt.disabled ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed opacity-60' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
                                                 }`}
                                             >
                                                 {currentValue === opt.value && <div className="w-1.5 h-1.5 rounded-full bg-primary-500" />}
@@ -2108,9 +2108,9 @@ export const Dashboard: React.FC = () => {
       {isFreeLimitModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-white rounded-t-2xl">
-              <h2 className="text-xl font-bold text-gray-900">Vault Limit Reached</h2>
-              <button onClick={() => setIsFreeLimitModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X className="text-gray-500 w-5 h-5" /></button>
+            <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-white dark:bg-gray-900 rounded-t-2xl">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Vault Limit Reached</h2>
+              <button onClick={() => setIsFreeLimitModalOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"><X className="text-gray-500 dark:text-gray-400 w-5 h-5" /></button>
             </div>
             <div className="p-6 text-center">
               <div className="bg-amber-100 text-amber-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
@@ -2135,9 +2135,9 @@ export const Dashboard: React.FC = () => {
       {isAccessModalOpen && managingVault && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-white rounded-t-2xl">
-              <h2 className="text-xl font-bold text-gray-900">Access Requests</h2>
-              <button onClick={() => setIsAccessModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X className="text-gray-500 w-5 h-5" /></button>
+            <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-white dark:bg-gray-900 rounded-t-2xl">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Access Requests</h2>
+              <button onClick={() => setIsAccessModalOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"><X className="text-gray-500 dark:text-gray-400 w-5 h-5" /></button>
             </div>
             <div className="p-6">
               {!managingVault.requests || managingVault.requests.length === 0 ? (
@@ -2148,7 +2148,7 @@ export const Dashboard: React.FC = () => {
               ) : (
                 <div className="space-y-4 max-h-[60vh] overflow-y-auto">
                   {managingVault?.requests?.map((req) => (
-                    <div key={req.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-100 bg-gray-50">
+                    <div key={req.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
                       <div className="overflow-hidden">
                         <p className="font-semibold text-gray-900 truncate" title={req.email}>{req.email}</p>
                         <p className="text-xs text-gray-500">{new Date(req.requestedAt).toLocaleDateString()}</p>
@@ -2184,9 +2184,9 @@ export const Dashboard: React.FC = () => {
       {/* QR Modal */}
       {viewQrVault && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center relative shadow-2xl">
-            <button onClick={() => setViewQrVault(null)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><X /></button>
-            <h3 className="text-xl font-bold text-gray-900 mb-6">{viewQrVault.name}</h3>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-sm w-full text-center relative shadow-2xl">
+            <button onClick={() => setViewQrVault(null)} className="absolute top-4 right-4 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"><X className="w-5 h-5" /></button>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">{viewQrVault.name}</h3>
 
             <div className="bg-white p-4 rounded-xl border border-gray-200 inline-block shadow-inner mb-6 relative group">
               <QRCode id="qr-code-svg" value={getQrUrl(viewQrVault)} size={200} />
@@ -2229,8 +2229,8 @@ export const Dashboard: React.FC = () => {
       {deleteConfirmId && (() => {
         const vaultToDelete = vaults.find(v => v.id === deleteConfirmId);
         return (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-in fade-in duration-200">
-            <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="fixed inset-0 bg-black/60 dark:bg-black/90 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-in fade-in duration-200">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-sm shadow-2xl animate-in zoom-in-95 duration-200 border border-red-100 dark:border-red-900/20">
               <div className="p-6 flex flex-col items-center text-center">
                 <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mb-4">
                   <Trash2 className="w-8 h-8 text-red-500" />
@@ -2275,11 +2275,11 @@ export const Dashboard: React.FC = () => {
                   <Shield className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-black text-gray-900 tracking-tight leading-none mb-1">Reports History</h3>
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{reportVault.name}</p>
+                  <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight leading-none mb-1">Reports History</h3>
+                  <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em]">{reportVault.name}</p>
                 </div>
               </div>
-              <button onClick={() => setReportVault(null)} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400"><X className="w-6 h-6" /></button>
+              <button onClick={() => setReportVault(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors text-gray-400"><X className="w-6 h-6" /></button>
             </div>
 
             <div className="flex-1 overflow-y-auto pr-2 space-y-4 no-scrollbar">
@@ -2360,7 +2360,7 @@ export const Dashboard: React.FC = () => {
                   <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tighter uppercase italic">File Destruct</h3>
                   <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-1">Advanced Security Protocol</p>
                 </div>
-                <button onClick={() => setSelectedFileForSettings(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"><X className="text-gray-400 w-6 h-6" /></button>
+                <button onClick={() => setSelectedFileForSettings(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"><X className="text-gray-400 w-6 h-6" /></button>
               </div>
 
               <div className="space-y-6">
