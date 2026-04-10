@@ -32,6 +32,7 @@ import {
 } from 'recharts';
 import { AdminAuth } from './AdminAuth';
 import { useNotification } from '../contexts/NotificationContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 // Types
 interface Stats {
@@ -85,6 +86,7 @@ export const AdminDashboard: React.FC = () => {
   const [selectedUserInvoices, setSelectedUserInvoices] = useState<any[]>([]);
   const [loadingInvoices, setLoadingInvoices] = useState(false);
   const { toast } = useNotification();
+  const { theme } = useTheme();
 
   const showNotify = (title: string, message: string, type: 'success' | 'error' | 'info' = 'info') => {
     toast(title, message, type);
@@ -329,7 +331,7 @@ export const AdminDashboard: React.FC = () => {
                           <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={useTheme().theme === 'dark' ? '#1e293b' : '#f1f5f9'} />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === 'dark' ? '#1e293b' : '#f1f5f9'} />
                       <XAxis 
                         dataKey="name" 
                         axisLine={false} 

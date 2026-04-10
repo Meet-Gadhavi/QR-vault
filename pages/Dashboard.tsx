@@ -1054,19 +1054,6 @@ export const Dashboard: React.FC = () => {
   return (
     <div className="bg-gray-50 dark:bg-[#0a0a0a] min-h-screen pb-12 relative transition-colors duration-300">
 
-      {/* Floating Theme Toggle */}
-      <button
-        onClick={toggleTheme}
-        className="fixed bottom-6 right-6 z-50 p-3 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-xl text-gray-600 dark:text-gray-300 hover:scale-110 transition-all"
-        title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-      >
-        {theme === 'dark' ? (
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-        ) : (
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z" /></svg>
-        )}
-      </button>
-
       {/* Over Limit Banner */}
       {isOverLimit && (
         <div className="bg-red-50 border-b border-red-200 sticky top-26 z-40 animate-in slide-in-from-top duration-300">
@@ -1520,10 +1507,9 @@ export const Dashboard: React.FC = () => {
                                 <Link 
                                   to="/pricing" 
                                   onClick={(e) => e.stopPropagation()}
-                                  className="mt-3 inline-flex items-center cursor-pointer gap-1.5 text-xs font-bold text-primary-600 hover:text-primary-700 bg-primary-50 hover:bg-primary-100 px-2.5 py-1.5 rounded-lg transition-colors border border-primary-100 w-fit"
+                                  className="ml-2 inline-flex items-center cursor-pointer gap-1 px-1.5 py-0.5 rounded-md bg-amber-50 dark:bg-amber-500/10 text-[9px] font-black text-amber-600 dark:text-amber-500 border border-amber-100 dark:border-amber-500/20 uppercase tracking-tighter"
                                 >
-                                  <Zap className="w-3 h-3" /> 
-                                  Upgrade to Keep Permanent
+                                  <Zap className="w-2 h-2" /> Upgrade
                                 </Link>
                               )}
                             </div>
@@ -1683,7 +1669,12 @@ export const Dashboard: React.FC = () => {
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                 {modalMode === 'CREATE' ? 'Create New Vault' : 'Edit Vault'}
               </h2>
-              <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"><X className="text-gray-500 dark:text-gray-400 w-5 h-5" /></button>
+              <button 
+                onClick={() => setIsModalOpen(false)} 
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"
+              >
+                <X className="text-gray-500 dark:text-gray-400 w-5 h-5" />
+              </button>
             </div>
 
             <div className="p-6 space-y-6">
@@ -1765,9 +1756,16 @@ export const Dashboard: React.FC = () => {
                 </div>
               </div>
 
-              {/* Expiry Selection (Custom Dropdown) */}
-              <div className="relative">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Vault Expiry</label>
+              {/* Self-Destruct Settings Group */}
+              <div className="bg-primary-50/50 dark:bg-primary-950/20 p-6 rounded-2xl border border-primary-100 dark:border-primary-900/30 space-y-6">
+                <div className="flex items-center gap-2 mb-2">
+                   <Zap className="w-5 h-5 text-primary-500" />
+                   <h3 className="text-xs font-black text-primary-700 dark:text-primary-400 uppercase tracking-widest">Global Self-Destruction</h3>
+                </div>
+
+                {/* Expiry Selection (Custom Dropdown) */}
+                <div className="relative">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Vault Lifetime (Expiry)</label>
                 {(() => {
                     const expiryOptions = [
                         { value: 24, label: '24 Hours (Default)', disabled: false },
@@ -1830,14 +1828,12 @@ export const Dashboard: React.FC = () => {
                     </div>
                 )}
                 
-                {appUser?.plan === PlanType.FREE && (
-                    <p className="mt-2 text-[10px] text-gray-500 dark:text-gray-400 italic font-medium">Free plan vaults are removed after 24 hours. Upgrade for up to 72 hours.</p>
-                )}
-              </div>
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-2 font-medium">Auto-destruction triggered once vault expires.</p>
+                </div>
 
-              {/* Scan Count Limit (Custom Dropdown) */}
-              <div className="relative">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Scan Count Limit</label>
+                {/* Scan Count Limit (Custom Dropdown) */}
+                <div className="relative">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Scan Count Limit (Self-Destruct after X Scans)</label>
                 {(() => {
                     const scanOptions = [
                         { value: 'none', label: 'Unlimited Scans', disabled: appUser?.plan !== PlanType.PRO, proOnly: appUser?.plan !== PlanType.PRO },
@@ -1907,32 +1903,33 @@ export const Dashboard: React.FC = () => {
 
                 {maxViews === 'custom' && appUser?.plan === PlanType.PRO && (
                     <div className="mt-3 animate-in fade-in slide-in-from-top-1 duration-200">
-                        <div className="relative group">
-                            <input
-                                type="number"
-                                min="1"
-                                placeholder="Enter custom scan limit"
-                                value={customMaxViews}
-                                onChange={(e) => setCustomMaxViews(e.target.value)}
-                                className="w-full p-4 bg-gray-50 border border-transparent focus:bg-white focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 rounded-xl text-sm outline-none transition-all duration-200"
-                            />
-                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-bold uppercase tracking-wider">Scans</div>
-                        </div>
-                        <p className="mt-2 text-[10px] text-primary-600 font-medium italic pl-1">Vault will auto-deactivate after reaching this many views.</p>
-                    </div>
-                )}
+                             <input
+                                 type="number"
+                                 min="1"
+                                 placeholder="Enter custom scan limit"
+                                 value={customMaxViews}
+                                 onChange={(e) => setCustomMaxViews(e.target.value)}
+                                 className="w-full p-4 bg-gray-50 dark:bg-black/50 border border-transparent focus:bg-white dark:focus:bg-black focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 rounded-xl text-sm dark:text-white outline-none transition-all duration-200"
+                             />
+                             <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-bold uppercase tracking-wider">Scans</div>
+                         </div>
+                         <p className="mt-2 text-[10px] text-primary-600 dark:text-primary-400 font-medium italic pl-1">Vault will auto-deactivate after reaching this many views.</p>
+                     </div>
+                 )}
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-2 font-medium">Vault wipes itself once scan limit is reached.</p>
+                </div>
               </div>
 
               {/* Existing Files List (Edit Mode Only) */}
               {modalMode === 'EDIT' && existingFiles.length > 0 && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Existing Files</label>
-                  <div className="bg-gray-50 rounded-xl border border-gray-200 divide-y divide-gray-100 max-h-40 overflow-y-auto">
+                <div className="bg-gray-50 dark:bg-black/30 p-4 rounded-xl border border-gray-100 dark:border-gray-800">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Current Files</label>
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto">
                     {existingFiles.map(file => (
-                      <div key={file.id} className="p-3 flex items-center justify-between text-sm group hover:bg-white">
+                      <div key={file.id} className="p-3 flex items-center justify-between text-sm bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-750">
                         <div className="flex items-center gap-2 truncate">
-                          {file.type === FileType.LINK ? <LinkIcon className="w-4 h-4 text-blue-500" /> : <FileIcon className="w-4 h-4 text-gray-500" />}
-                          <span className="text-gray-700 truncate max-w-[200px]">{file.name}</span>
+                          {file.type === FileType.LINK ? <LinkIcon className="w-4 h-4 text-blue-500" /> : <FileIcon className="w-4 h-4 text-gray-400 dark:text-gray-500" />}
+                          <span className="text-gray-700 dark:text-gray-300 truncate max-w-[200px] font-medium">{file.name}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <button
@@ -1958,11 +1955,11 @@ export const Dashboard: React.FC = () => {
 
               {/* Upload Section */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   {modalMode === 'EDIT' ? 'Add More Files' : 'Upload Files'}
                 </label>
                 <div
-                  className={`border-2 border-dashed rounded-xl p-8 text-center transition-all relative group cursor-pointer ${isDragging ? 'border-primary-500 bg-primary-50 scale-[1.02]' : 'border-gray-300 hover:bg-gray-50'
+                  className={`border-2 border-dashed rounded-[2rem] p-10 text-center transition-all relative group cursor-pointer ${isDragging ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 scale-[1.02]' : 'border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-white/5 hover:border-primary-400'
                     }`}
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
@@ -1976,33 +1973,37 @@ export const Dashboard: React.FC = () => {
                     className="hidden"
                     onChange={handleFileSelect}
                   />
-                  <div className="pointer-events-none">
-                    <UploadCloud className={`w-10 h-10 mx-auto mb-2 transition-colors ${isDragging ? 'text-primary-600' : 'text-primary-500'}`} />
-                    <p className="text-sm text-gray-900 font-medium">
-                      {isDragging ? 'Drop files here' : 'Click to upload files'}
+                  <div className="pointer-events-none relative z-10">
+                    <div className="w-16 h-16 bg-primary-50 dark:bg-primary-900/40 rounded-3xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                      <UploadCloud className={`w-8 h-8 transition-colors ${isDragging ? 'text-primary-600' : 'text-primary-500'}`} />
+                    </div>
+                    <p className="text-sm text-gray-900 dark:text-white font-black uppercase tracking-tighter">
+                      {isDragging ? 'Drop files here' : 'Drop Vault Assets'}
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">or drag and drop here</p>
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-bold uppercase tracking-widest">Maximum transparency and security</p>
                   </div>
+                  {/* Decorative background element */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-[2rem]"></div>
                 </div>
                 {selectedFiles.length > 0 && (
-                  <div className="mt-3 space-y-2">
+                  <div className="mt-4 space-y-2">
                     {selectedFiles.map((f, i) => (
-                      <div key={i} className="flex items-center justify-between text-sm bg-blue-50 border border-blue-100 p-2 rounded-lg">
-                        <span className="truncate flex items-center gap-2">
-                          <FileIcon className="w-4 h-4 text-blue-500" /> {f.name}
+                      <div key={i} className="flex items-center justify-between text-xs bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 p-3 rounded-xl transition-all hover:scale-[1.01]">
+                        <span className="truncate flex items-center gap-2 font-bold text-emerald-800 dark:text-emerald-400">
+                          <FileIcon className="w-4 h-4" /> {f.name}
                           {fileSettings[i] && (
-                            <span className="text-[9px] bg-red-500 text-white px-1.5 py-0.5 rounded-full font-black uppercase tracking-tighter animate-pulse">Destruct Active</span>
+                            <span className="text-[9px] bg-red-500 text-white px-1.5 py-0.5 rounded-full font-black uppercase tracking-tighter animate-pulse shadow-lg shadow-red-500/20">Destruct Active</span>
                           )}
                         </span>
                         <div className="flex items-center gap-1">
                           <button
                             onClick={(e) => { e.stopPropagation(); setSelectedFileForSettings({ type: 'NEW', index: i }); }}
-                            className="text-gray-400 hover:text-primary-600 p-1"
+                            className="text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 p-2 hover:bg-white dark:hover:bg-white/10 rounded-lg transition-colors"
                             title="File Settings"
                           >
                             <Settings className="w-4 h-4" />
                           </button>
-                          <button onClick={(e) => { e.stopPropagation(); removeSelectedFile(i); }} className="text-gray-400 hover:text-red-500 p-1"><X className="w-4 h-4" /></button>
+                          <button onClick={(e) => { e.stopPropagation(); removeSelectedFile(i); }} className="text-gray-400 hover:text-red-500 p-2 hover:bg-white dark:hover:bg-white/10 rounded-lg transition-colors"><X className="w-4 h-4" /></button>
                         </div>
                       </div>
                     ))}
@@ -2012,26 +2013,26 @@ export const Dashboard: React.FC = () => {
 
               {/* Links Section */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   {modalMode === 'EDIT' ? 'Add More Links' : 'Add Links (Optional)'}
                 </label>
                 <div className="flex gap-2">
                   <input
                     type="url"
-                    className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    className="flex-1 p-3 bg-white dark:bg-black/50 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all dark:text-white"
                     placeholder="https://..."
                     value={tempLink}
                     onChange={(e) => setTempLink(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && addLink()}
                   />
-                  <button onClick={addLink} className="bg-gray-100 hover:bg-gray-200 px-4 rounded-lg font-medium text-gray-700">Add</button>
+                  <button onClick={addLink} className="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 px-4 rounded-lg font-bold text-gray-700 dark:text-gray-300 transition-colors uppercase text-[10px] tracking-widest">Add</button>
                 </div>
                 {links.length > 0 && (
                   <div className="mt-2 space-y-1">
                     {links.map((l, i) => (
-                      <div key={i} className="flex items-center justify-between text-sm text-blue-600 bg-gray-50 p-2 rounded border border-gray-100">
-                        <span className="flex items-center gap-2 truncate"><LinkIcon className="w-3 h-3" /> {l}</span>
-                        <button onClick={() => removeLink(i)} className="text-gray-400 hover:text-red-500"><X className="w-3 h-3" /></button>
+                      <div key={i} className="flex items-center justify-between text-xs text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/20 p-2 rounded-lg border border-blue-100 dark:border-blue-900/30">
+                        <span className="flex items-center gap-2 truncate font-medium"><LinkIcon className="w-3 h-3" /> {l}</span>
+                        <button onClick={() => removeLink(i)} className="text-gray-400 hover:text-red-500 transition-colors"><X className="w-3 h-3" /></button>
                       </div>
                     ))}
                   </div>
@@ -2040,65 +2041,69 @@ export const Dashboard: React.FC = () => {
             </div>
 
 
-            <div className="border-t border-gray-100 bg-gray-50 rounded-b-2xl">
+            <div className="border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-[#0d0f14] rounded-b-2xl">
               {/* Upload Progress Bar - always visible in footer */}
               {isSubmitting && (
-                <div className="px-6 pt-4 pb-2">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs font-semibold text-primary-600 flex items-center gap-1.5">
+                <div className="px-6 pt-6 pb-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] font-black text-primary-600 dark:text-primary-400 flex items-center gap-2 uppercase tracking-widest">
                       <Loader2 className="animate-spin w-3 h-3" />
-                      {uploadProgress < 100 ? `Uploading... (~${estimatedSeconds}s)` : 'Finalizing...'}
+                      {uploadProgress < 100 ? `Streaming Data (~${estimatedSeconds}s)` : 'Finalizing Hash...'}
                     </span>
-                    <span className="text-xs font-bold text-primary-700">{uploadProgress}%</span>
+                    <span className="text-xs font-black text-primary-700 dark:text-primary-500">{uploadProgress}%</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                  <div className="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-2 overflow-hidden shadow-inner">
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-primary-500 via-primary-400 to-primary-600 transition-all duration-200 ease-out"
+                      className="h-full rounded-full bg-gradient-to-r from-primary-500 via-primary-400 to-indigo-600 transition-all duration-300 ease-out shadow-lg"
                       style={{ width: `${uploadProgress}%` }}
                     />
                   </div>
-                  <p className="text-[10px] text-gray-400 mt-1">Please don't close this window.</p>
+                  <p className="text-[9px] text-gray-400 dark:text-gray-500 mt-2 font-bold uppercase tracking-tight">Security handshakes in progress. Do not disconnect.</p>
 
                   {/* Task Checklist (NEW) */}
-                  <div className="mt-6 space-y-3 bg-white/50 backdrop-blur-sm p-4 rounded-xl border border-primary-100/50">
+                  <div className="mt-6 space-y-3 bg-white/50 dark:bg-black/20 backdrop-blur-sm p-5 rounded-2xl border border-primary-100/50 dark:border-primary-900/30">
                     <div className="flex items-center justify-between mb-2">
-                       <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Processing Pipeline</span>
-                       <span className="text-[10px] font-black text-primary-500 bg-primary-50 px-2 py-0.5 rounded-full">{Math.min(uploadTask, 3)}/3 Tasks</span>
+                       <span className="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">Processing Intelligence</span>
+                       <span className="text-[9px] font-black text-primary-500 bg-primary-50 dark:bg-primary-950/40 px-2 py-0.5 rounded-full">{Math.min(uploadTask, 3)}/3 Verified</span>
                     </div>
                     {[
-                      { id: 1, label: 'Security scan for threats', icon: <ShieldCheck className="w-3.5 h-3.5" /> },
-                      { id: 2, label: 'Encryption chain processing', icon: <Shield className="w-3.5 h-3.5" /> },
-                      { id: 3, label: 'Finalizing server distribution', icon: <Zap className="w-3.5 h-3.5" /> }
-                    ].map(task => {
-                      const isDone = uploadTask > task.id || (uploadTask === 3 && uploadProgress === 100);
-                      const isActive = uploadTask === task.id;
-                      return (
-                        <div key={task.id} className={`flex items-center gap-3 transition-opacity duration-300 ${isDone || isActive ? 'opacity-100' : 'opacity-30 grayscale'}`}>
-                           <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isDone ? 'bg-green-500 text-white shadow-lg shadow-green-100' : isActive ? 'bg-primary-600 text-white shadow-lg animate-pulse' : 'bg-gray-100 text-gray-400'}`}>
-                              {isDone ? <Check className="w-3.5 h-3.5" /> : task.icon}
-                           </div>
-                           <span className={`text-[11px] font-bold uppercase tracking-tight ${isDone ? 'text-green-600' : isActive ? 'text-primary-700' : 'text-gray-400'}`}>
-                              {task.label}
-                              {isActive && <span className="ml-1 inline-block animate-bounce">...</span>}
-                           </span>
-                           {isDone && <Check className="w-3 h-3 text-green-500 ml-auto" />}
+                      { id: 1, label: 'Quantum Encryption', icon: Lock },
+                      { id: 2, label: 'Data Sharding', icon: Share2 },
+                      { id: 3, label: 'Integrity Verification', icon: ShieldCheck }
+                    ].map((step) => (
+                      <div key={step.id} className="flex items-center justify-between group">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all ${uploadTask >= step.id ? 'bg-emerald-500 text-white rotate-0' : 'bg-gray-100 dark:bg-gray-800 text-gray-300 -rotate-12'}`}>
+                            {uploadTask > step.id ? <Check className="w-3 h-3" /> : <step.icon className="w-3 h-3" />}
+                          </div>
+                          <span className={`text-[10px] font-black uppercase tracking-tight transition-colors ${uploadTask >= step.id ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-gray-600'}`}>
+                            {step.label}
+                          </span>
                         </div>
-                      );
-                    })}
+                        {uploadTask === step.id && <Loader2 className="w-3 h-3 text-primary-500 animate-spin" />}
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
-              <div className="p-6 flex justify-end gap-3">
-                <button onClick={() => setIsModalOpen(false)} disabled={isSubmitting} className="px-4 py-2 text-gray-600 font-medium hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed">Cancel</button>
+              <div className="p-6 flex items-center justify-between gap-4">
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  disabled={isSubmitting}
+                  className="px-6 py-3 text-sm font-black text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors uppercase tracking-widest disabled:opacity-0"
+                >
+                  Cancel
+                </button>
                 <button
                   onClick={handleSubmit}
                   disabled={isSubmitting}
-                  className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-2 rounded-lg font-medium shadow-sm flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed transition-all"
+                  className="bg-primary-600 hover:bg-primary-700 text-white px-8 py-3 rounded-xl font-black text-xs shadow-xl shadow-primary-500/20 active:scale-95 transition-all disabled:opacity-0 uppercase tracking-[0.2em] flex items-center gap-2"
                 >
-                  {isSubmitting
-                    ? <><Loader2 className="animate-spin w-4 h-4" /> Uploading...</>
-                    : (modalMode === 'CREATE' ? 'Create Vault' : 'Save Changes')
-                  }
+                  {isSubmitting ? (
+                    <><Loader2 className="animate-spin w-4 h-4" /> Processing...</>
+                  ) : (
+                    modalMode === 'CREATE' ? <>Initialize Vault <Box className="w-3 h-3" /></> : <>Save Changes <Zap className="w-3 h-3" /></>
+                  )}
                 </button>
               </div>
             </div>

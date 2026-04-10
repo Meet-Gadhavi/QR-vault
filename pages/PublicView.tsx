@@ -398,7 +398,7 @@ export const PublicView: React.FC = () => {
         <div className="bg-amber-50 text-amber-800 p-5 rounded-2xl text-sm mb-8 border border-amber-100 leading-relaxed font-medium">
           This vault has been automatically deleted based on our security and storage policy.
         </div>
-        {(vault.userPlan === PlanType.FREE || vault.userPlan === PlanType.STARTER) && (
+        {(vault?.userPlan === PlanType.FREE || vault?.userPlan === PlanType.STARTER) && (
           <div className="space-y-4">
             <Link to="/" className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-6 rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
               Create Your Own Vault
@@ -1077,47 +1077,90 @@ export const PublicView: React.FC = () => {
 
       {/* Auto-Destruct Warning Modal */}
       {warningFile && (
-        <div className="fixed inset-0 bg-black/60 dark:bg-black/90 backdrop-blur-xl z-[100] flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] w-full max-w-2xl shadow-2xl animate-in fade-in zoom-in-95 duration-300 border border-white/20 dark:border-white/5 overflow-hidden relative">
-            <div className="absolute top-0 left-0 w-full h-1 bg-red-500"></div>
+        <div className="fixed inset-0 bg-black/60 dark:bg-black/95 backdrop-blur-xl z-[110] flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-[#0f1115] rounded-[2.5rem] w-full max-w-3xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] dark:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.8)] animate-in zoom-in-95 duration-500 border border-white/20 dark:border-white/5 overflow-hidden relative flex flex-col md:flex-row">
             
-            <div className="flex flex-col items-center text-center p-10">
-              <div className="w-16 h-16 bg-red-50 dark:bg-red-500/10 rounded-2xl flex items-center justify-center text-red-500 mb-6">
-                <AlertCircle className="w-8 h-8 animate-pulse" />
-              </div>
+            {/* Left Brand Strip (Visible on Desktop) */}
+            <div className="hidden md:flex w-1/3 bg-primary-600 p-12 flex-col justify-between relative overflow-hidden">
+               <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+               <div className="absolute bottom-0 left-0 w-24 h-24 bg-primary-400/20 rounded-full -ml-12 -mb-12 blur-xl"></div>
+               
+               <div className="relative z-10">
+                 <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6 border border-white/20">
+                    <ShieldCheck className="w-6 h-6 text-white" />
+                 </div>
+                 <h2 className="text-2xl font-black text-white leading-tight uppercase tracking-tighter">
+                    Secure<br/>Destruction<br/>Activated
+                 </h2>
+               </div>
+               
+               <div className="relative z-10">
+                  <p className="text-primary-100/80 text-[10px] font-black uppercase tracking-[0.2em]">QR Vault Security</p>
+               </div>
+            </div>
 
-              <h3 className="text-xl font-black text-gray-900 dark:text-white tracking-tight uppercase mb-2">
-                Auto-Destruction Active
-              </h3>
-              
-              <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mb-8 leading-relaxed">
-                ⚠️ Caution: This file is set to auto-destruct after 
-                <span className="text-red-500 font-black"> 
-                  {warningFile.maxDownloads ? ` ${warningFile.maxDownloads} download${warningFile.maxDownloads > 1 ? 's' : ''}` : ''}
-                  {warningFile.deleteAfterMinutes ? ` ${warningFile.deleteAfterMinutes} minutes` : ''}
-                </span>. 
-                Please ensure you save it securely immediately.
-              </p>
+            {/* Content Area */}
+            <div className="flex-1 p-8 md:p-12 relative">
+               <button 
+                 onClick={() => setWarningFile(null)}
+                 className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl transition-all"
+               >
+                 <X className="w-5 h-5" />
+               </button>
 
-              <button
-                onClick={() => {
-                  setAcknowledgedFiles(prev => {
-                    const next = new Set(Array.from(prev));
-                    next.add(warningFile.id);
-                    return next;
-                  });
-                  const fileToPreview = warningFile;
-                  setWarningFile(null);
-                  // Call handleOpenPreview again with acknowledgment bypass
-                  if (fileToPreview.type === FileType.IMAGE) setPreviewFile(fileToPreview);
-                  else if (fileToPreview.type === FileType.PDF) setPreviewPdf(fileToPreview);
-                  else if (fileToPreview.type === FileType.VIDEO) setPreviewVideo(fileToPreview);
-                  else handleSingleDownload(fileToPreview, { stopPropagation: () => {} } as any);
-                }}
-                className="w-full bg-gray-900 dark:bg-white text-white dark:text-black font-black py-4 rounded-xl shadow-lg transition-all active:scale-95 hover:tracking-widest uppercase text-xs"
-              >
-                I Understand, Proceed
-              </button>
+               <div className="flex items-center gap-3 mb-6">
+                  <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></div>
+                  <span className="text-[10px] font-black text-red-500 uppercase tracking-[0.2em]">Safety Protocol Alert</span>
+               </div>
+
+               <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tighter mb-4 leading-none">
+                  THIS FILE WILL <span className="text-primary-600">EVAPORATE</span>
+               </h3>
+
+               <div className="space-y-4 mb-10">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 font-medium leading-relaxed">
+                    You are accessing a self-destructing resource. Once the conditions below are met, this link will permanently expire and the file will be wiped from our secure chain.
+                  </p>
+                  
+                  <div className="grid grid-cols-2 gap-3">
+                     <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-2xl border border-gray-100 dark:border-white/5">
+                        <p className="text-[9px] font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest mb-1">Trigger 01</p>
+                        <p className="text-sm font-black text-gray-900 dark:text-white">
+                           {warningFile.maxDownloads ? `${warningFile.maxDownloads} Downloads` : 'Unlimited'}
+                        </p>
+                     </div>
+                     <div className="bg-gray-50 dark:bg-white/5 p-4 rounded-2xl border border-gray-100 dark:border-white/5">
+                        <p className="text-[9px] font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest mb-1">Trigger 02</p>
+                        <p className="text-sm font-black text-gray-900 dark:text-white">
+                           {warningFile.deleteAfterMinutes ? `${warningFile.deleteAfterMinutes} Minutes` : 'No Timer'}
+                        </p>
+                     </div>
+                  </div>
+               </div>
+
+               <div className="flex flex-col gap-3">
+                  <button
+                    onClick={() => {
+                      setAcknowledgedFiles(prev => {
+                        const next = new Set(Array.from(prev));
+                        next.add(warningFile.id);
+                        return next;
+                      });
+                      const fileToPreview = warningFile;
+                      setWarningFile(null);
+                      if (fileToPreview.type === FileType.IMAGE) setPreviewFile(fileToPreview);
+                      else if (fileToPreview.type === FileType.PDF) setPreviewPdf(fileToPreview);
+                      else if (fileToPreview.type === FileType.VIDEO) setPreviewVideo(fileToPreview);
+                      else handleSingleDownload(fileToPreview, { stopPropagation: () => {} } as any);
+                    }}
+                    className="w-full bg-primary-600 hover:bg-primary-700 text-white font-black py-4 rounded-2xl shadow-xl shadow-primary-500/20 transition-all active:scale-[0.98] uppercase text-xs tracking-widest flex items-center justify-center gap-2 group"
+                  >
+                    Enter Vault Access <ExternalLink className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </button>
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500 text-center font-bold uppercase tracking-tight">
+                    By proceeding, you acknowledge the temporary nature of this link.
+                  </p>
+               </div>
             </div>
           </div>
         </div>
