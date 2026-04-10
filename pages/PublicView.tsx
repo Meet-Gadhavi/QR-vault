@@ -3,7 +3,7 @@ import { useParams, useLocation, Link } from 'react-router-dom';
 import { mockService } from '../services/mockService';
 import { supabase } from '../services/supabaseClient';
 import { Vault, FileType, VaultFile, AccessLevel, RequestStatus, PlanType } from '../types';
-import { Download, ExternalLink, FileText, Image as ImageIcon, Box, Loader2, ShieldCheck, AlertCircle, Eye, Link as LinkIcon, Info, X, File, Lock, Send, Clock, Zap, RefreshCw, Sun, Moon } from 'lucide-react';
+import { Download, ExternalLink, FileText, Image as ImageIcon, Box, Loader2, ShieldCheck, AlertCircle, Eye, Link as LinkIcon, Info, X, File, Lock, Send, Clock, Zap, RefreshCw, Sun, Moon, Search } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import JSZip from 'jszip';
 
@@ -832,7 +832,7 @@ export const PublicView: React.FC = () => {
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Community Moderation System</p>
                 </div>
               </div>
-              <button onClick={() => setIsReportModalOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors text-gray-400"><X className="w-6 h-6" /></button>
+              <button onClick={() => setIsReportModalOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg border border-transparent hover:border-gray-200 dark:hover:border-gray-700 transition-colors text-gray-400 shadow-sm"><X className="w-6 h-6" /></button>
             </div>
 
             <form onSubmit={handleReportSubmit} className="flex-1 flex flex-col md:flex-row gap-10 overflow-hidden">
@@ -910,14 +910,14 @@ export const PublicView: React.FC = () => {
 
       {previewFile && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/90 backdrop-blur-3xl p-6 animate-in fade-in" onClick={() => setPreviewFile(null)}>
-          <button className="absolute top-8 right-8 text-white/50 hover:text-white transition-colors p-2" onClick={() => setPreviewFile(null)}><X className="w-10 h-10" /></button>
+          <button className="absolute top-8 right-8 text-white/50 hover:text-white bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg transition-all p-2 shadow-xl backdrop-blur-md" onClick={() => setPreviewFile(null)}><X className="w-10 h-10" /></button>
           <img src={previewFile.url} alt={previewFile.name} className="max-w-full max-h-full object-contain rounded-3xl shadow-2xl border border-white/10 animate-in zoom-in-95" onClick={(e) => e.stopPropagation()} />
         </div>
       )}
 
       {previewVideo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/90 backdrop-blur-3xl p-6 animate-in fade-in" onClick={() => setPreviewVideo(null)}>
-          <button className="absolute top-8 right-8 text-white/50 hover:text-white transition-colors p-2" onClick={() => setPreviewVideo(null)}><X className="w-10 h-10" /></button>
+          <button className="absolute top-8 right-8 text-white/50 hover:text-white bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg transition-all p-2 shadow-xl backdrop-blur-md" onClick={() => setPreviewVideo(null)}><X className="w-10 h-10" /></button>
           <div className="w-full max-w-4xl aspect-video bg-black rounded-3xl overflow-hidden shadow-2xl border border-white/10 animate-in zoom-in-95" onClick={(e) => e.stopPropagation()}>
             <video 
               src={previewVideo.url} 
@@ -942,7 +942,7 @@ export const PublicView: React.FC = () => {
                  <button onClick={() => handleSingleDownload(previewPdf!, { stopPropagation: () => {} } as any)} className="bg-primary-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary-700 shadow-lg shadow-primary-100 transition-all flex items-center gap-2">
                     <Download className="w-3 h-3" /> Download
                  </button>
-                 <button onClick={() => setPreviewPdf(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all"><X className="w-6 h-6 dark:text-gray-400" /></button>
+                 <button onClick={() => setPreviewPdf(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg border border-transparent hover:border-gray-200 dark:hover:border-gray-700 transition-all shadow-sm"><X className="w-6 h-6 dark:text-gray-400" /></button>
               </div>
             </div>
             <iframe 
@@ -959,7 +959,7 @@ export const PublicView: React.FC = () => {
           <div className="bg-white rounded-[2.5rem] p-10 w-full max-w-sm shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-8">
               <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Asset Info</h3>
-              <button onClick={() => setInfoFile(null)} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 transition-colors"><X className="w-6 h-6" /></button>
+              <button onClick={() => setInfoFile(null)} className="p-2 rounded-lg border border-transparent hover:border-gray-200 dark:hover:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 transition-colors shadow-sm"><X className="w-6 h-6" /></button>
             </div>
             <div className="flex flex-col items-center text-center mb-8">
               <div className="w-24 h-24 bg-gray-50 rounded-[2rem] flex items-center justify-center text-gray-900 mb-4 shadow-inner">
