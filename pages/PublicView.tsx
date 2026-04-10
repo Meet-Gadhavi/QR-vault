@@ -652,7 +652,7 @@ export const PublicView: React.FC = () => {
 
               {vault.files.some(f => f.type !== FileType.LINK) && (
                 <button
-                  className="bg-gray-900 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-xl shadow-gray-200 hover:bg-gray-800 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-70"
+                  className="bg-gray-900 dark:bg-white/10 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-xl shadow-gray-200/60 dark:shadow-none hover:bg-gray-800 dark:hover:bg-white/20 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-70 border border-transparent dark:border-white/10"
                   onClick={handleBulkDownload}
                   disabled={isDownloadingAll}
                 >
@@ -666,6 +666,7 @@ export const PublicView: React.FC = () => {
                   </span>
                 </button>
               )}
+
             </div>
           </div>
 
