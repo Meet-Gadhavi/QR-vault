@@ -5,7 +5,7 @@ import { supabase } from '../services/supabaseClient';
 import { Vault, User, PlanType, VaultFile, FileType, PLAN_LIMITS, AccessLevel, AccessRequest, RequestStatus, Invoice } from '../types';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import QRCode from 'react-qr-code';
-import { UploadCloud, File as FileIcon, Link as LinkIcon, Trash2, ExternalLink, Plus, X, Loader2, Eye, HardDrive, QrCode, Copy, Check, MoreVertical, Edit2, Search, Filter, ArrowUpDown, Download, Zap, ChevronDown, Lock, Users, Shield, UserCheck, UserX, Clock, ShieldCheck, AlertTriangle, AlertCircle, RotateCcw, FileText, Shuffle, Settings, Calendar } from 'lucide-react';
+import { UploadCloud, File as FileIcon, Link as LinkIcon, Trash2, ExternalLink, Plus, X, Loader2, Eye, HardDrive, QrCode, Copy, Check, MoreVertical, Edit2, Search, Filter, ArrowUpDown, Download, Zap, ChevronDown, Lock, Users, Shield, UserCheck, UserX, Clock, ShieldCheck, AlertTriangle, AlertCircle, RotateCcw, FileText, Shuffle, Settings, Calendar, Share2, Box } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -1902,22 +1902,24 @@ export const Dashboard: React.FC = () => {
                 })()}
 
                 {maxViews === 'custom' && appUser?.plan === PlanType.PRO && (
-                    <div className="mt-3 animate-in fade-in slide-in-from-top-1 duration-200">
-                             <input
-                                 type="number"
-                                 min="1"
-                                 placeholder="Enter custom scan limit"
-                                 value={customMaxViews}
-                                 onChange={(e) => setCustomMaxViews(e.target.value)}
-                                 className="w-full p-4 bg-gray-50 dark:bg-black/50 border border-transparent focus:bg-white dark:focus:bg-black focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 rounded-xl text-sm dark:text-white outline-none transition-all duration-200"
-                             />
-                             <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-bold uppercase tracking-wider">Scans</div>
-                         </div>
-                         <p className="mt-2 text-[10px] text-primary-600 dark:text-primary-400 font-medium italic pl-1">Vault will auto-deactivate after reaching this many views.</p>
-                     </div>
-                 )}
-                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-2 font-medium">Vault wipes itself once scan limit is reached.</p>
-                </div>
+                  <div className="mt-3 relative animate-in fade-in slide-in-from-top-1 duration-200">
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="1"
+                        placeholder="Enter custom scan limit"
+                        value={customMaxViews}
+                        onChange={(e) => setCustomMaxViews(e.target.value)}
+                        className="w-full p-4 bg-gray-50 dark:bg-black/50 border border-transparent focus:bg-white dark:focus:bg-black focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 rounded-xl text-sm dark:text-white outline-none transition-all duration-200"
+                      />
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-bold uppercase tracking-wider">Scans</div>
+                    </div>
+                    <p className="mt-2 text-[10px] text-primary-600 dark:text-primary-400 font-medium italic pl-1">Vault will auto-deactivate after reaching this many views.</p>
+                  </div>
+                )}
+                
+                <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-2 font-medium">Vault wipes itself once scan limit is reached.</p>
+              </div>
               </div>
 
               {/* Existing Files List (Edit Mode Only) */}
