@@ -85,6 +85,16 @@ const VaultTimer: React.FC<{
     </div>
   );
 
+  if (!expiresAt) return (
+    <div className="bg-primary-50/60 dark:bg-primary-900/10 py-2.5 px-4 border-t border-primary-100/50 dark:border-primary-900/30 flex items-center justify-center gap-2 group/timer transition-colors hover:bg-primary-50 dark:hover:bg-primary-900/20">
+      <ShieldCheck className="w-3.5 h-3.5 text-primary-500 group-hover/timer:scale-110 transition-transform" />
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] text-primary-700 dark:text-primary-400 font-black uppercase tracking-widest">Permanent Store</span>
+        <span className="text-[10px] font-black text-primary-600 dark:text-primary-500 uppercase tracking-tighter bg-primary-100 dark:bg-primary-900/50 px-1.5 py-0.5 rounded">Unlimited</span>
+      </div>
+    </div>
+  );
+
   return (
     <div className="bg-amber-50/60 dark:bg-amber-900/10 py-2.5 px-4 border-t border-amber-100/50 dark:border-amber-900/30 flex items-center justify-center gap-2 group/timer transition-colors hover:bg-amber-50 dark:hover:bg-amber-900/20">
       <Clock className="w-3.5 h-3.5 text-amber-500 group-hover/timer:animate-spin-slow" />
@@ -1550,9 +1560,12 @@ export const Dashboard: React.FC = () => {
                                <button disabled={isOverLimit} onClick={(e) => openEditModal(vault, e)} className={`w-full py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest cursor-pointer font-black flex items-center justify-center gap-2 transition-all shadow-md ${isOverLimit ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700 text-white shadow-primary-500/20 active:scale-95'}`}><Edit2 className="w-4 h-4"/> Edit Vault</button>
                                <button onClick={(e) => openManageAccess(vault, e)} className="w-full bg-gray-50 dark:bg-gray-800 border cursor-pointer border-gray-100 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-750 active:scale-95 text-gray-700 dark:text-gray-300 py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-black flex items-center justify-center gap-2 transition-all"><Users className="w-4 h-4"/> Manage Access</button>
                                <button onClick={(e) => { e.stopPropagation(); setReportVault(vault); setMenuOpenId(null); }} className="w-full bg-red-50 dark:bg-red-900/10 border cursor-pointer border-red-100 dark:border-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/20 active:scale-95 text-red-600 dark:text-red-400 py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-black flex items-center justify-center gap-2 transition-all"><AlertTriangle className="w-4 h-4"/> View Reports {vault.reportCount || 0 > 0 && <span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-[10px] ml-1">{vault.reportCount}</span>}</button>
+                               <button onClick={(e) => handleDeleteVault(vault.id, e)} className="w-full bg-red-600 hover:bg-red-700 text-white cursor-pointer py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-black flex items-center justify-center gap-2 transition-all shadow-lg shadow-red-500/20 active:scale-95"><Trash2 className="w-4 h-4"/> Self Destruct Vault</button>
                            </div>
                            
-                           <button disabled={isOverLimit} onClick={(e) => handleDeleteVault(vault.id, e)} className={`w-full mt-auto py-3 px-4 rounded-xl text-[10px] cursor-pointer font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${isOverLimit ? 'text-gray-400 cursor-not-allowed' : 'text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 active:scale-95'}`}><Trash2 className="w-3.5 h-3.5"/> Delete Vault</button>
+                           <div className="mt-auto w-full text-center">
+                              <p className="text-[9px] text-gray-400 dark:text-gray-500 font-black uppercase tracking-[0.2em]">Protocol: Absolute Deletion</p>
+                           </div>
                       </div>
 
                     </div>
@@ -1757,10 +1770,20 @@ export const Dashboard: React.FC = () => {
               </div>
 
               {/* Self-Destruct Settings Group */}
-              <div className="bg-primary-50/50 dark:bg-primary-950/20 p-6 rounded-2xl border border-primary-100 dark:border-primary-900/30 space-y-6">
-                <div className="flex items-center gap-2 mb-2">
-                   <Zap className="w-5 h-5 text-primary-500" />
-                   <h3 className="text-xs font-black text-primary-700 dark:text-primary-400 uppercase tracking-widest">Global Self-Destruction</h3>
+              <div className="bg-gray-50/80 dark:bg-[#0f1115] p-7 rounded-[2.5rem] border border-gray-100 dark:border-white/5 space-y-8 shadow-inner">
+                <div className="flex items-center justify-between">
+                   <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-primary-500 text-white rounded-2xl shadow-lg shadow-primary-500/20">
+                        <Zap className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] leading-none mb-1">Destruction Protocol</h3>
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Global Lifecycle Policy</p>
+                      </div>
+                   </div>
+                   <div className="px-3 py-1 bg-primary-50 dark:bg-primary-500/10 rounded-full border border-primary-100 dark:border-primary-500/20">
+                      <span className="text-[8px] font-black text-primary-600 dark:text-primary-400 uppercase tracking-widest">Active</span>
+                   </div>
                 </div>
 
                 {/* Expiry Selection (Custom Dropdown) */}
@@ -1771,7 +1794,7 @@ export const Dashboard: React.FC = () => {
                         { value: 24, label: '24 Hours (Default)', disabled: false },
                         { value: 48, label: '48 Hours', disabled: appUser?.plan === PlanType.FREE },
                         { value: 72, label: '72 Hours', disabled: appUser?.plan === PlanType.FREE },
-                        { value: 'never', label: `Permanent Storage (Never Expire) ${appUser?.plan === PlanType.STARTER ? '(PRO Only)' : ''}`, disabled: appUser?.plan !== PlanType.PRO },
+                        { value: 'never', label: `Permanent Storage ${appUser?.plan !== PlanType.PRO ? '(PRO Feature)' : '(Never Expire)'}`, disabled: appUser?.plan !== PlanType.PRO },
                     ];
                     const selected = expiryOptions.find(o => o.value === expiryHours) || expiryOptions[0];
                     const isOpen = menuOpenId === 'modal-expiry';
@@ -1819,12 +1842,20 @@ export const Dashboard: React.FC = () => {
                     );
                 })()}
                 
-                {appUser?.plan === PlanType.STARTER && expiryHours !== 'never' && (
-                    <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-1 duration-200">
-                        <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
-                        <p className="text-xs text-amber-800 leading-relaxed font-medium">
-                            <strong>Notice:</strong> This vault will be deleted after <strong>{expiryHours} hours</strong> because of the auto-expiry limits of your Plus account.
-                        </p>
+                {appUser?.plan !== PlanType.PRO && expiryHours !== 'never' && (
+                    <div className="mt-4 p-4 bg-primary-500/5 dark:bg-primary-500/10 border border-primary-500/20 dark:border-primary-500/30 rounded-2xl flex items-center justify-between gap-4 animate-in fade-in slide-in-from-top-1 duration-300">
+                        <div className="flex items-center gap-3">
+                           <div className="p-2 bg-primary-500 text-white rounded-xl shadow-lg shadow-primary-500/20">
+                              <Zap className="w-4 h-4 fill-current" />
+                           </div>
+                           <div>
+                              <p className="text-[10px] text-primary-900 dark:text-primary-100 font-black uppercase tracking-widest leading-none mb-1">Temporary Life</p>
+                              <p className="text-[9px] text-primary-700/70 dark:text-primary-400/70 font-bold uppercase tracking-tight">Auto-destruct in {expiryHours}h</p>
+                           </div>
+                        </div>
+                        <Link to="/pricing" onClick={(e) => e.stopPropagation()} className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-[10px] font-black rounded-xl transition-all shadow-md shadow-primary-500/20 active:scale-95 whitespace-nowrap uppercase tracking-widest">
+                           Keep Permanent
+                        </Link>
                     </div>
                 )}
                 
@@ -2062,29 +2093,43 @@ export const Dashboard: React.FC = () => {
                   </div>
                   <p className="text-[9px] text-gray-400 dark:text-gray-500 mt-2 font-bold uppercase tracking-tight">Security handshakes in progress. Do not disconnect.</p>
 
-                  {/* Task Checklist (NEW) */}
-                  <div className="mt-6 space-y-3 bg-white/50 dark:bg-black/20 backdrop-blur-sm p-5 rounded-2xl border border-primary-100/50 dark:border-primary-900/30">
-                    <div className="flex items-center justify-between mb-2">
-                       <span className="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">Processing Intelligence</span>
-                       <span className="text-[9px] font-black text-primary-500 bg-primary-50 dark:bg-primary-950/40 px-2 py-0.5 rounded-full">{Math.min(uploadTask, 3)}/3 Verified</span>
+                  {/* Task Checklist (Premium Redesign) */}
+                  <div className="mt-6 space-y-2.5 bg-white/50 dark:bg-black/40 backdrop-blur-md p-6 rounded-3xl border border-primary-100/50 dark:border-primary-500/10 shadow-sm relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-3 opacity-10">
+                       <ShieldCheck className="w-12 h-12 text-primary-500" />
                     </div>
-                    {[
-                      { id: 1, label: 'Quantum Encryption', icon: Lock },
-                      { id: 2, label: 'Data Sharding', icon: Share2 },
-                      { id: 3, label: 'Integrity Verification', icon: ShieldCheck }
-                    ].map((step) => (
-                      <div key={step.id} className="flex items-center justify-between group">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all ${uploadTask >= step.id ? 'bg-emerald-500 text-white rotate-0' : 'bg-gray-100 dark:bg-gray-800 text-gray-300 -rotate-12'}`}>
-                            {uploadTask > step.id ? <Check className="w-3 h-3" /> : <step.icon className="w-3 h-3" />}
+                    <div className="flex items-center justify-between mb-4">
+                       <div className="flex flex-col">
+                          <span className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] leading-none mb-1">Processing Protocol</span>
+                          <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Active Security Encryption</span>
+                       </div>
+                       <div className="flex items-center gap-1.5 bg-primary-50 dark:bg-primary-500/10 px-2.5 py-1 rounded-full border border-primary-100 dark:border-primary-500/20">
+                          <div className="w-1 h-1 rounded-full bg-primary-500 animate-ping" />
+                          <span className="text-[9px] font-black text-primary-600 dark:text-primary-400 whitespace-nowrap">{Math.min(uploadTask, 3)}/3 SECURED</span>
+                       </div>
+                    </div>
+                    <div className="space-y-3">
+                      {[
+                        { id: 1, label: 'Quantum Shielding', icon: Lock, desc: 'E2E Encryption active' },
+                        { id: 2, label: 'Data Sharding', icon: Share2, desc: 'Distributed storage' },
+                        { id: 3, label: 'Integrity Check', icon: ShieldCheck, desc: 'Final checksum verification' }
+                      ].map((step) => (
+                        <div key={step.id} className={`flex items-start gap-4 p-2.5 rounded-2xl transition-all duration-500 ${uploadTask >= step.id ? 'bg-primary-50/50 dark:bg-primary-500/5 border border-primary-100/50 dark:border-primary-500/10' : 'opacity-40'}`}>
+                          <div className={`mt-0.5 w-7 h-7 rounded-xl flex items-center justify-center transition-all duration-700 ${uploadTask >= step.id ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/20 rotate-0 scale-110' : 'bg-gray-100 dark:bg-gray-800 text-gray-400 -rotate-12'}`}>
+                            {uploadTask > step.id ? <Check className="w-3.5 h-3.5" /> : <step.icon className="w-3.5 h-3.5" />}
                           </div>
-                          <span className={`text-[10px] font-black uppercase tracking-tight transition-colors ${uploadTask >= step.id ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-gray-600'}`}>
-                            {step.label}
-                          </span>
+                          <div className="flex flex-col">
+                            <span className={`text-[10px] font-black uppercase tracking-tight ${uploadTask >= step.id ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>{step.label}</span>
+                            <span className="text-[8px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">{uploadTask >= step.id ? step.desc : 'Waiting for protocol...'}</span>
+                          </div>
+                          {uploadTask === step.id && (
+                            <div className="ml-auto">
+                              <Loader2 className="w-3 h-3 text-primary-500 animate-spin" />
+                            </div>
+                          )}
                         </div>
-                        {uploadTask === step.id && <Loader2 className="w-3 h-3 text-primary-500 animate-spin" />}
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
@@ -2256,7 +2301,7 @@ export const Dashboard: React.FC = () => {
                   <button
                     onClick={() => setDeleteConfirmId(null)}
                     disabled={isDeleting}
-                    className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-all disabled:opacity-50"
+                    className="flex-1 py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-xl transition-all disabled:opacity-50"
                   >
                     Cancel
                   </button>
@@ -2298,7 +2343,7 @@ export const Dashboard: React.FC = () => {
                    <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Scanning History...</span>
                  </div>
               ) : vaultReports.length === 0 ? (
-                <div className="text-center py-20 bg-gray-50/50 rounded-3xl border-2 border-dashed border-gray-100">
+                <div className="text-center py-20 bg-gray-50/50 dark:bg-black/20 rounded-3xl border-2 border-dashed border-gray-100 dark:border-white/5">
                   <ShieldCheck className="w-12 h-12 text-emerald-400 mx-auto mb-4" />
                   <p className="text-sm font-black text-gray-900 uppercase">Vault Clean</p>
                   <p className="text-xs text-gray-400 font-medium mt-1">No community reports received for this vault.</p>
@@ -2324,7 +2369,7 @@ export const Dashboard: React.FC = () => {
                           {report.fileIds.map((fid: string) => {
                             const file = reportVault?.files?.find((f: any) => f.id === fid);
                             return (
-                              <div key={fid} className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-xl border border-gray-100">
+                              <div key={fid} className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-white/5 rounded-xl border border-gray-100 dark:border-white/5">
                                 <FileText className="w-3 h-3 text-gray-400" />
                                 <span className="text-[10px] font-medium text-gray-700 truncate">
                                   {file?.name || "Unknown File"}
@@ -2336,7 +2381,7 @@ export const Dashboard: React.FC = () => {
                       </div>
                     )}
                     {report.custom_message && (
-                      <div className="bg-gray-50/50 p-4 rounded-2xl italic text-gray-600 text-xs font-medium border-l-4 border-l-red-100 mt-3">
+                      <div className="bg-gray-50/50 dark:bg-white/5 p-4 rounded-2xl italic text-gray-600 dark:text-gray-400 text-xs font-medium border-l-4 border-l-red-100 dark:border-l-red-900/50 mt-3">
                         "{report.custom_message}"
                       </div>
                     )}

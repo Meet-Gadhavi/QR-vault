@@ -3,7 +3,7 @@ import { useParams, useLocation, Link } from 'react-router-dom';
 import { mockService } from '../services/mockService';
 import { supabase } from '../services/supabaseClient';
 import { Vault, FileType, VaultFile, AccessLevel, RequestStatus, PlanType } from '../types';
-import { Download, ExternalLink, FileText, Image as ImageIcon, Box, Loader2, ShieldCheck, AlertCircle, Eye, Link as LinkIcon, Info, X, File, Lock, Send, Clock, Zap, RefreshCw, Sun, Moon, Search } from 'lucide-react';
+import { Download, ExternalLink, FileText, Image as ImageIcon, Box, Loader2, ShieldCheck, AlertCircle, Eye, Link as LinkIcon, Info, X, File, Lock, Send, Clock, Zap, RefreshCw, Sun, Moon, Search, Play } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import JSZip from 'jszip';
 
@@ -429,25 +429,25 @@ export const PublicView: React.FC = () => {
           <div className="w-16 h-16 bg-gray-900 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
             <Lock className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Restricted Access</h1>
-          <p className="text-gray-500 mb-8 font-medium">This vault is protected by the owner. You need to request access to view the files.</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Restricted Access</h1>
+          <p className="text-gray-500 dark:text-gray-400 mb-8 font-medium">This vault is protected by the owner. You need to request access to view the files.</p>
           {requestStatus === RequestStatus.PENDING ? (
-            <div className="bg-orange-50 border border-orange-100 rounded-xl p-6">
+            <div className="bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-900/30 rounded-xl p-6">
               <Clock className="w-8 h-8 text-orange-500 mx-auto mb-3" />
-              <h3 className="font-bold text-gray-900">Request Pending</h3>
-              <p className="text-sm text-gray-600 mt-1">We've sent your request to the owner. Please check back later.</p>
-              <p className="text-xs text-gray-400 mt-4 underline decoration-orange-200">Logged in as: {viewerEmail}</p>
+              <h3 className="font-bold text-gray-900 dark:text-white">Request Pending</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">We've sent your request to the owner. Please check back later.</p>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-4 underline decoration-orange-200">Logged in as: {viewerEmail}</p>
             </div>
           ) : requestStatus === RequestStatus.REJECTED ? (
-            <div className="bg-red-50 border border-red-100 rounded-xl p-6">
+            <div className="bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 rounded-xl p-6">
               <X className="w-8 h-8 text-red-500 mx-auto mb-3" />
-              <h3 className="font-bold text-gray-900">Access Denied</h3>
-              <p className="text-sm text-gray-600 mt-1">The owner has denied your request to access this vault.</p>
+              <h3 className="font-bold text-gray-900 dark:text-white">Access Denied</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">The owner has denied your request to access this vault.</p>
             </div>
           ) : (
             <form onSubmit={handleRequestAccess} className="space-y-4">
               <div>
-                <label className="block text-left text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 ml-1">Your Email Address</label>
+                <label className="block text-left text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1 ml-1">Your Email Address</label>
                 <input
                   type="email"
                   required
@@ -752,11 +752,14 @@ export const PublicView: React.FC = () => {
                     </>
                   ) : file.type === FileType.VIDEO ? (
                     <div className="flex flex-col items-center gap-3">
-                       <Loader2 className="w-12 h-12 text-primary-500 animate-pulse" />
-                       <div className="bg-primary-600 p-4 rounded-full shadow-xl transform group-hover:scale-110 transition-transform relative z-10">
-                          <Send className="w-6 h-6 text-white rotate-90" />
+                       <div className="relative group/vid p-6 bg-primary-100/50 dark:bg-primary-900/30 rounded-3xl transition-all group-hover:scale-110 shadow-lg shadow-primary-500/10">
+                          <Play className="w-10 h-10 text-primary-600 dark:text-primary-400 fill-current" />
+                          <div className="absolute -top-1 -right-1 w-3 h-3 bg-primary-500 rounded-full border-2 border-white dark:border-gray-900 animate-pulse" />
                        </div>
-                       <span className="text-[10px] font-black text-primary-500 uppercase tracking-widest">Video Content</span>
+                       <div className="flex flex-col items-center">
+                          <span className="text-[10px] font-black text-primary-600 dark:text-primary-400 uppercase tracking-[0.2em] leading-none mb-1">Secure Stream</span>
+                          <span className="text-[8px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">End-to-End Encrypted</span>
+                       </div>
                     </div>
                   ) : file.type === FileType.PDF ? (
                     <div className="flex flex-col items-center gap-3">
@@ -820,52 +823,52 @@ export const PublicView: React.FC = () => {
       </div>
 
       {isReportModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in" onClick={() => setIsReportModalOpen(false)}>
-          <div className="bg-white rounded-[2.5rem] w-full max-w-4xl p-10 shadow-2xl animate-in zoom-in-95 flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 dark:bg-black/80 backdrop-blur-sm p-4 animate-in fade-in" onClick={() => setIsReportModalOpen(false)}>
+          <div className="bg-white dark:bg-gray-950 rounded-[2.5rem] w-full max-w-4xl p-10 shadow-2xl animate-in zoom-in-95 flex flex-col max-h-[90vh] border border-gray-100 dark:border-white/10" onClick={(e) => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-8">
               <div className="flex items-center gap-4">
-                <div className="bg-red-50 p-3 rounded-2xl text-red-500">
+                <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-2xl text-red-500">
                   <AlertCircle className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-black text-gray-900 tracking-tight leading-none mb-1">Report Violation</h3>
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Community Moderation System</p>
+                  <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight leading-none mb-1">Report Violation</h3>
+                  <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">Community Moderation System</p>
                 </div>
               </div>
-              <button onClick={() => setIsReportModalOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors text-gray-400"><X className="w-6 h-6" /></button>
+              <button onClick={() => setIsReportModalOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all text-gray-400"><X className="w-6 h-6" /></button>
             </div>
 
             <form onSubmit={handleReportSubmit} className="flex-1 flex flex-col md:flex-row gap-10 overflow-hidden">
               {/* Left Column: Reasons & Files */}
               <div className="flex-1 flex flex-col min-w-0 overflow-y-auto pr-2 no-scrollbar">
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 ml-1">Select Reason(s)</p>
+                <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4 ml-1">Select Reason(s)</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-                  <label className="flex items-center gap-4 p-4 border-2 border-gray-50 rounded-2xl hover:border-red-100 hover:bg-red-50/20 transition-all cursor-pointer">
-                    <input type="checkbox" className="w-5 h-5 text-red-600 rounded-lg border-gray-200 focus:ring-red-500" checked={reportReasonVirus} onChange={(e) => setReportReasonVirus(e.target.checked)} />
+                  <label className="flex items-center gap-4 p-4 border-2 border-gray-50 dark:border-white/5 rounded-2xl hover:border-red-100 dark:hover:border-red-500/30 hover:bg-red-50/20 transition-all cursor-pointer">
+                    <input type="checkbox" className="w-5 h-5 text-red-600 rounded-lg border-gray-200 dark:border-gray-700 focus:ring-red-500 bg-transparent" checked={reportReasonVirus} onChange={(e) => setReportReasonVirus(e.target.checked)} />
                     <div className="flex flex-col">
-                      <span className="text-sm font-black text-gray-900 uppercase tracking-tight">Malware</span>
-                      <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Dangerous files</span>
+                      <span className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight">Malware</span>
+                      <span className="text-[9px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider">Dangerous files</span>
                     </div>
                   </label>
 
-                  <label className="flex items-center gap-4 p-4 border-2 border-gray-50 rounded-2xl hover:border-red-100 hover:bg-red-50/20 transition-all cursor-pointer">
-                    <input type="checkbox" className="w-5 h-5 text-red-600 rounded-lg border-gray-200 focus:ring-red-500" checked={reportReasonContent} onChange={(e) => setReportReasonContent(e.target.checked)} />
+                  <label className="flex items-center gap-4 p-4 border-2 border-gray-50 dark:border-white/5 rounded-2xl hover:border-red-100 dark:hover:border-red-500/30 hover:bg-red-50/20 transition-all cursor-pointer">
+                    <input type="checkbox" className="w-5 h-5 text-red-600 rounded-lg border-gray-200 dark:border-gray-700 focus:ring-red-500 bg-transparent" checked={reportReasonContent} onChange={(e) => setReportReasonContent(e.target.checked)} />
                     <div className="flex flex-col">
-                      <span className="text-sm font-black text-gray-900 uppercase tracking-tight">Illegal</span>
-                      <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Policy violations</span>
+                      <span className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight">Illegal</span>
+                      <span className="text-[9px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider">Policy violations</span>
                     </div>
                   </label>
                 </div>
 
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 ml-1">Affected Files</p>
-                <div className="flex-1 max-h-[300px] overflow-y-auto space-y-2 pr-2 no-scrollbar border-y-2 border-gray-50/50 py-4">
+                <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4 ml-1">Affected Files</p>
+                <div className="flex-1 max-h-[300px] overflow-y-auto space-y-2 pr-2 no-scrollbar border-y-2 border-gray-50/50 dark:border-white/5 py-4">
                   {vault.files.map(file => {
                     const isChecked = reportFileIds.includes(file.id);
                     return (
-                      <label key={file.id} className={`flex items-center gap-3 p-3 border-2 rounded-xl cursor-pointer transition-all ${isChecked ? 'border-red-500 bg-red-50/30' : 'border-gray-50 hover:bg-gray-50'}`}>
+                      <label key={file.id} className={`flex items-center gap-3 p-3 border-2 rounded-xl cursor-pointer transition-all ${isChecked ? 'border-red-500 bg-red-50/30 dark:bg-red-900/20' : 'border-gray-50 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/10'}`}>
                         <input 
                           type="checkbox" 
-                          className="w-4 h-4 text-red-600 rounded" 
+                          className="w-4 h-4 text-red-600 rounded border-gray-300 dark:border-gray-600 bg-transparent" 
                           checked={isChecked} 
                           onChange={(e) => {
                             if (e.target.checked) setReportFileIds([...reportFileIds, file.id]);
@@ -873,8 +876,8 @@ export const PublicView: React.FC = () => {
                           }} 
                         />
                         <div className="flex flex-col min-w-0">
-                          <span className="text-xs font-bold text-gray-900 truncate">{file.name}</span>
-                          <span className="text-[9px] text-gray-400 font-black uppercase tracking-tight">{file.type}</span>
+                          <span className="text-xs font-bold text-gray-900 dark:text-white truncate">{file.name}</span>
+                          <span className="text-[9px] text-gray-400 dark:text-gray-500 font-black uppercase tracking-tight">{file.type}</span>
                         </div>
                       </label>
                     );
@@ -885,9 +888,9 @@ export const PublicView: React.FC = () => {
               {/* Right Column: Custom Message & Submission */}
               <div className="flex-1 flex flex-col justify-between">
                 <div className="flex-1 flex flex-col mb-6">
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 ml-1">Additional Details</p>
+                  <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4 ml-1">Additional Details</p>
                   <textarea 
-                    className="flex-1 w-full p-6 bg-gray-50 border-2 border-transparent rounded-[2rem] focus:bg-white focus:border-red-200 transition-all outline-none text-sm font-medium resize-none" 
+                    className="flex-1 w-full p-6 bg-gray-50 dark:bg-white/5 border-2 border-transparent rounded-[2rem] focus:bg-white dark:focus:bg-gray-900 focus:border-red-200 dark:focus:border-red-900/50 transition-all outline-none text-sm font-medium resize-none dark:text-white" 
                     placeholder="Provide more information about the violation..." 
                     value={reportMessage} 
                     onChange={(e) => setReportMessage(e.target.value)} 
