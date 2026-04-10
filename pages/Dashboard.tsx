@@ -5,7 +5,7 @@ import { supabase } from '../services/supabaseClient';
 import { Vault, User, PlanType, VaultFile, FileType, PLAN_LIMITS, AccessLevel, AccessRequest, RequestStatus, Invoice } from '../types';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import QRCode from 'react-qr-code';
-import { UploadCloud, File as FileIcon, Link as LinkIcon, Trash2, ExternalLink, Plus, X, Loader2, Eye, HardDrive, QrCode, Copy, Check, MoreVertical, Edit2, Search, Filter, ArrowUpDown, Download, Zap, ChevronDown, Lock, Users, Shield, UserCheck, UserX, Clock, ShieldCheck, AlertTriangle, AlertCircle, RotateCcw, FileText, Shuffle, Settings, Calendar, Share2, Box } from 'lucide-react';
+import { UploadCloud, File as FileIcon, Link as LinkIcon, Trash2, ExternalLink, Plus, X, Loader2, Eye, HardDrive, QrCode, Copy, Check, MoreVertical, Edit2, Search, Filter, ArrowUpDown, Download, Zap, ChevronDown, Lock, Users, Shield, UserCheck, UserX, Clock, ShieldCheck, AlertTriangle, AlertCircle, RotateCcw, FileText, Shuffle, Settings, Calendar, Share2, Box, Settings2, ChevronRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -1452,10 +1452,10 @@ export const Dashboard: React.FC = () => {
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredVaults.map(vault => (
-                  <div key={vault.id} className="relative z-10 w-full h-full perspective-[1000px]">
+                  <div key={vault.id} className="relative z-10 w-full min-h-[500px] perspective-[1000px]">
                     <div 
                       onClick={(e) => toggleMenu(e, vault.id)} 
-                      className={`cursor-pointer relative w-full h-full flex flex-col rounded-xl border-2 transition-all duration-500 shadow-sm hover:shadow-md transform-gpu ${vault.reportCount && vault.reportCount > 0 ? 'bg-red-50 dark:bg-red-900/10 border-red-100 dark:border-red-900/30 shadow-lg shadow-red-50/40 dark:shadow-red-900/20 scale-[1.01]' : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800'}`}
+                      className={`cursor-pointer relative w-full h-full min-h-[500px] flex flex-col rounded-2xl border-2 transition-all duration-700 shadow-sm hover:shadow-xl transform-gpu ${vault.reportCount && vault.reportCount > 0 ? 'bg-red-50 dark:bg-red-900/10 border-red-100 dark:border-red-900/30 shadow-lg shadow-red-50/40 dark:shadow-red-900/20 scale-[1.01]' : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800'}`}
                       style={{ transformStyle: 'preserve-3d', transform: menuOpenId === vault.id ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
                     >
                       {/* FRONT FACE */}
@@ -1551,20 +1551,45 @@ export const Dashboard: React.FC = () => {
                         />
                       </div>
 
-                      {/* BACK FACE */}
-                      <div className="absolute inset-0 w-full h-full bg-white dark:bg-gray-900 border-2 border-gray-100 dark:border-gray-800 rounded-xl flex flex-col justify-center items-center text-gray-900 dark:text-white p-6 shadow-xl" style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
-                           <button onClick={(e) => toggleMenu(e, vault.id)} className="absolute top-4 right-4 bg-gray-100 dark:bg-gray-800 cursor-pointer text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-750 p-2 rounded-xl transition-colors"><Shuffle className="w-4 h-4"/></button>
-                           <h3 className="text-lg font-black tracking-tight mb-4 text-gray-900 dark:text-white truncate w-full text-center pr-8">{vault.name}</h3>
+                      <div className="absolute inset-0 w-full h-full bg-white dark:bg-[#0a0a0b] border-2 border-primary-500/20 dark:border-primary-500/10 rounded-2xl flex flex-col justify-start items-center text-gray-900 dark:text-white p-8 shadow-2xl overflow-hidden" style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
+                           <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 to-transparent pointer-events-none"></div>
                            
-                           <div className="w-full space-y-2.5">
-                               <button disabled={isOverLimit} onClick={(e) => openEditModal(vault, e)} className={`w-full py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest cursor-pointer font-black flex items-center justify-center gap-2 transition-all shadow-md ${isOverLimit ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700 text-white shadow-primary-500/20 active:scale-95'}`}><Edit2 className="w-4 h-4"/> Edit Vault</button>
-                               <button onClick={(e) => openManageAccess(vault, e)} className="w-full bg-gray-50 dark:bg-gray-800 border cursor-pointer border-gray-100 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-750 active:scale-95 text-gray-700 dark:text-gray-300 py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-black flex items-center justify-center gap-2 transition-all"><Users className="w-4 h-4"/> Manage Access</button>
-                               <button onClick={(e) => { e.stopPropagation(); setReportVault(vault); setMenuOpenId(null); }} className="w-full bg-red-50 dark:bg-red-900/10 border cursor-pointer border-red-100 dark:border-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/20 active:scale-95 text-red-600 dark:text-red-400 py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-black flex items-center justify-center gap-2 transition-all"><AlertTriangle className="w-4 h-4"/> View Reports {vault.reportCount || 0 > 0 && <span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-[10px] ml-1">{vault.reportCount}</span>}</button>
-                               <button onClick={(e) => handleDeleteVault(vault.id, e)} className="w-full bg-red-600 hover:bg-red-700 text-white cursor-pointer py-3.5 px-4 rounded-xl text-xs uppercase tracking-widest font-black flex items-center justify-center gap-2 transition-all shadow-lg shadow-red-500/20 active:scale-95"><Trash2 className="w-4 h-4"/> Self Destruct Vault</button>
+                           <button onClick={(e) => toggleMenu(e, vault.id)} className="absolute top-5 right-5 bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-md cursor-pointer text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 p-2.5 rounded-2xl transition-all active:scale-90 border border-transparent hover:border-primary-200 dark:hover:border-primary-800"><Shuffle className="w-5 h-5"/></button>
+                           
+                           <div className="w-full mb-8 text-center px-4">
+                               <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4 text-primary-600 dark:text-primary-400 shadow-inner">
+                                  <Settings2 className="w-6 h-6" />
+                               </div>
+                               <h3 className="text-xl font-black tracking-tight text-gray-900 dark:text-white truncate uppercase">{vault.name}</h3>
+                               <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.3em] mt-1">Management Console</p>
                            </div>
                            
-                           <div className="mt-auto w-full text-center">
-                              <p className="text-[9px] text-gray-400 dark:text-gray-500 font-black uppercase tracking-[0.2em]">Protocol: Absolute Deletion</p>
+                           <div className="w-full space-y-3 relative z-10">
+                               <button disabled={isOverLimit} onClick={(e) => openEditModal(vault, e)} className={`group w-full py-4 px-6 rounded-2xl text-[11px] uppercase tracking-widest cursor-pointer font-black flex items-center justify-between transition-all shadow-lg active:scale-95 ${isOverLimit ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed' : 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:shadow-primary-500/10'}`}>
+                                  <span className="flex items-center gap-3"><Edit2 className="w-4 h-4"/> Edit Vault</span>
+                                  <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
+                               </button>
+                               
+                               <button onClick={(e) => openManageAccess(vault, e)} className="group w-full bg-white dark:bg-gray-900 border cursor-pointer border-gray-200 dark:border-gray-800 hover:border-primary-500/50 hover:bg-primary-50/30 dark:hover:bg-primary-900/10 active:scale-95 text-gray-700 dark:text-gray-300 py-4 px-6 rounded-2xl text-[11px] uppercase tracking-widest font-black flex items-center justify-between transition-all">
+                                  <span className="flex items-center gap-3"><Users className="w-4 h-4"/> Security & Access</span>
+                                  <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
+                               </button>
+                               
+                               <button onClick={(e) => { e.stopPropagation(); setReportVault(vault); setMenuOpenId(null); }} className="group w-full bg-white dark:bg-gray-900 border cursor-pointer border-gray-200 dark:border-gray-800 hover:border-red-500/50 hover:bg-red-50/30 dark:hover:bg-red-900/10 active:scale-95 text-gray-700 dark:text-gray-300 py-4 px-6 rounded-2xl text-[11px] uppercase tracking-widest font-black flex items-center justify-between transition-all">
+                                  <span className="flex items-center gap-3 flex-1 text-left"><AlertTriangle className="w-4 h-4 text-red-500"/> Activity Intelligence {(vault.reportCount || 0) > 0 && <span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-[9px] ml-2 animate-pulse">{vault.reportCount}</span>}</span>
+                                  <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
+                               </button>
+
+                               <div className="pt-2">
+                                  <button onClick={(e) => handleDeleteVault(vault.id, e)} className="w-full bg-red-600 hover:bg-red-700 text-white cursor-pointer py-4 px-6 rounded-2xl text-[11px] uppercase tracking-widest font-black flex items-center justify-center gap-3 transition-all shadow-xl shadow-red-500/20 active:scale-95">
+                                     <Trash2 className="w-4 h-4"/> Self Destruct Protocol
+                                  </button>
+                               </div>
+                           </div>
+                           
+                           <div className="mt-auto w-full pt-6 flex flex-col items-center gap-2">
+                              <div className="h-0.5 w-12 bg-gray-100 dark:bg-gray-800 rounded-full"></div>
+                              <p className="text-[9px] text-gray-400 dark:text-gray-600 font-black uppercase tracking-[0.4em]">Protocol: Absolute Deletion</p>
                            </div>
                       </div>
 
@@ -2402,115 +2427,130 @@ export const Dashboard: React.FC = () => {
           </div>
         </div>
       )}
-      {/* File-Specific Setting Modal (Self-Destruct) */}
-      {selectedFileForSettings && (
-        <div className="fixed inset-0 bg-black/60 dark:bg-black/90 backdrop-blur-xl z-[100] flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] w-full max-w-md shadow-2xl animate-in fade-in zoom-in-95 duration-300 border border-white/20 overflow-hidden relative">
+       {/* File-Specific Setting Modal (Self-Destruct) - Redesigned Broad Layout */}
+       {selectedFileForSettings && (
+         <div className="fixed inset-0 bg-black/60 dark:bg-black/95 backdrop-blur-xl z-[100] flex items-center justify-center p-4 animate-in fade-in duration-500">
+           <div className="bg-white dark:bg-[#0d0f14] rounded-[3rem] w-full max-w-5xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] dark:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.8)] animate-in zoom-in-95 duration-500 border border-white/20 dark:border-white/5 overflow-hidden relative">
+             <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary-600 via-primary-400 to-indigo-600 opacity-80"></div>
             <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-red-500 via-orange-500 to-amber-500"></div>
             
-            <div className="p-8">
-              <div className="flex justify-between items-center mb-8">
-                <div>
-                  <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tighter uppercase italic">File Destruct</h3>
-                  <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mt-1">Advanced Security Protocol</p>
-                </div>
-                <button onClick={() => setSelectedFileForSettings(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"><X className="text-gray-400 w-6 h-6" /></button>
-              </div>
-
-              <div className="space-y-6">
-                {/* 1. Max Downloads */}
-                <div className="bg-gray-50 dark:bg-black/40 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 relative group">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <Download className="w-4 h-4 text-primary-600 dark:text-primary-400" />
-                      <span className="text-xs font-black text-gray-900 dark:text-gray-200 uppercase tracking-tight">Download Limit</span>
+             <div className="p-10 md:p-12">
+               <div className="flex justify-between items-start mb-10">
+                 <div className="flex items-center gap-5">
+                    <div className="w-14 h-14 bg-primary-600 dark:bg-primary-500 rounded-[1.5rem] flex items-center justify-center shadow-2xl shadow-primary-500/20 rotate-3">
+                       <ShieldCheck className="w-7 h-7 text-white" />
                     </div>
-                    {appUser?.plan === PlanType.FREE && (
-                      <span className="text-[9px] font-black bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-500 px-2 py-0.5 rounded-full uppercase tracking-widest">Plus+</span>
-                    )}
-                  </div>
-                  <input 
-                    type="number"
-                    disabled={appUser?.plan === PlanType.FREE}
-                    placeholder="Unlimited"
-                    value={fileSettings[selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any]?.maxDownloads || ''}
-                    onChange={(e) => {
-                      const val = e.target.value === '' ? undefined : parseInt(e.target.value);
-                      const key = selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any;
-                      setFileSettings({ ...fileSettings, [key]: { ...fileSettings[key], maxDownloads: val } });
-                    }}
-                    className={`w-full bg-white dark:bg-black border border-gray-100 dark:border-gray-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-primary-500 transition-all font-bold ${appUser?.plan === PlanType.FREE ? 'opacity-50 cursor-not-allowed' : 'dark:text-white'}`}
-                  />
-                  <p className="text-[9px] text-gray-400 mt-2 font-medium">Auto-delete after reaching this many successful downloads.</p>
-                </div>
-
-                {/* 2. Vanishing Timer */}
-                <div className="bg-gray-50 dark:bg-black/40 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 relative group">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-orange-600 dark:text-orange-400" />
-                      <span className="text-xs font-black text-gray-900 dark:text-gray-200 uppercase tracking-tight">Vanishing Timer</span>
+                    <div>
+                      <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tighter uppercase italic leading-none">File Destruct</h3>
+                      <p className="text-[10px] font-black text-primary-600 dark:text-primary-400 uppercase tracking-[0.2em] mt-2">Advanced Security Protocol</p>
                     </div>
-                    {appUser?.plan === PlanType.FREE && (
-                      <span className="text-[9px] font-black bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-500 px-2 py-0.5 rounded-full uppercase tracking-widest">Plus+</span>
-                    )}
-                  </div>
-                  <select
-                    disabled={appUser?.plan === PlanType.FREE}
-                    value={fileSettings[selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any]?.deleteAfterMinutes || ''}
-                    onChange={(e) => {
-                      const val = e.target.value === '' ? undefined : parseInt(e.target.value);
-                      const key = selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any;
-                      setFileSettings({ ...fileSettings, [key]: { ...fileSettings[key], deleteAfterMinutes: val } });
-                    }}
-                    className={`w-full bg-white dark:bg-black border border-gray-100 dark:border-gray-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-orange-500 transition-all font-bold ${appUser?.plan === PlanType.FREE ? 'opacity-50 cursor-not-allowed' : 'dark:text-white'}`}
-                  >
-                    <option value="">Never vanish</option>
-                    <option value="1">1 Minute after opening</option>
-                    <option value="5">5 Minutes after opening</option>
-                    <option value="60">1 Hour after opening</option>
-                    <option value="1440">24 Hours after opening</option>
-                  </select>
-                  <p className="text-[9px] text-gray-400 mt-2 font-medium">Countdown begins once the visitor first previews or downloads this file.</p>
-                </div>
+                 </div>
+                 <button onClick={() => setSelectedFileForSettings(null)} className="p-3 hover:bg-gray-100 dark:hover:bg-white/5 rounded-2xl transition-all active:scale-90 text-gray-400 hover:text-gray-900 dark:hover:text-white border border-transparent hover:border-gray-200 dark:hover:border-white/10"><X className="w-6 h-6" /></button>
+               </div>
 
-                {/* 3. Fixed Expiry */}
-                <div className="bg-gray-50 dark:bg-black/40 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 relative group">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-red-600 dark:text-red-400" />
-                      <span className="text-xs font-black text-gray-900 dark:text-gray-200 uppercase tracking-tight">Hard Expiry</span>
-                    </div>
-                    {appUser?.plan === PlanType.FREE && (
-                      <span className="text-[9px] font-black bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-500 px-2 py-0.5 rounded-full uppercase tracking-widest">Plus+</span>
-                    )}
-                  </div>
-                  <input 
-                    type="datetime-local"
-                    disabled={appUser?.plan === PlanType.FREE}
-                    value={fileSettings[selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any]?.expiresAt || ''}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      const key = selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any;
-                      setFileSettings({ ...fileSettings, [key]: { ...fileSettings[key], expiresAt: val } });
-                    }}
-                    className={`w-full bg-white dark:bg-black border border-gray-100 dark:border-gray-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-red-500 transition-all font-bold ${appUser?.plan === PlanType.FREE ? 'opacity-50 cursor-not-allowed' : 'dark:text-white'}`}
-                  />
-                  <p className="text-[9px] text-gray-400 mt-2 font-medium">File will vanish on this specific date regardless of views.</p>
-                </div>
-              </div>
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                 {/* 1. Max Downloads */}
+                 <div className="bg-gray-50 dark:bg-black/40 p-6 rounded-[2rem] border border-gray-100 dark:border-white/5 relative group transition-all hover:bg-white dark:hover:bg-black/60 hover:shadow-xl hover:shadow-primary-500/5 hover:border-primary-100 dark:hover:border-primary-900/10">
+                   <div className="flex items-center justify-between mb-5">
+                     <div className="flex items-center gap-3">
+                       <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-xl">
+                          <Download className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                       </div>
+                       <span className="text-xs font-black text-gray-900 dark:text-gray-200 uppercase tracking-tight">Download Limit</span>
+                     </div>
+                     {appUser?.plan === PlanType.FREE && (
+                       <span className="text-[9px] font-black bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-500 px-2 py-0.5 rounded-full uppercase tracking-widest">Plus+</span>
+                     )}
+                   </div>
+                   <div className="relative">
+                      <input 
+                        type="number"
+                        disabled={appUser?.plan === PlanType.FREE}
+                        placeholder="Unlimited"
+                        value={fileSettings[selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any]?.maxDownloads || ''}
+                        onChange={(e) => {
+                          const val = e.target.value === '' ? undefined : parseInt(e.target.value);
+                          const key = selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any;
+                          setFileSettings({ ...fileSettings, [key]: { ...fileSettings[key], maxDownloads: val } });
+                        }}
+                        className={`w-full bg-white dark:bg-black/40 border border-gray-200 dark:border-white/5 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-primary-500 transition-all font-bold text-sm ${appUser?.plan === PlanType.FREE ? 'opacity-50 cursor-not-allowed' : 'dark:text-white'}`}
+                      />
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-bold uppercase tracking-widest pointer-events-none">Hits</div>
+                   </div>
+                   <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-4 font-bold uppercase tracking-tight leading-relaxed">Auto-delete after reaching this many successful downloads.</p>
+                 </div>
 
-              <div className="mt-10 flex gap-4">
-                 {appUser?.plan === PlanType.FREE ? (
-                  <Link to="/pricing" onClick={() => setSelectedFileForSettings(null)} className="flex-1 bg-gradient-to-r from-amber-500 to-orange-600 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 animate-in slide-in-from-bottom-2">
-                    <Zap className="w-4 h-4 fill-current" /> Upgrade to Plus
-                  </Link>
-                 ) : (
-                  <button onClick={() => setSelectedFileForSettings(null)} className="flex-1 bg-gray-900 dark:bg-white dark:text-gray-900 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl hover:scale-95 transition-all">
-                    Apply Protocol
-                  </button>
-                 )}
-              </div>
+                 {/* 2. Vanishing Timer */}
+                 <div className="bg-gray-50 dark:bg-black/40 p-6 rounded-[2rem] border border-gray-100 dark:border-white/5 relative group transition-all hover:bg-white dark:hover:bg-black/60 hover:shadow-xl hover:shadow-orange-500/5 hover:border-orange-100 dark:hover:border-orange-900/10">
+                   <div className="flex items-center justify-between mb-5">
+                     <div className="flex items-center gap-3">
+                        <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-xl">
+                           <Clock className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                        </div>
+                       <span className="text-xs font-black text-gray-900 dark:text-gray-200 uppercase tracking-tight">Vanishing Timer</span>
+                     </div>
+                     {appUser?.plan === PlanType.FREE && (
+                       <span className="text-[9px] font-black bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-500 px-2 py-0.5 rounded-full uppercase tracking-widest">Plus+</span>
+                     )}
+                   </div>
+                   <select
+                     disabled={appUser?.plan === PlanType.FREE}
+                     value={fileSettings[selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any]?.deleteAfterMinutes || ''}
+                     onChange={(e) => {
+                       const val = e.target.value === '' ? undefined : parseInt(e.target.value);
+                       const key = selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any;
+                       setFileSettings({ ...fileSettings, [key]: { ...fileSettings[key], deleteAfterMinutes: val } });
+                     }}
+                     className={`w-full bg-white dark:bg-black/40 border border-gray-200 dark:border-white/5 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-orange-500 transition-all font-bold text-sm appearance-none ${appUser?.plan === PlanType.FREE ? 'opacity-50 cursor-not-allowed' : 'dark:text-white'}`}
+                   >
+                     <option value="">Never vanish</option>
+                     <option value="1">1 Minute after opening</option>
+                     <option value="5">5 Minutes after opening</option>
+                     <option value="60">1 Hour after opening</option>
+                     <option value="1440">24 Hours after opening</option>
+                   </select>
+                   <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-4 font-bold uppercase tracking-tight leading-relaxed">Countdown begins once the visitor first previews or downloads this file.</p>
+                 </div>
+
+                 {/* 3. Fixed Expiry */}
+                 <div className="bg-gray-50 dark:bg-black/40 p-6 rounded-[2rem] border border-gray-100 dark:border-white/5 relative group transition-all hover:bg-white dark:hover:bg-black/60 hover:shadow-xl hover:shadow-red-500/5 hover:border-red-100 dark:hover:border-red-900/10">
+                   <div className="flex items-center justify-between mb-5">
+                     <div className="flex items-center gap-3">
+                        <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-xl">
+                           <Calendar className="w-4 h-4 text-red-600 dark:text-red-400" />
+                        </div>
+                       <span className="text-xs font-black text-gray-900 dark:text-gray-200 uppercase tracking-tight">Hard Expiry</span>
+                     </div>
+                     {appUser?.plan === PlanType.FREE && (
+                       <span className="text-[9px] font-black bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-500 px-2 py-0.5 rounded-full uppercase tracking-widest">Plus+</span>
+                     )}
+                   </div>
+                   <input 
+                     type="datetime-local"
+                     disabled={appUser?.plan === PlanType.FREE}
+                     value={fileSettings[selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any]?.expiresAt || ''}
+                     onChange={(e) => {
+                       const val = e.target.value;
+                       const key = selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any;
+                       setFileSettings({ ...fileSettings, [key]: { ...fileSettings[key], expiresAt: val } });
+                     }}
+                     className={`w-full bg-white dark:bg-black/40 border border-gray-200 dark:border-white/5 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-red-500 transition-all font-bold text-sm ${appUser?.plan === PlanType.FREE ? 'opacity-50 cursor-not-allowed' : 'dark:text-white'}`}
+                   />
+                   <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-4 font-bold uppercase tracking-tight leading-relaxed">File will vanish on this specific date regardless of views.</p>
+                 </div>
+               </div>
+
+               <div className="mt-12 flex gap-4 max-w-xs mx-auto md:mx-0">
+                  {appUser?.plan === PlanType.FREE ? (
+                   <Link to="/pricing" onClick={() => setSelectedFileForSettings(null)} className="w-full bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-700 hover:to-indigo-700 text-white py-4 px-8 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary-500/20 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-95">
+                     <Zap className="w-4 h-4 fill-current text-white" /> Upgrade to Plus
+                   </Link>
+                  ) : (
+                   <button onClick={() => setSelectedFileForSettings(null)} className="w-full bg-primary-600 hover:bg-primary-700 text-white py-4 px-8 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary-500/20 active:scale-95 transition-all">
+                     Apply Protocol
+                   </button>
+                  )}
+               </div>
             </div>
           </div>
         </div>
