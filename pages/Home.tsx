@@ -120,6 +120,74 @@ export const Home: React.FC = () => {
         </div>
       </section>
 
+      {/* New Premium Features Highlight */}
+      <section className="py-32 bg-white dark:bg-[#0a0a0a] relative overflow-hidden transition-colors duration-300">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+           <div className="grid md:grid-cols-2 gap-24 items-center">
+              <div className="order-2 md:order-1 relative">
+                 <div className="absolute -top-20 -left-20 w-64 h-64 bg-primary-400/10 rounded-full blur-[100px] animate-pulse"></div>
+                 <div className="grid grid-cols-2 gap-4 relative z-10">
+                    <div className="space-y-4">
+                       <div className="p-8 bg-gray-50 dark:bg-white/5 rounded-[2.5rem] border border-gray-100 dark:border-white/10 shadow-sm hover:scale-105 transition-transform">
+                          <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
+                             <QrCode className="w-6 h-6 text-violet-500" />
+                          </div>
+                          <h4 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest mb-2">QR Skins</h4>
+                          <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed font-medium">Dynamic shapes, dots, and custom frames for your codes.</p>
+                       </div>
+                       <div className="p-8 bg-primary-600 rounded-[2.5rem] shadow-xl shadow-primary-500/30 hover:scale-105 transition-transform">
+                          <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-6 text-white">
+                             <Globe className="w-6 h-6" />
+                          </div>
+                          <h4 className="text-sm font-black text-white uppercase tracking-widest mb-2">White-Label</h4>
+                          <p className="text-[11px] text-white/80 leading-relaxed font-medium">Map your own custom domain (files.yourbrand.com) to your vaults.</p>
+                       </div>
+                    </div>
+                    <div className="space-y-4 pt-12">
+                       <div className="p-8 bg-gray-900 rounded-[2.5rem] shadow-2xl hover:scale-105 transition-transform">
+                          <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mb-6 text-primary-400">
+                             <Image className="w-6 h-6" />
+                          </div>
+                          <h4 className="text-sm font-black text-white uppercase tracking-widest mb-2">Center Logo</h4>
+                          <p className="text-[11px] text-gray-400 leading-relaxed font-medium">Embed your brand logo directly into the heart of the QR code.</p>
+                       </div>
+                       <div className="p-8 bg-gray-50 dark:bg-white/5 rounded-[2.5rem] border border-gray-100 dark:border-white/10 shadow-sm hover:scale-105 transition-transform">
+                          <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
+                             <Shuffle className="w-6 h-6 text-emerald-500" />
+                          </div>
+                          <h4 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest mb-2">Live Swap</h4>
+                          <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed font-medium">Update files anytime without changing your QR code printed on stickers.</p>
+                       </div>
+                    </div>
+                 </div>
+              </div>
+              <div className="order-1 md:order-2">
+                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 text-sm font-bold mb-8 uppercase tracking-widest">
+                    <Zap className="w-4 h-4 fill-primary-500" /> Performance Layer
+                 </div>
+                 <h2 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white mb-8 leading-[1.1]">The Ultimate <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-indigo-600">Dynamic QR</span> Engine.</h2>
+                 <p className="text-gray-500 dark:text-gray-400 text-lg mb-10 font-medium max-w-lg leading-relaxed">Stop using static, boring QR codes that break when you change a file. QR Vault provides a full performance engine to manage your digital presence.</p>
+                 <div className="space-y-6">
+                    {[
+                       { title: "Universal White-Labeling", desc: "Your users see your brand, not our domain.", icon: <Globe className="w-5 h-5" /> },
+                       { title: "Visual Recognition", desc: "Custom colors and logos increase scan rates by up to 40%.", icon: <Star className="w-5 h-5" /> }
+                    ].map((feat, i) => (
+                       <div key={i} className="flex gap-4">
+                          <div className="flex-shrink-0 w-12 h-12 bg-primary-50 dark:bg-primary-900/20 rounded-2xl flex items-center justify-center text-primary-600 dark:text-primary-400">
+                             {feat.icon}
+                          </div>
+                          <div>
+                             <h4 className="font-bold text-gray-900 dark:text-white mb-1">{feat.title}</h4>
+                             <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed font-medium">{feat.desc}</p>
+                          </div>
+                       </div>
+                    ))}
+                 </div>
+              </div>
+           </div>
+        </div>
+      </section>
+
       {/* Security Featurette */}
       <section className="py-24 bg-gray-900 text-white overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

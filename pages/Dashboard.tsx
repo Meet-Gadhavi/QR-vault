@@ -1141,7 +1141,7 @@ export const Dashboard: React.FC = () => {
               {appUser.plan !== PlanType.PRO && (
                 <Link
                   to={`/pricing`}
-                  className="flex items-center justify-center gap-2 bg-gradient-to-r from-primary-600 to-indigo-600 text-white px-6 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary-500/20 hover:shadow-2xl hover:scale-[1.02] active:scale-95 transition-all"
+                  className="flex items-center justify-center gap-2 bg-gradient-to-r from-amber-300 via-yellow-100 to-amber-300 bg-[length:200%_auto] animate-shine border border-amber-300 text-amber-900 px-6 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-amber-500/20 hover:shadow-2xl hover:scale-[1.02] active:scale-95 transition-all"
                 >
                   <Zap className="w-4 h-4 fill-current" />
                   Upgrade to {appUser.plan === PlanType.FREE ? 'Plus' : 'Pro'}
@@ -1161,10 +1161,10 @@ export const Dashboard: React.FC = () => {
                   <button
                     onClick={openCreateModal}
                     disabled={isOverLimit}
-                    className={`flex items-center justify-center gap-2 px-6 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl transition-all ${isOverLimit ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none' : 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:scale-[1.02] active:scale-95 shadow-gray-900/10 dark:shadow-none'}`}
+                    className={`flex items-center justify-center gap-2 px-6 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl transition-all ${isOverLimit ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none' : 'bg-primary-600 hover:bg-primary-700 text-white hover:shadow-lg shadow-primary-500/20'}`}
                   >
                     {isOverLimit ? <Lock className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                    {isOverLimit ? 'Vault Locked' : 'Initialize Vault'}
+                    {isOverLimit ? 'Vault Locked' : 'Create Vault'}
                   </button>
 
                   {!googleTokens && isPaidPlan && (
@@ -2167,42 +2167,56 @@ export const Dashboard: React.FC = () => {
                     <div className="p-2.5 bg-indigo-500 text-white rounded-2xl shadow-lg shadow-indigo-500/20">
                       <Globe className="w-5 h-5" />
                     </div>
+              </div>
+              {/* END TWO-COLUMN GRID */}
+
+              {/* Branded Domain Section (PRO Feature) - Moved to be standalone */}
+              <div className="bg-white/50 dark:bg-black/40 p-10 rounded-[2.5rem] border border-gray-100 dark:border-white/5 space-y-6 shadow-sm group transition-all hover:bg-white/80 dark:hover:bg-primary-900/5 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-8 opacity-5">
+                   <Globe className="w-24 h-24 text-primary-500" />
+                </div>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-gradient-to-br from-primary-500 to-indigo-600 text-white rounded-2xl shadow-xl shadow-primary-500/20">
+                      <Globe className="w-6 h-6" />
+                    </div>
                     <div>
-                      <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] leading-none mb-1">Branded Domain</h3>
-                      <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Connect Custom Host</p>
+                      <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] leading-none mb-1.5">Branded Domain</h3>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Connect your custom hostname</p>
                     </div>
                   </div>
                   {appUser?.plan !== PlanType.PRO && (
-                    <div className="flex items-center justify-center px-3 py-1 bg-primary-50 dark:bg-primary-500/10 rounded-full border border-primary-100 dark:border-primary-500/20 gap-1.5 animate-pulse h-fit">
-                      <Zap className="w-2.5 h-2.5 fill-primary-500 text-primary-500" />
-                      <span className="text-[8px] font-black text-primary-600 dark:text-primary-400 uppercase tracking-widest leading-none">PRO FEATURE</span>
+                    <div className="flex items-center justify-center px-4 py-1.5 bg-primary-100 dark:bg-primary-900/30 rounded-full border border-primary-200 dark:border-primary-800 gap-2 animate-bounce h-fit">
+                      <Zap className="w-3 h-3 fill-primary-600 text-primary-600" />
+                      <span className="text-[9px] font-black text-primary-700 dark:text-primary-400 uppercase tracking-widest leading-none">PRO FEATURE</span>
                     </div>
                   )}
                 </div>
                 
-                <div className="relative">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-xs">https://</div>
-                  <input
-                    type="text"
-                    disabled={appUser?.plan !== PlanType.PRO}
-                    className={`w-full pl-16 pr-4 py-4 bg-gray-50 dark:bg-black border border-gray-200 dark:border-gray-800 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold text-sm dark:text-white ${appUser?.plan !== PlanType.PRO ? 'opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-900' : ''}`}
-                    value={customDomain}
-                    onChange={(e) => setCustomDomain(e.target.value)}
-                    placeholder="files.yourbrand.com"
-                  />
-                  {customDomain && appUser?.plan === PlanType.PRO && (
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                       <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce"></div>
-                       <span className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Live</span>
-                    </div>
-                  )}
+                <div className="relative z-10">
+                  <div className="relative group/input">
+                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 font-black text-xs tracking-widest">HTTPS://</div>
+                    <input
+                      type="text"
+                      disabled={appUser?.plan !== PlanType.PRO}
+                      className={`w-full pl-24 pr-6 py-5 bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-3xl focus:ring-4 focus:ring-primary-500/10 outline-none transition-all font-black text-sm dark:text-white shadow-inner ${appUser?.plan !== PlanType.PRO ? 'opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-900' : 'hover:border-primary-300 dark:hover:border-primary-700'}`}
+                      value={customDomain}
+                      onChange={(e) => setCustomDomain(e.target.value)}
+                      placeholder="files.yourbrand.com"
+                    />
+                    {customDomain && appUser?.plan === PlanType.PRO && (
+                      <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-2 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-100 dark:border-emerald-500/20">
+                         <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                         <span className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Verified</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-4 flex items-center gap-2 px-2">
+                     <Share2 className="w-3 h-3 text-primary-500" />
+                     <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-tight">Access Link: <span className="text-primary-600 dark:text-primary-400">{customDomain || 'yourdomain.com'}/v/[id]</span></p>
+                  </div>
                 </div>
-                <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium px-1">Mapping: <span className="text-primary-500 font-black">{customDomain || 'yourdomain.com'}/v/[vault-id]</span></p>
               </div>
-              </div>
-              </div>
-              </div>
-              {/* END TWO-COLUMN GRID */}
 
               {/* Existing Files List (Edit Mode Only) */}
               {modalMode === 'EDIT' && existingFiles.length > 0 && (
@@ -2369,12 +2383,52 @@ export const Dashboard: React.FC = () => {
                   </div>
 
                   {/* Dynamic Designs - Premium */}
+                   {/* Middle Logo Upload Section - Moved up */}
+                   <div className="mt-3 p-5 bg-white dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-[2rem] flex items-center justify-between shadow-sm">
+                      <div className="flex items-center gap-4">
+                         <div className="w-12 h-12 bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 flex items-center justify-center overflow-hidden shadow-inner group/logo">
+                            {qrLogo ? (
+                               <img src={qrLogo} alt="QR Logo" className="w-full h-full object-cover transition-transform group-hover/logo:scale-110" />
+                            ) : (
+                               <Box className="w-6 h-6 text-gray-300" />
+                            )}
+                         </div>
+                         <div>
+                            <p className="text-[11px] font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] leading-none mb-1">Middle Logo</p>
+                            <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest">Everyone can customize</p>
+                         </div>
+                      </div>
+                      <input 
+                        type="file" 
+                        ref={qrLogoInputRef} 
+                        hidden 
+                        accept="image/*" 
+                        onChange={(e) => {
+                           const file = e.target.files?.[0];
+                           if (file) {
+                              const reader = new FileReader();
+                              reader.onloadend = () => setQrLogo(reader.result as string);
+                              reader.readAsDataURL(file);
+                           }
+                        }} 
+                      />
+                      <button 
+                        type="button" 
+                        onClick={() => qrLogoInputRef.current?.click()}
+                        className="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white border border-primary-500 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-primary-500/20"
+                      >
+                         {qrLogo ? 'Swap Logo' : 'Upload'}
+                      </button>
+                   </div>
+                  </div>
+
+                  {/* Dynamic Designs - Premium */}
                   <div className="relative">
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center justify-between mb-3 mt-4 sm:mt-0">
                       <p className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em]">Dynamic Designs</p>
                       <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 dark:bg-emerald-500/10 rounded-full border border-emerald-100 dark:border-emerald-500/20">
                          <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
-                         <span className="text-[8px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">ENABLED</span>
+                         <span className="text-[8px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">ENABLED FOR ALL</span>
                       </div>
                     </div>
                     <div className="grid grid-cols-3 gap-3">
@@ -2401,44 +2455,6 @@ export const Dashboard: React.FC = () => {
                           <span className="text-[8px] text-gray-400 font-medium leading-tight">{d.desc}</span>
                         </button>
                       ))}
-                    </div>
-                    
-                    {/* Middle Logo Upload Section */}
-                    <div className="mt-6 p-4 bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-[1.5rem] flex items-center justify-between">
-                       <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-white dark:bg-white/5 rounded-xl border border-gray-100 dark:border-white/10 flex items-center justify-center overflow-hidden">
-                             {qrLogo ? (
-                                <img src={qrLogo} alt="QR Logo" className="w-full h-full object-cover" />
-                             ) : (
-                                <Box className="w-5 h-5 text-gray-300" />
-                             )}
-                          </div>
-                          <div>
-                             <p className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-widest">Middle Logo</p>
-                             <p className="text-[8px] text-gray-400 font-bold uppercase tracking-tight">Everyone can customize</p>
-                          </div>
-                       </div>
-                       <input 
-                         type="file" 
-                         ref={qrLogoInputRef} 
-                         hidden 
-                         accept="image/*" 
-                         onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                               const reader = new FileReader();
-                               reader.onloadend = () => setQrLogo(reader.result as string);
-                               reader.readAsDataURL(file);
-                            }
-                         }} 
-                       />
-                       <button 
-                         type="button" 
-                         onClick={() => qrLogoInputRef.current?.click()}
-                         className="px-4 py-2 bg-white dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 border border-gray-100 dark:border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all active:scale-95"
-                       >
-                          {qrLogo ? 'Change' : 'Upload'}
-                       </button>
                     </div>
                 </div>
               </div>

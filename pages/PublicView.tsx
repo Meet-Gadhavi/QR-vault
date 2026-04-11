@@ -388,36 +388,41 @@ export const PublicView: React.FC = () => {
   );
 
   if (isExpired) return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-gray-50 relative overflow-hidden">
-      <div className="bg-white p-10 rounded-3xl shadow-xl border border-gray-100 max-w-md w-full relative z-10">
-        <div className="w-20 h-20 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-inner">
-          <Clock className="w-10 h-10 text-amber-500 animate-pulse" />
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-gray-50 dark:bg-[#0a0a0a] relative overflow-hidden transition-colors duration-300">
+      <div className="bg-white dark:bg-gray-900 p-10 rounded-[3rem] shadow-2xl border border-gray-100 dark:border-white/5 max-w-lg w-full relative z-10">
+        <div className="w-24 h-24 bg-red-50 dark:bg-red-500/10 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-inner">
+          <Trash2 className="w-12 h-12 text-red-500 animate-pulse" />
         </div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Vault Expired</h1>
-        <p className="font-semibold text-primary-600 mb-6 truncate px-4">&#8220;{expiredVaultName}&#8221;</p>
-        <div className="bg-amber-50 text-amber-800 p-5 rounded-2xl text-sm mb-8 border border-amber-100 leading-relaxed font-medium">
-          This vault has been automatically deleted based on our security and storage policy.
+        <h1 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight mb-4 leading-tight">Vault Offline</h1>
+        <p className="font-black text-primary-600 dark:text-primary-400 mb-6 uppercase tracking-widest text-xs italic bg-primary-50 dark:bg-primary-900/20 py-2 rounded-xl whitespace-nowrap overflow-hidden text-ellipsis px-4 mx-auto max-w-xs">&#8220;{expiredVaultName}&#8221;</p>
+        <div className="bg-red-50 dark:bg-red-500/5 text-red-800 dark:text-red-400 p-6 rounded-[1.5rem] text-[13px] mb-8 border border-red-100 dark:border-red-900/20 leading-relaxed font-black uppercase tracking-widest">
+          Vault has been deleted due to certain reasons, please connect with vault Owner
         </div>
-        {(vault?.userPlan === PlanType.FREE || vault?.userPlan === PlanType.STARTER) && (
-          <div className="space-y-4">
-            <Link to="/" className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-6 rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
-              Create Your Own Vault
-            </Link>
-            <p className="text-xs text-gray-400 dark:text-gray-500">
-              Want to keep files forever? <Link to="/pricing" className="text-primary-600 font-bold hover:underline">Check Pro Plans</Link>
-            </p>
+        <div className="space-y-4">
+          <Link to="/" className="w-full bg-primary-600 hover:bg-primary-700 text-white font-black py-4 px-6 rounded-2xl shadow-xl shadow-primary-500/20 transition-all flex items-center justify-center gap-2 uppercase text-xs tracking-[0.2em] active:scale-95">
+            Create Your Own Vault
+          </Link>
+          <div className="pt-2">
+             <Link to="/pricing" className="text-[10px] text-gray-400 dark:text-gray-500 font-bold hover:text-primary-600 uppercase tracking-widest transition-colors">Enterprise Data Protection Policy</Link>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
 
   if (!vault) return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-gray-50 dark:bg-[#0a0a0a]">
-      <div className="bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-sm border border-gray-200 dark:border-white/10 max-w-md">
-        <AlertCircle className="w-16 h-16 text-gray-300 dark:text-gray-700 mx-auto mb-4" />
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Vault Not Found</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-2 mb-6">This vault may have been deleted, the link is incorrect, or you don't have permission to view it.</p>
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-gray-50 dark:bg-[#0a0a0a] transition-colors duration-300">
+      <div className="bg-white dark:bg-gray-900 p-10 rounded-[3rem] shadow-2xl border border-gray-100 dark:border-white/5 max-w-lg w-full">
+        <div className="w-24 h-24 bg-gray-100 dark:bg-white/5 rounded-[2rem] flex items-center justify-center mx-auto mb-8">
+          <AlertCircle className="w-12 h-12 text-gray-300 dark:text-gray-600" />
+        </div>
+        <h1 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight mb-4">Vault Unavailable</h1>
+        <div className="bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-gray-400 p-6 rounded-[1.5rem] text-[13px] mb-8 border border-gray-100 dark:border-white/5 leading-relaxed font-black uppercase tracking-widest">
+          Vault has been deleted due to certain reasons, please connect with vault Owner
+        </div>
+        <Link to="/" className="w-full bg-primary-600 hover:bg-primary-700 text-white font-black py-4 px-6 rounded-2xl shadow-xl shadow-primary-500/20 transition-all flex items-center justify-center gap-2 uppercase text-xs tracking-[0.2em] active:scale-95">
+          Return to Hub
+        </Link>
       </div>
     </div>
   );
