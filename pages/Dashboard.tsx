@@ -1111,46 +1111,39 @@ export const Dashboard: React.FC = () => {
         {/* Welcome & Stats */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
           <div className="md:col-span-2 bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm relative overflow-hidden flex flex-col justify-between">
-            <div className="flex justify-between items-start relative z-10">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Welcome back, {appUser.name}</h1>
-                <p className="text-gray-500 dark:text-gray-400 mt-1">Manage your vaults and storage.</p>
+                <h1 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white tracking-tight leading-tight">
+                  Welcome, <span className="text-primary-600 dark:text-primary-400">{appUser.name}</span>
+                </h1>
+                <p className="text-gray-500 dark:text-gray-400 text-sm font-medium mt-1 uppercase tracking-widest opacity-80">Vault Management Protocol Active</p>
               </div>
-              <div className="flex flex-col items-end gap-2">
-                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${appUser.plan === PlanType.PRO ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400' : appUser.plan === PlanType.STARTER ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}>
+              <div className="flex flex-wrap items-center gap-3">
+                <span className={`px-4 py-1.5 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-sm ${appUser.plan === PlanType.PRO ? 'bg-purple-600 text-white' : appUser.plan === PlanType.STARTER ? 'bg-indigo-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'}`}>
                   {appUser.plan === PlanType.STARTER ? 'Plus' : appUser.plan} Plan
                 </span>
                 {timeLeft && (
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 px-2 py-1 rounded-lg">
-                    <Clock className="w-3 h-3" /> {timeLeft}
+                  <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-white/5 px-3 py-1.5 rounded-2xl border border-gray-100 dark:border-white/5">
+                    <Clock className="w-3.5 h-3.5" /> {timeLeft}
                   </div>
                 )}
                 {googleTokens && (
-                  <div className="flex items-center gap-1.5">
-                    <div className="flex items-center gap-1.5 text-xs text-green-600 bg-green-50 px-2 py-1 rounded-lg border border-green-100">
-                      <GoogleDriveImg className="w-3 h-3" />
-                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                      Drive Synced
-                    </div>
-                    <button
-                      onClick={disconnectGoogleDrive}
-                      className="p-1 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all"
-                      title="Disconnect Google Drive"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
+                  <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-1.5 rounded-2xl border border-emerald-100 dark:border-emerald-500/20">
+                    <GoogleDriveImg className="w-3.5 h-3.5" />
+                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping" />
+                    Synced
                   </div>
                 )}
               </div>
             </div>
 
-            <div className="mt-8 flex gap-4 relative z-10">
+            <div className="mt-8 flex flex-col sm:flex-row gap-4 relative z-10">
               {appUser.plan !== PlanType.PRO && (
                 <Link
                   to={`/pricing`}
-                  className="flex items-center gap-2 bg-gradient-to-r from-amber-300 via-yellow-100 to-amber-300 bg-[length:200%_auto] animate-shine border border-amber-300 text-amber-900 px-5 py-3 rounded-xl font-bold shadow-md hover:shadow-lg transition-all hover:scale-105"
+                  className="flex items-center justify-center gap-2 bg-gradient-to-r from-primary-600 to-indigo-600 text-white px-6 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary-500/20 hover:shadow-2xl hover:scale-[1.02] active:scale-95 transition-all"
                 >
-                  <Zap className="w-5 h-5 fill-current" />
+                  <Zap className="w-4 h-4 fill-current" />
                   Upgrade to {appUser.plan === PlanType.FREE ? 'Plus' : 'Pro'}
                 </Link>
               )}
@@ -1158,29 +1151,29 @@ export const Dashboard: React.FC = () => {
               {needsDriveConnection ? (
                 <button
                   onClick={handleConnectGoogleDrive}
-                  className="flex items-center gap-2 px-5 py-3 rounded-xl font-medium shadow-md transition-all bg-amber-50 border border-amber-200 text-amber-800 hover:bg-amber-100 animate-pulse"
+                  className="flex items-center justify-center gap-2 px-6 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-md transition-all bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 hover:bg-amber-100 active:scale-95"
                 >
                   <GoogleDriveImg className="w-5 h-5" />
-                  Connect Drive to Start
+                  Link Workspace
                 </button>
               ) : (
                 <>
                   <button
                     onClick={openCreateModal}
                     disabled={isOverLimit}
-                    className={`flex items-center gap-2 px-5 py-3 rounded-xl font-medium shadow-md transition-all ${isOverLimit ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700 text-white hover:shadow-lg'}`}
+                    className={`flex items-center justify-center gap-2 px-6 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl transition-all ${isOverLimit ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none' : 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:scale-[1.02] active:scale-95 shadow-gray-900/10 dark:shadow-none'}`}
                   >
-                    {isOverLimit ? <Lock className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
-                    {isOverLimit ? 'Storage Full' : 'Create New Vault'}
+                    {isOverLimit ? <Lock className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                    {isOverLimit ? 'Vault Locked' : 'Initialize Vault'}
                   </button>
 
                   {!googleTokens && isPaidPlan && (
                     <button
                       onClick={handleConnectGoogleDrive}
-                      className="flex items-center gap-2 px-5 py-3 rounded-xl font-medium shadow-md transition-all bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                      className="flex items-center justify-center gap-2 px-6 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-md transition-all bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 active:scale-95"
                     >
                       <GoogleDriveImg className="w-5 h-5" />
-                      Connect Google Drive
+                      Sync Cloud
                     </button>
                   )}
                 </>
@@ -2348,7 +2341,6 @@ export const Dashboard: React.FC = () => {
                 <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Standard Colors - Available to All */}
                   <div>
-                  <div>
                     <p className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em] mb-3">Global Branding</p>
                     <div className="flex flex-wrap gap-2">
                       {[
@@ -2450,8 +2442,8 @@ export const Dashboard: React.FC = () => {
                     </div>
                 </div>
               </div>
-
             </div>
+          </div>
 
 
             <div className="border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-[#0d0f14] rounded-b-2xl">
@@ -3044,7 +3036,7 @@ export const Dashboard: React.FC = () => {
                                 <Bar dataKey="engagement" fill="#7c3aed" radius={[8, 8, 0, 0]} barSize={40} />
                              </BarChart>
                           </ResponsiveContainer>
-                       </div>
+                       }</div>
                     </div>
                  </div>
                )}
@@ -3067,7 +3059,7 @@ export const Dashboard: React.FC = () => {
                                 <Bar dataKey="downloads" name="Downloads" fill="#10b981" radius={[0, 4, 4, 0]} />
                              </BarChart>
                           </ResponsiveContainer>
-                       </div>
+                       }</div>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

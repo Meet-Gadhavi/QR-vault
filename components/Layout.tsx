@@ -53,7 +53,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               <Link to="/pricing" className="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 font-medium text-sm transition-colors">Pricing</Link>
               <Link to="/changelog" className="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 font-medium text-sm transition-colors">Changelog</Link>
               <Link to="/api" className="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 font-medium text-sm transition-colors">API</Link>
-              
+              <Link to="/blogs" className="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 font-medium text-sm transition-colors">Blogs</Link>
+
               <div className="h-6 w-px bg-gray-200 dark:bg-gray-800 mx-2"></div>
 
               <ThemeToggle />
@@ -105,6 +106,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
              <Link to="/pricing" className="block text-gray-600 dark:text-gray-400 font-medium hover:text-primary-600" onClick={() => setIsMenuOpen(false)}>Pricing</Link>
              <Link to="/changelog" className="block text-gray-600 dark:text-gray-400 font-medium hover:text-primary-600" onClick={() => setIsMenuOpen(false)}>Changelog</Link>
              <Link to="/api" className="block text-gray-600 dark:text-gray-400 font-medium hover:text-primary-600" onClick={() => setIsMenuOpen(false)}>API</Link>
+             <Link to="/blogs" className="block text-gray-600 dark:text-gray-400 font-medium hover:text-primary-600" onClick={() => setIsMenuOpen(false)}>Blogs</Link>
              <div className="border-t border-gray-100 dark:border-gray-800 my-2"></div>
              
              {isAuthenticated ? (
