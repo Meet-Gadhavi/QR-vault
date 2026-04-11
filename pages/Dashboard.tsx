@@ -1541,13 +1541,13 @@ export const Dashboard: React.FC = () => {
                           </div>
 
                           {/* Engagement Indicator Box - Compact Dynamic Graph */}
-                            <div className={`w-full h-24 rounded-[1.5rem] border relative transition-all duration-500 group/engage hover:scale-[1.01] shadow-sm overflow-hidden ${
+                            <div className={`w-full mt-4 rounded-[1.5rem] border relative transition-all duration-500 group/engage hover:scale-[1.01] shadow-sm overflow-hidden ${
                                 vault.views > 80 
                                 ? 'bg-emerald-500/[0.02] border-emerald-500/10 text-emerald-500' 
                                 : vault.views > 30 
                                 ? 'bg-orange-500/[0.02] border-orange-500/10 text-orange-500' 
                                 : 'bg-red-500/[0.02] border-red-500/10 text-red-500'
-                            }`}>
+                            }`} style={{ minHeight: '9rem' }}>
                                 {/* Action Arrow */}
                                 <button 
                                   onClick={(e) => { e.stopPropagation(); setSelectedAnalyticsVault(vault); }}
@@ -1861,8 +1861,13 @@ export const Dashboard: React.FC = () => {
       </div>
       {/* ... keeping Modals ... */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-800">
+        <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-4xl max-h-[93vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-800 custom-scrollbar"
+            style={{
+              scrollbarWidth: 'thin',
+              scrollbarColor: 'rgba(139,92,246,0.35) transparent'
+            }}
+          >
             <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center sticky top-0 bg-white dark:bg-gray-900 z-10">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                 {modalMode === 'CREATE' ? 'Create New Vault' : 'Edit Vault'}
@@ -1876,8 +1881,12 @@ export const Dashboard: React.FC = () => {
             </div>
 
             <div className="p-6 space-y-6">
+              {/* Two-column layout on wider screens */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* LEFT COLUMN */}
+                <div className="space-y-6">
 
-              {/* Name Input */}
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vault Name</label>
                 <input
@@ -1953,6 +1962,10 @@ export const Dashboard: React.FC = () => {
                   </button>
                 </div>
               </div>
+
+                {/* RIGHT COLUMN */}
+                </div>
+                <div className="space-y-6">
 
               {/* Self-Destruct Settings Group */}
               <div className="bg-gray-50/80 dark:bg-[#0f1115] p-7 rounded-[2.5rem] border border-gray-100 dark:border-white/5 space-y-8 shadow-inner">
@@ -2137,6 +2150,9 @@ export const Dashboard: React.FC = () => {
                 <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-2 font-medium">Vault wipes itself once scan limit is reached.</p>
               </div>
               </div>
+              </div>
+              </div>
+              {/* END TWO-COLUMN GRID */}
 
               {/* Existing Files List (Edit Mode Only) */}
               {modalMode === 'EDIT' && existingFiles.length > 0 && (
@@ -2256,6 +2272,104 @@ export const Dashboard: React.FC = () => {
                   </div>
                 )}
               </div>
+
+              {/* QR Customization Section */}
+              <div className="rounded-[2rem] border border-gray-100 dark:border-white/5 overflow-hidden bg-gradient-to-br from-gray-50/80 to-white dark:from-[#0d0f14] dark:to-[#0a0a0d]">
+                {/* Section Header */}
+                <div className="px-6 pt-6 pb-4 flex items-center justify-between border-b border-gray-100 dark:border-white/5">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 bg-gradient-to-br from-violet-500 to-indigo-600 text-white rounded-2xl shadow-lg shadow-violet-500/25">
+                      <QrCode className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] leading-none mb-0.5">QR Customization</h3>
+                      <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Visual Identity Layer</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Standard Colors - Available to All */}
+                  <div>
+                    <p className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em] mb-3">Standard Colors</p>
+                    <div className="grid grid-cols-5 gap-2">
+                      {[
+                        { color: '#7c3aed', label: 'Violet' },
+                        { color: '#0f172a', label: 'Ink Black' },
+                        { color: '#1d4ed8', label: 'Royal Blue' },
+                        { color: '#059669', label: 'Emerald' },
+                        { color: '#dc2626', label: 'Crimson' },
+                        { color: '#d97706', label: 'Amber' },
+                        { color: '#db2777', label: 'Rose' },
+                        { color: '#0891b2', label: 'Cyan' },
+                        { color: '#4f46e5', label: 'Indigo' },
+                        { color: '#374151', label: 'Slate' },
+                      ].map((c) => (
+                        <button
+                          key={c.color}
+                          type="button"
+                          title={c.label}
+                          className="w-8 h-8 rounded-xl border-2 transition-all duration-200 hover:scale-110 active:scale-95 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-violet-400"
+                          style={{ backgroundColor: c.color, borderColor: c.color }}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-[9px] text-gray-400 dark:text-gray-500 mt-3 font-medium">Tap a color to apply to your QR code.</p>
+                  </div>
+
+                  {/* Dynamic Designs - Premium */}
+                  <div className="relative">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em]">Dynamic Designs</p>
+                      {appUser?.plan !== PlanType.PRO && (
+                        <span className="flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[9px] font-black rounded-full shadow-md shadow-amber-500/20 uppercase tracking-widest">
+                          <Zap className="w-2.5 h-2.5 fill-current" /> Pro
+                        </span>
+                      )}
+                    </div>
+                    <div className={`grid grid-cols-3 gap-3 ${appUser?.plan !== PlanType.PRO ? 'pointer-events-none' : ''}`}>
+                      {[
+                        { id: 'shape-dots', icon: '⬤', label: 'Dots', desc: 'Rounded modules' },
+                        { id: 'shape-classy', icon: '◆', label: 'Classy', desc: 'Sharp pixels' },
+                        { id: 'logo', icon: '🏷', label: 'Logo', desc: 'Embed logo center' },
+                        { id: 'gradient-h', icon: '▬', label: 'Gradient H', desc: 'Horizontal blend' },
+                        { id: 'gradient-r', icon: '◉', label: 'Gradient R', desc: 'Radial burst' },
+                        { id: 'frame', icon: '▣', label: 'Frame', desc: 'Stylish border' },
+                      ].map((d) => (
+                        <button
+                          key={d.id}
+                          type="button"
+                          disabled={appUser?.plan !== PlanType.PRO}
+                          className={`relative p-3 rounded-2xl border-2 text-center transition-all duration-200 flex flex-col items-center gap-1 group ${
+                            appUser?.plan !== PlanType.PRO
+                              ? 'border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/2 opacity-60 cursor-not-allowed'
+                              : 'border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 hover:border-violet-400 dark:hover:border-violet-500 hover:bg-violet-50/50 dark:hover:bg-violet-500/10 hover:scale-105 cursor-pointer active:scale-95'
+                          }`}
+                        >
+                          <span className="text-xl leading-none">{d.icon}</span>
+                          <span className="text-[9px] font-black text-gray-700 dark:text-gray-300 uppercase tracking-tight">{d.label}</span>
+                          <span className="text-[8px] text-gray-400 font-medium leading-tight">{d.desc}</span>
+                        </button>
+                      ))}
+                    </div>
+                    {appUser?.plan !== PlanType.PRO && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/70 dark:bg-gray-900/80 backdrop-blur-[2px] rounded-2xl">
+                        <div className="text-center px-4">
+                          <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-2 shadow-lg shadow-amber-500/25">
+                            <Zap className="w-5 h-5 text-white fill-current" />
+                          </div>
+                          <p className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-widest mb-1">Pro Feature</p>
+                          <p className="text-[9px] text-gray-500 dark:text-gray-400 font-medium mb-3">Custom shapes, logos &amp; gradient colors</p>
+                          <Link to="/pricing" onClick={(e) => e.stopPropagation()} className="px-4 py-1.5 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white text-[9px] font-black rounded-xl transition-all shadow-md shadow-amber-500/25 active:scale-95 whitespace-nowrap uppercase tracking-widest inline-block">
+                            Upgrade to Pro
+                          </Link>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
             </div>
 
 
