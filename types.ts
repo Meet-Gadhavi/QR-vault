@@ -80,6 +80,7 @@ export interface Vault {
   reportCount?: number;                            // TOTAL flags received
   lockedUntil?: string;                            // NEW: ISO Date for temporary block
   analytics?: EngagementData;                      // NEW: Engagement analytics
+  customDomain?: string;                           // NEW: Branded URL (PRO only)
 }
 
 export interface Report {

@@ -5,7 +5,7 @@ import { supabase } from '../services/supabaseClient';
 import { Vault, User, PlanType, VaultFile, FileType, PLAN_LIMITS, AccessLevel, AccessRequest, RequestStatus, Invoice } from '../types';
 import { PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, Legend } from 'recharts';
 import QRCode from 'react-qr-code';
-import { UploadCloud, File as FileIcon, Link as LinkIcon, Trash2, ExternalLink, Plus, X, Loader2, Eye, HardDrive, QrCode, Copy, Check, MoreVertical, Edit2, Search, Filter, ArrowUpDown, Download, Zap, ChevronDown, Lock, Users, Shield, UserCheck, UserX, Clock, ShieldCheck, AlertTriangle, AlertCircle, RotateCcw, FileText, Shuffle, Settings, Calendar, Share2, Box, Settings2, ChevronRight, TrendingUp, ArrowUp } from 'lucide-react';
+import { UploadCloud, File as FileIcon, Link as LinkIcon, Trash2, ExternalLink, Plus, X, Loader2, Eye, HardDrive, QrCode, Copy, Check, MoreVertical, Edit2, Search, Filter, ArrowUpDown, Download, Zap, ChevronDown, Lock, Users, Shield, UserCheck, UserX, Clock, ShieldCheck, AlertTriangle, AlertCircle, RotateCcw, FileText, Shuffle, Settings, Calendar, Share2, Box, Settings2, ChevronRight, TrendingUp, ArrowUp, Globe } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -143,6 +143,7 @@ export const Dashboard: React.FC = () => {
 
   // Form State
   const [vaultName, setVaultName] = useState('');
+  const [customDomain, setCustomDomain] = useState('');
   const [accessLevel, setAccessLevel] = useState<AccessLevel>(AccessLevel.PUBLIC);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [links, setLinks] = useState<string[]>([]);
@@ -175,6 +176,10 @@ export const Dashboard: React.FC = () => {
   const [copied, setCopied] = useState(false);
   const [selectedFileForSettings, setSelectedFileForSettings] = useState<{ type: 'NEW' | 'EXISTING', index: number } | null>(null);
   const [fileSettings, setFileSettings] = useState<Record<string, any>>({}); // key is index for NEW, id for EXISTING
+  const [selectedQrDesign, setSelectedQrDesign] = useState<string>('standard');
+  const [selectedQrColor, setSelectedQrColor] = useState<string>('#000000');
+  const [qrLogo, setQrLogo] = useState<string | null>(null);
+  const qrLogoInputRef = useRef<HTMLInputElement>(null);
 
   // Google Drive State
   const [googleTokens, setGoogleTokens] = useState<any>(null);
@@ -430,6 +435,7 @@ export const Dashboard: React.FC = () => {
     setMaxViews(appUser?.plan === PlanType.PRO ? null : 25);
     setCustomMaxViews('');
     setVaultPassword('');
+    setCustomDomain('');
     setIsModalOpen(true);
   };
 
@@ -447,6 +453,7 @@ export const Dashboard: React.FC = () => {
     setAccessLevel(vault.accessLevel || AccessLevel.PUBLIC);
     setSelectedFiles([]);
     setLinks([]);
+    setCustomDomain(vault.customDomain || '');
     setExistingFiles(vault.files);
     setDeletedFileIds([]);
     
@@ -677,9 +684,9 @@ export const Dashboard: React.FC = () => {
 
       setUploadTask(3); // Finalizing
       if (modalMode === 'CREATE') {
-        await mockService.createVault(appUser.id, vaultName, finalFiles, links, accessLevel, appUser.email, expiresAt, finalMaxViews, vaultPassword);
+        await mockService.createVault(appUser.id, vaultName, finalFiles, links, accessLevel, appUser.email, expiresAt, finalMaxViews, vaultPassword, customDomain);
       } else if (modalMode === 'EDIT' && editingVaultId) {
-        await mockService.updateVault(appUser.id, editingVaultId, vaultName, finalFiles, links, deletedFileIds, accessLevel, appUser.email, expiresAt, finalMaxViews, vaultPassword);
+        await mockService.updateVault(appUser.id, editingVaultId, vaultName, finalFiles, links, deletedFileIds, accessLevel, appUser.email, expiresAt, finalMaxViews, vaultPassword, customDomain);
       }
       
       success = true;
@@ -917,7 +924,10 @@ export const Dashboard: React.FC = () => {
   };
 
   const getQrUrl = (vault: Vault) => {
-    // Robust URL generation: Origin + Path
+    // Robust URL generation: Support custom domains for PRO users
+    if (vault.customDomain && vault.userPlan === PlanType.PRO) {
+      return `https://${vault.customDomain}/v/${vault.id}`;
+    }
     const origin = window.location.origin;
     return `${origin}/v/${vault.id}`;
   };
@@ -1526,7 +1536,7 @@ export const Dashboard: React.FC = () => {
                             </div>
                             <div className="flex items-center gap-2 mt-2">
                                {vault.accessLevel === AccessLevel.RESTRICTED ? (
-                                 <span className="flex items-center gap-1 text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tight"><Shield className="w-3 h-3" /> Restricted</span>
+                                 <span className="flex items-center gap-1 text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tight"><Shield className="w-3 h-3" /> Restricted</span>
                                ) : (
                                  <span className="flex items-center gap-1 text-green-600 bg-green-50 px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tight"><Users className="w-3 h-3" /> Public</span>
                                )}
@@ -1545,38 +1555,45 @@ export const Dashboard: React.FC = () => {
                                 vault.views > 80 
                                 ? 'bg-emerald-500/[0.02] border-emerald-500/10 text-emerald-500' 
                                 : vault.views > 30 
-                                ? 'bg-orange-500/[0.02] border-orange-500/10 text-orange-500' 
+                                ? 'bg-primary-500/[0.02] border-primary-500/10 text-primary-500' 
                                 : 'bg-red-500/[0.02] border-red-500/10 text-red-500'
                             }`} style={{ minHeight: '9rem' }}>
-                                {/* Action Arrow */}
+                                { /* Action Arrow - Inclined only, no background square */ }
                                 <button 
                                   onClick={(e) => { e.stopPropagation(); setSelectedAnalyticsVault(vault); }}
-                                  className="absolute top-3 right-3 z-20 w-7 h-7 flex items-center justify-center bg-white/80 dark:bg-black/40 backdrop-blur-md rounded-lg border border-gray-200 dark:border-white/10 text-gray-400 hover:text-primary-500 dark:hover:text-primary-400 hover:bg-white dark:hover:bg-white/10 transition-all active:scale-90 group/arrow cursor-pointer"
+                                  className="absolute top-3 right-3 z-20 group/arrow cursor-pointer transition-all active:scale-90"
                                   title="View Detailed Analytics"
                                 >
-                                  <ArrowUp className="w-3.5 h-3.5 rotate-45 group-hover/arrow:scale-110 transition-transform" />
+                                  <ArrowUp className="w-5 h-5 rotate-45 text-primary-500/60 group-hover/arrow:text-primary-500 group-hover/arrow:scale-125 transition-all drop-shadow-sm" />
                                 </button>
 
-                                <div className="absolute inset-0 w-full h-full opacity-30 dark:opacity-50 -mb-2">
-                                  <ResponsiveContainer width="100%" height="100%">
-                                     <AreaChart data={generateTrendData(vault.id, vault.views > 80 ? 'high' : vault.views > 30 ? 'medium' : 'low')}>
-                                        <defs>
-                                           <linearGradient id={`grad-${vault.id}`} x1="0" y1="0" x2="0" y2="1">
-                                              <stop offset="0%" stopColor="currentColor" stopOpacity={0.5}/>
-                                              <stop offset="100%" stopColor="currentColor" stopOpacity={0}/>
-                                           </linearGradient>
-                                        </defs>
-                                        <Area 
-                                           type="monotone" 
-                                           dataKey="value" 
-                                           stroke="currentColor" 
-                                           strokeWidth={3} 
-                                           fill={`url(#grad-${vault.id})`} 
-                                           isAnimationActive={true}
-                                        />
-                                     </AreaChart>
-                                  </ResponsiveContainer>
-                                </div>
+                                {vault.views === 0 ? (
+                                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                    <TrendingUp className="w-12 h-12 text-gray-200 dark:text-gray-800 mb-2 opacity-50" />
+                                    <span className="text-[10px] font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest italic px-8 text-center leading-relaxed">NO Data to showcase !</span>
+                                  </div>
+                                ) : (
+                                  <div className="absolute inset-0 w-full h-full opacity-30 dark:opacity-50 -mb-2">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                      <AreaChart data={generateTrendData(vault.id, vault.views > 80 ? 'high' : vault.views > 30 ? 'medium' : 'low')}>
+                                          <defs>
+                                            <linearGradient id={`grad-${vault.id}`} x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="0%" stopColor="currentColor" stopOpacity={0.5}/>
+                                                <stop offset="100%" stopColor="currentColor" stopOpacity={0}/>
+                                            </linearGradient>
+                                          </defs>
+                                          <Area 
+                                            type="monotone" 
+                                            dataKey="value" 
+                                            stroke="currentColor" 
+                                            strokeWidth={3} 
+                                            fill={`url(#grad-${vault.id})`} 
+                                            isAnimationActive={true}
+                                          />
+                                      </AreaChart>
+                                    </ResponsiveContainer>
+                                  </div>
+                                )}
                             </div>
 
                             <div className="mt-auto pt-4 border-t border-gray-50 dark:border-gray-800 flex flex-col gap-3">
@@ -1906,7 +1923,7 @@ export const Dashboard: React.FC = () => {
                     <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-tight">Security & Privacy</h3>
                   </div>
                   {appUser?.plan !== PlanType.PRO && (
-                    <span className="flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[10px] font-black rounded-full shadow-lg shadow-amber-500/20 uppercase tracking-widest animate-pulse">
+                    <span className="flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-primary-400 to-indigo-600 text-white text-[10px] font-black rounded-full shadow-lg shadow-amber-500/20 uppercase tracking-widest animate-pulse">
                       <Zap className="w-3 h-3 fill-current" /> Pro Feature
                     </span>
                   )}
@@ -1952,11 +1969,11 @@ export const Dashboard: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setAccessLevel(AccessLevel.RESTRICTED)}
-                    className={`flex-1 p-4 rounded-xl border-2 text-left transition-all ${accessLevel === AccessLevel.RESTRICTED ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20' : 'border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-white dark:bg-gray-900'}`}
+                    className={`flex-1 p-4 rounded-xl border-2 text-left transition-all ${accessLevel === AccessLevel.RESTRICTED ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' : 'border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-white dark:bg-gray-900'}`}
                   >
                     <div className="flex items-center gap-2 mb-1">
-                      <Shield className={`w-5 h-5 ${accessLevel === AccessLevel.RESTRICTED ? 'text-orange-600' : 'text-gray-400'}`} />
-                      <span className={`font-bold ${accessLevel === AccessLevel.RESTRICTED ? 'text-orange-900 dark:text-white' : 'text-gray-700 dark:text-gray-400'}`}>Restricted</span>
+                      <Shield className={`w-5 h-5 ${accessLevel === AccessLevel.RESTRICTED ? 'text-primary-600' : 'text-gray-400'}`} />
+                      <span className={`font-bold ${accessLevel === AccessLevel.RESTRICTED ? 'text-primary-900 dark:text-white' : 'text-gray-700 dark:text-gray-400'}`}>Restricted</span>
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">Users must request access. You approve who can view.</p>
                   </button>
@@ -1979,8 +1996,8 @@ export const Dashboard: React.FC = () => {
                         <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Global Lifecycle Policy</p>
                       </div>
                    </div>
-                   <div className="px-3 py-1 bg-primary-50 dark:bg-primary-500/10 rounded-full border border-primary-100 dark:border-primary-500/20">
-                      <span className="text-[8px] font-black text-primary-600 dark:text-primary-400 uppercase tracking-widest">Active</span>
+                   <div className="flex items-center justify-center px-3 py-1 bg-primary-50 dark:bg-primary-500/10 rounded-full border border-primary-100 dark:border-primary-500/20 h-fit">
+                      <span className="text-[8px] font-black text-primary-600 dark:text-primary-400 uppercase tracking-widest leading-none">Active</span>
                    </div>
                 </div>
 
@@ -2149,6 +2166,46 @@ export const Dashboard: React.FC = () => {
                 
                 <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-2 font-medium">Vault wipes itself once scan limit is reached.</p>
               </div>
+              
+              {/* Custom Domain Section (PRO Feature) */}
+              <div className="bg-white dark:bg-black/40 p-7 rounded-[2.5rem] border border-gray-100 dark:border-white/5 space-y-4 shadow-sm group transition-all hover:bg-white/80 dark:hover:bg-primary-900/5">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 bg-indigo-500 text-white rounded-2xl shadow-lg shadow-indigo-500/20">
+                      <Globe className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] leading-none mb-1">Branded Domain</h3>
+                      <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Connect Custom Host</p>
+                    </div>
+                  </div>
+                  {appUser?.plan !== PlanType.PRO && (
+                    <div className="flex items-center justify-center px-3 py-1 bg-primary-50 dark:bg-primary-500/10 rounded-full border border-primary-100 dark:border-primary-500/20 gap-1.5 animate-pulse h-fit">
+                      <Zap className="w-2.5 h-2.5 fill-primary-500 text-primary-500" />
+                      <span className="text-[8px] font-black text-primary-600 dark:text-primary-400 uppercase tracking-widest leading-none">PRO FEATURE</span>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="relative">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-xs">https://</div>
+                  <input
+                    type="text"
+                    disabled={appUser?.plan !== PlanType.PRO}
+                    className={`w-full pl-16 pr-4 py-4 bg-gray-50 dark:bg-black border border-gray-200 dark:border-gray-800 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold text-sm dark:text-white ${appUser?.plan !== PlanType.PRO ? 'opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-900' : ''}`}
+                    value={customDomain}
+                    onChange={(e) => setCustomDomain(e.target.value)}
+                    placeholder="files.yourbrand.com"
+                  />
+                  {customDomain && appUser?.plan === PlanType.PRO && (
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                       <div className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce"></div>
+                       <span className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Live</span>
+                    </div>
+                  )}
+                </div>
+                <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium px-1">Mapping: <span className="text-primary-500 font-black">{customDomain || 'yourdomain.com'}/v/[vault-id]</span></p>
+              </div>
               </div>
               </div>
               </div>
@@ -2291,47 +2348,48 @@ export const Dashboard: React.FC = () => {
                 <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Standard Colors - Available to All */}
                   <div>
-                    <p className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em] mb-3">Standard Colors</p>
-                    <div className="grid grid-cols-5 gap-2">
+                  <div>
+                    <p className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em] mb-3">Global Branding</p>
+                    <div className="flex flex-wrap gap-2">
                       {[
-                        { color: '#7c3aed', label: 'Violet' },
-                        { color: '#0f172a', label: 'Ink Black' },
-                        { color: '#1d4ed8', label: 'Royal Blue' },
+                        { color: '#000000', label: 'Classic' },
+                        { color: '#7c3aed', label: 'Primary' },
+                        { color: '#2563eb', label: 'Royal' },
                         { color: '#059669', label: 'Emerald' },
                         { color: '#dc2626', label: 'Crimson' },
-                        { color: '#d97706', label: 'Amber' },
-                        { color: '#db2777', label: 'Rose' },
-                        { color: '#0891b2', label: 'Cyan' },
+                        { color: '#ea580c', label: 'Orange' },
                         { color: '#4f46e5', label: 'Indigo' },
-                        { color: '#374151', label: 'Slate' },
+                        { color: '#374151', label: 'Slate' }
                       ].map((c) => (
                         <button
                           key={c.color}
                           type="button"
+                          onClick={() => setSelectedQrColor(c.color)}
                           title={c.label}
-                          className="w-8 h-8 rounded-xl border-2 transition-all duration-200 hover:scale-110 active:scale-95 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-violet-400"
-                          style={{ backgroundColor: c.color, borderColor: c.color }}
+                          className={`w-8 h-8 rounded-xl border-2 transition-all duration-200 hover:scale-110 active:scale-95 shadow-sm focus:outline-none ${
+                            selectedQrColor === c.color ? 'ring-2 ring-primary-500 ring-offset-2 scale-110 border-white' : 'border-transparent'
+                          }`}
+                          style={{ backgroundColor: c.color }}
                         />
                       ))}
                     </div>
-                    <p className="text-[9px] text-gray-400 dark:text-gray-500 mt-3 font-medium">Tap a color to apply to your QR code.</p>
+                    <p className="text-[9px] text-gray-400 dark:text-gray-500 mt-3 font-medium">Global color theme for your vault presence.</p>
                   </div>
 
                   {/* Dynamic Designs - Premium */}
                   <div className="relative">
                     <div className="flex items-center justify-between mb-3">
                       <p className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em]">Dynamic Designs</p>
-                      {appUser?.plan !== PlanType.PRO && (
-                        <span className="flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[9px] font-black rounded-full shadow-md shadow-amber-500/20 uppercase tracking-widest">
-                          <Zap className="w-2.5 h-2.5 fill-current" /> Pro
-                        </span>
-                      )}
+                      <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 dark:bg-emerald-500/10 rounded-full border border-emerald-100 dark:border-emerald-500/20">
+                         <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+                         <span className="text-[8px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">ENABLED</span>
+                      </div>
                     </div>
-                    <div className={`grid grid-cols-3 gap-3 ${appUser?.plan !== PlanType.PRO ? 'pointer-events-none' : ''}`}>
+                    <div className="grid grid-cols-3 gap-3">
                       {[
+                        { id: 'standard', icon: '▤', label: 'Standard', desc: 'Classic blocks' },
                         { id: 'shape-dots', icon: '⬤', label: 'Dots', desc: 'Rounded modules' },
                         { id: 'shape-classy', icon: '◆', label: 'Classy', desc: 'Sharp pixels' },
-                        { id: 'logo', icon: '🏷', label: 'Logo', desc: 'Embed logo center' },
                         { id: 'gradient-h', icon: '▬', label: 'Gradient H', desc: 'Horizontal blend' },
                         { id: 'gradient-r', icon: '◉', label: 'Gradient R', desc: 'Radial burst' },
                         { id: 'frame', icon: '▣', label: 'Frame', desc: 'Stylish border' },
@@ -2339,11 +2397,11 @@ export const Dashboard: React.FC = () => {
                         <button
                           key={d.id}
                           type="button"
-                          disabled={appUser?.plan !== PlanType.PRO}
-                          className={`relative p-3 rounded-2xl border-2 text-center transition-all duration-200 flex flex-col items-center gap-1 group ${
-                            appUser?.plan !== PlanType.PRO
-                              ? 'border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/2 opacity-60 cursor-not-allowed'
-                              : 'border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 hover:border-violet-400 dark:hover:border-violet-500 hover:bg-violet-50/50 dark:hover:bg-violet-500/10 hover:scale-105 cursor-pointer active:scale-95'
+                          onClick={() => setSelectedQrDesign(d.id)}
+                          className={`relative p-3 rounded-2xl border-2 text-center transition-all duration-200 flex flex-col items-center gap-1 group shadow-sm ${
+                            selectedQrDesign === d.id 
+                            ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-500/10 scale-105' 
+                            : 'border-gray-100 dark:border-white/5 bg-white dark:bg-white/5 hover:border-violet-400 dark:hover:border-violet-500 hover:scale-105'
                           }`}
                         >
                           <span className="text-xl leading-none">{d.icon}</span>
@@ -2352,21 +2410,44 @@ export const Dashboard: React.FC = () => {
                         </button>
                       ))}
                     </div>
-                    {appUser?.plan !== PlanType.PRO && (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/70 dark:bg-gray-900/80 backdrop-blur-[2px] rounded-2xl">
-                        <div className="text-center px-4">
-                          <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-2 shadow-lg shadow-amber-500/25">
-                            <Zap className="w-5 h-5 text-white fill-current" />
+                    
+                    {/* Middle Logo Upload Section */}
+                    <div className="mt-6 p-4 bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-[1.5rem] flex items-center justify-between">
+                       <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-white dark:bg-white/5 rounded-xl border border-gray-100 dark:border-white/10 flex items-center justify-center overflow-hidden">
+                             {qrLogo ? (
+                                <img src={qrLogo} alt="QR Logo" className="w-full h-full object-cover" />
+                             ) : (
+                                <Box className="w-5 h-5 text-gray-300" />
+                             )}
                           </div>
-                          <p className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-widest mb-1">Pro Feature</p>
-                          <p className="text-[9px] text-gray-500 dark:text-gray-400 font-medium mb-3">Custom shapes, logos &amp; gradient colors</p>
-                          <Link to="/pricing" onClick={(e) => e.stopPropagation()} className="px-4 py-1.5 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white text-[9px] font-black rounded-xl transition-all shadow-md shadow-amber-500/25 active:scale-95 whitespace-nowrap uppercase tracking-widest inline-block">
-                            Upgrade to Pro
-                          </Link>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                          <div>
+                             <p className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-widest">Middle Logo</p>
+                             <p className="text-[8px] text-gray-400 font-bold uppercase tracking-tight">Everyone can customize</p>
+                          </div>
+                       </div>
+                       <input 
+                         type="file" 
+                         ref={qrLogoInputRef} 
+                         hidden 
+                         accept="image/*" 
+                         onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                               const reader = new FileReader();
+                               reader.onloadend = () => setQrLogo(reader.result as string);
+                               reader.readAsDataURL(file);
+                            }
+                         }} 
+                       />
+                       <button 
+                         type="button" 
+                         onClick={() => qrLogoInputRef.current?.click()}
+                         className="px-4 py-2 bg-white dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 border border-gray-100 dark:border-white/10 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all active:scale-95"
+                       >
+                          {qrLogo ? 'Change' : 'Upload'}
+                       </button>
+                    </div>
                 </div>
               </div>
 
@@ -2506,7 +2587,7 @@ export const Dashboard: React.FC = () => {
                         <p className="font-semibold text-gray-900 truncate" title={req.email}>{req.email}</p>
                         <p className="text-xs text-gray-500">{new Date(req.requestedAt).toLocaleDateString()}</p>
                         <span className={`text-xs font-bold uppercase ${req.status === RequestStatus.APPROVED ? 'text-green-600' :
-                          req.status === RequestStatus.REJECTED ? 'text-red-600' : 'text-orange-600'
+                          req.status === RequestStatus.REJECTED ? 'text-red-600' : 'text-primary-600'
                           }`}>
                           {req.status}
                         </span>
@@ -2653,7 +2734,7 @@ export const Dashboard: React.FC = () => {
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex flex-wrap gap-2">
                         {report.reason_virus && <span className="bg-red-50 text-red-600 px-2 py-1 rounded-lg text-[9px] font-black uppercase ring-1 ring-red-100">Virus/Malware</span>}
-                        {report.reason_content && <span className="bg-orange-50 text-orange-600 px-2 py-1 rounded-lg text-[9px] font-black uppercase ring-1 ring-orange-100">Illegal Content</span>}
+                        {report.reason_content && <span className="bg-primary-50 text-primary-600 px-2 py-1 rounded-lg text-[9px] font-black uppercase ring-1 ring-orange-100">Illegal Content</span>}
                         {!report.reason_virus && !report.reason_content && <span className="bg-gray-50 text-gray-500 px-2 py-1 rounded-lg text-[9px] font-black uppercase ring-1 ring-gray-100">Other Violation</span>}
                       </div>
                       <span className="text-[10px] font-black text-gray-300 uppercase tracking-tighter">{new Date(report.created_at).toLocaleString()}</span>
@@ -2706,7 +2787,6 @@ export const Dashboard: React.FC = () => {
          <div className="fixed inset-0 bg-black/60 dark:bg-black/95 backdrop-blur-xl z-[100] flex items-center justify-center p-4 animate-in fade-in duration-500">
            <div className="bg-white dark:bg-[#0d0f14] rounded-[3rem] w-full max-w-5xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] dark:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.8)] animate-in zoom-in-95 duration-500 border border-white/20 dark:border-white/5 overflow-hidden relative">
              <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary-600 via-primary-400 to-indigo-600 opacity-80"></div>
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-red-500 via-orange-500 to-amber-500"></div>
             
              <div className="p-10 md:p-12">
                <div className="flex justify-between items-start mb-10">
@@ -2724,7 +2804,7 @@ export const Dashboard: React.FC = () => {
 
                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                  {/* 1. Max Downloads */}
-                 <div className="bg-gray-50 dark:bg-black/40 p-6 rounded-[2rem] border border-gray-100 dark:border-white/5 relative group transition-all hover:bg-white dark:hover:bg-black/60 hover:shadow-xl hover:shadow-primary-500/5 hover:border-primary-100 dark:hover:border-primary-900/10">
+                 <div className="bg-gray-50 dark:bg-black/60 p-6 rounded-[2rem] border border-gray-100 dark:border-white/5 relative group transition-all hover:bg-white dark:hover:bg-primary-900/10 hover:shadow-xl hover:shadow-primary-500/5">
                    <div className="flex items-center justify-between mb-5">
                      <div className="flex items-center gap-3">
                        <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-xl">
@@ -2733,7 +2813,7 @@ export const Dashboard: React.FC = () => {
                        <span className="text-xs font-black text-gray-900 dark:text-gray-200 uppercase tracking-tight">Download Limit</span>
                      </div>
                      {appUser?.plan === PlanType.FREE && (
-                       <span className="text-[9px] font-black bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-500 px-2 py-0.5 rounded-full uppercase tracking-widest">Plus+</span>
+                       <span className="text-[9px] font-black bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-300 px-2 py-0.5 rounded-full uppercase tracking-widest">Plus+</span>
                      )}
                    </div>
                    <div className="relative">
@@ -2747,24 +2827,24 @@ export const Dashboard: React.FC = () => {
                           const key = selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any;
                           setFileSettings({ ...fileSettings, [key]: { ...fileSettings[key], maxDownloads: val } });
                         }}
-                        className={`w-full bg-white dark:bg-black/40 border border-gray-200 dark:border-white/5 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-primary-500 transition-all font-bold text-sm ${appUser?.plan === PlanType.FREE ? 'opacity-50 cursor-not-allowed' : 'dark:text-white'}`}
+                        className={`w-full bg-white dark:bg-black/40 dark:text-white border border-gray-200 dark:border-white/10 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-primary-500 transition-all font-bold text-sm ${appUser?.plan === PlanType.FREE ? 'opacity-50 cursor-not-allowed' : ''}`}
                       />
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-bold uppercase tracking-widest pointer-events-none">Hits</div>
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest pointer-events-none">Hits</div>
                    </div>
                    <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-4 font-bold uppercase tracking-tight leading-relaxed">Auto-delete after reaching this many successful downloads.</p>
                  </div>
 
                  {/* 2. Vanishing Timer */}
-                 <div className="bg-gray-50 dark:bg-black/40 p-6 rounded-[2rem] border border-gray-100 dark:border-white/5 relative group transition-all hover:bg-white dark:hover:bg-black/60 hover:shadow-xl hover:shadow-orange-500/5 hover:border-orange-100 dark:hover:border-orange-900/10">
+                 <div className="bg-gray-50 dark:bg-black/60 p-6 rounded-[2rem] border border-gray-100 dark:border-white/5 relative group transition-all hover:bg-white dark:hover:bg-primary-900/10 hover:shadow-xl hover:shadow-primary-500/5">
                    <div className="flex items-center justify-between mb-5">
                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-xl">
-                           <Clock className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                        <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-xl">
+                           <Clock className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                         </div>
                        <span className="text-xs font-black text-gray-900 dark:text-gray-200 uppercase tracking-tight">Vanishing Timer</span>
                      </div>
                      {appUser?.plan === PlanType.FREE && (
-                       <span className="text-[9px] font-black bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-500 px-2 py-0.5 rounded-full uppercase tracking-widest">Plus+</span>
+                       <span className="text-[9px] font-black bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-300 px-2 py-0.5 rounded-full uppercase tracking-widest">Plus+</span>
                      )}
                    </div>
                    <select
@@ -2775,28 +2855,28 @@ export const Dashboard: React.FC = () => {
                        const key = selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any;
                        setFileSettings({ ...fileSettings, [key]: { ...fileSettings[key], deleteAfterMinutes: val } });
                      }}
-                     className={`w-full bg-white dark:bg-black/40 border border-gray-200 dark:border-white/5 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-orange-500 transition-all font-bold text-sm appearance-none ${appUser?.plan === PlanType.FREE ? 'opacity-50 cursor-not-allowed' : 'dark:text-white'}`}
+                     className={`w-full bg-white dark:bg-black/60 dark:text-white border border-gray-200 dark:border-white/10 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-primary-500 transition-all font-bold text-sm appearance-none ${appUser?.plan === PlanType.FREE ? 'opacity-50 cursor-not-allowed' : ''}`}
                    >
-                     <option value="">Never vanish</option>
-                     <option value="1">1 Minute after opening</option>
-                     <option value="5">5 Minutes after opening</option>
-                     <option value="60">1 Hour after opening</option>
-                     <option value="1440">24 Hours after opening</option>
+                     <option className="dark:bg-gray-900" value="">Never vanish</option>
+                     <option className="dark:bg-gray-900" value="1">1 Minute after opening</option>
+                     <option className="dark:bg-gray-900" value="5">5 Minutes after opening</option>
+                     <option className="dark:bg-gray-900" value="60">1 Hour after opening</option>
+                     <option className="dark:bg-gray-900" value="1440">24 Hours after opening</option>
                    </select>
                    <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-4 font-bold uppercase tracking-tight leading-relaxed">Countdown begins once the visitor first previews or downloads this file.</p>
                  </div>
 
-                 {/* 3. Fixed Expiry */}
-                 <div className="bg-gray-50 dark:bg-black/40 p-6 rounded-[2rem] border border-gray-100 dark:border-white/5 relative group transition-all hover:bg-white dark:hover:bg-black/60 hover:shadow-xl hover:shadow-red-500/5 hover:border-red-100 dark:hover:border-red-900/10">
+                 {/* 3. Hard Expiry */}
+                 <div className="bg-gray-50 dark:bg-black/60 p-6 rounded-[2rem] border border-gray-100 dark:border-white/5 relative group transition-all hover:bg-white dark:hover:bg-primary-900/10 hover:shadow-xl hover:shadow-primary-500/5">
                    <div className="flex items-center justify-between mb-5">
                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-xl">
-                           <Calendar className="w-4 h-4 text-red-600 dark:text-red-400" />
+                        <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-xl">
+                           <Calendar className="w-4 h-4 text-primary-600 dark:text-primary-400" />
                         </div>
                        <span className="text-xs font-black text-gray-900 dark:text-gray-200 uppercase tracking-tight">Hard Expiry</span>
                      </div>
                      {appUser?.plan === PlanType.FREE && (
-                       <span className="text-[9px] font-black bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-500 px-2 py-0.5 rounded-full uppercase tracking-widest">Plus+</span>
+                       <span className="text-[9px] font-black bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-300 px-2 py-0.5 rounded-full uppercase tracking-widest">Plus+</span>
                      )}
                    </div>
                    <input 
@@ -2808,7 +2888,7 @@ export const Dashboard: React.FC = () => {
                        const key = selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any;
                        setFileSettings({ ...fileSettings, [key]: { ...fileSettings[key], expiresAt: val } });
                      }}
-                     className={`w-full bg-white dark:bg-black/40 border border-gray-200 dark:border-white/5 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-red-500 transition-all font-bold text-sm ${appUser?.plan === PlanType.FREE ? 'opacity-50 cursor-not-allowed' : 'dark:text-white'}`}
+                     className={`w-full bg-white dark:bg-black/60 dark:text-white border border-gray-200 dark:border-white/10 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-primary-500 transition-all font-bold text-sm ${appUser?.plan === PlanType.FREE ? 'opacity-50 cursor-not-allowed' : ''}`}
                    />
                    <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-4 font-bold uppercase tracking-tight leading-relaxed">File will vanish on this specific date regardless of views.</p>
                  </div>
@@ -2893,7 +2973,7 @@ export const Dashboard: React.FC = () => {
                               stat.color === 'primary' ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/20' :
                               stat.color === 'blue' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' :
                               stat.color === 'emerald' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' :
-                              'bg-amber-500 text-white shadow-lg shadow-amber-500/20'
+                              'bg-primary-500 text-white shadow-lg shadow-primary-500/20'
                             }`}>
                                <stat.icon className="w-5 h-5" />
                             </div>
@@ -2903,36 +2983,43 @@ export const Dashboard: React.FC = () => {
                        ))}
                     </div>
 
-                    <div className="p-8 bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-[2rem]">
+                    <div className="p-8 bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-[2rem] min-h-[400px] flex flex-col">
                        <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] mb-8 flex items-center gap-2">
                           <TrendingUp className="w-4 h-4 text-primary-500" /> Mixed engagement trends
                        </h3>
-                       <div className="h-[300px] w-full">
-                          <ResponsiveContainer width="100%" height="100%">
-                             <AreaChart data={selectedAnalyticsVault.analytics?.timestampComparison}>
-                                <defs>
-                                   <linearGradient id="colorEngage" x1="0" y1="0" x2="0" y2="1">
-                                      <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.3}/>
-                                      <stop offset="95%" stopColor="#7c3aed" stopOpacity={0}/>
-                                   </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#88888822" />
-                                <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 900}} />
-                                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 900}} />
-                                <Tooltip 
-                                  contentStyle={{ backgroundColor: '#000', border: 'none', borderRadius: '12px', padding: '12px' }}
-                                  labelStyle={{ color: '#888', marginBottom: '4px', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase' }}
-                                  itemStyle={{ color: '#fff', fontSize: '14px', fontWeight: 900 }}
-                                />
-                                <Area type="monotone" dataKey="engagement" stroke="#7c3aed" strokeWidth={4} fillOpacity={1} fill="url(#colorEngage)" />
-                             </AreaChart>
-                          </ResponsiveContainer>
+                       <div className="flex-1 w-full flex items-center justify-center">
+                          {selectedAnalyticsVault.views === 0 ? (
+                             <div className="flex flex-col items-center">
+                                <AreaChartIcon className="w-16 h-16 text-gray-200 dark:text-gray-800 mb-4 opacity-50" />
+                                <span className="text-xs font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest italic">NO Data to showcase !</span>
+                             </div>
+                          ) : (
+                             <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={selectedAnalyticsVault.analytics?.timestampComparison}>
+                                   <defs>
+                                      <linearGradient id="colorEngage" x1="0" y1="0" x2="0" y2="1">
+                                         <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.3}/>
+                                         <stop offset="95%" stopColor="#7c3aed" stopOpacity={0}/>
+                                      </linearGradient>
+                                   </defs>
+                                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#88888822" />
+                                   <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 900}} />
+                                   <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 900}} />
+                                   <Tooltip 
+                                     contentStyle={{ backgroundColor: '#000', border: 'none', borderRadius: '12px', padding: '12px' }}
+                                     labelStyle={{ color: '#888', marginBottom: '4px', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase' }}
+                                     itemStyle={{ color: '#fff', fontSize: '14px', fontWeight: 900 }}
+                                   />
+                                   <Area type="monotone" dataKey="engagement" stroke="#7c3aed" strokeWidth={4} fillOpacity={1} fill="url(#colorEngage)" />
+                                </AreaChart>
+                             </ResponsiveContainer>
+                          )}
                        </div>
                     </div>
                  </div>
                )}
 
-               {activeAnalyticsTab === 'engagement' && (
+               {activeAnalyticsTab === 'engagement' && selectedAnalyticsVault.views > 0 && (
                  <div className="animate-in slide-in-from-bottom-4 duration-500">
                     <div className="bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-[2rem] p-8">
                        <div className="flex items-center justify-between mb-8">
@@ -2944,8 +3031,7 @@ export const Dashboard: React.FC = () => {
                              <span className="text-[9px] font-black text-primary-600 dark:text-primary-400 uppercase tracking-widest">Live Updates</span>
                           </div>
                        </div>
-                       <div className="h-[350px]">
-                          <ResponsiveContainer width="100%" height="100%">
+                       <div className="h-[350px] flex items-center justify-center">{selectedAnalyticsVault.views === 0 ? <div className="flex flex-col items-center"><TrendingUp className="w-16 h-16 text-gray-200 dark:text-gray-800 mb-4 opacity-50" /><span className="text-xs font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest italic">NO Data to showcase !</span></div> : <ResponsiveContainer width="100%" height="100%">
                              <BarChart data={selectedAnalyticsVault.analytics?.timestampComparison}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#88888822" />
                                 <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 900}} />
@@ -2967,8 +3053,7 @@ export const Dashboard: React.FC = () => {
                  <div className="animate-in slide-in-from-bottom-4 duration-500 space-y-6">
                     <div className="bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-[2rem] p-8">
                        <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] mb-8">File Engagement vs Downloads</h3>
-                       <div className="h-[350px]">
-                          <ResponsiveContainer width="100%" height="100%">
+                       <div className="h-[350px] flex items-center justify-center">{selectedAnalyticsVault.views === 0 ? <div className="flex flex-col items-center"><TrendingUp className="w-16 h-16 text-gray-200 dark:text-gray-800 mb-4 opacity-50" /><span className="text-xs font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest italic">NO Data to showcase !</span></div> : <ResponsiveContainer width="100%" height="100%">
                              <BarChart data={selectedAnalyticsVault.analytics?.fileEngagement} layout="vertical">
                                 <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#88888822" />
                                 <XAxis type="number" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 900}} />
@@ -2986,7 +3071,7 @@ export const Dashboard: React.FC = () => {
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                       {selectedAnalyticsVault.analytics?.fileEngagement.slice(0, 4).map((file, i) => (
+                       {selectedAnalyticsVault.views === 0 ? <div className="col-span-full py-12 flex flex-col items-center"><Box className="w-12 h-12 text-gray-200 dark:text-gray-800 mb-3" /><span className="text-[10px] font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest italic">NO Data to showcase !</span></div> : selectedAnalyticsVault.analytics?.fileEngagement.slice(0, 4).map((file, i) => (
                          <div key={i} className="p-5 bg-white dark:bg-white/[0.01] border border-gray-100 dark:border-white/5 rounded-3xl flex items-center justify-between group">
                             <div className="flex items-center gap-4">
                                <div className="w-10 h-10 bg-gray-100 dark:bg-white/5 rounded-2xl flex items-center justify-center text-gray-500 group-hover:bg-primary-500 group-hover:text-white transition-all">
@@ -3030,3 +3115,10 @@ export const Dashboard: React.FC = () => {
     </div>
   );
 };
+
+
+
+
+
+
+

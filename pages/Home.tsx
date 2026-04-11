@@ -7,11 +7,7 @@ export const Home: React.FC = () => {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/dashboard');
-    }
-  }, [isAuthenticated, navigate]);
+
 
   return (
     <div className="overflow-hidden bg-white dark:bg-[#0a0a0a] transition-colors duration-300">
