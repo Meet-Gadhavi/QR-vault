@@ -2982,7 +2982,7 @@ export const Dashboard: React.FC = () => {
                        <div className="flex-1 w-full flex items-center justify-center">
                           {selectedAnalyticsVault.views === 0 ? (
                              <div className="flex flex-col items-center">
-                                <AreaChartIcon className="w-16 h-16 text-gray-200 dark:text-gray-800 mb-4 opacity-50" />
+                                <TrendingUp className="w-16 h-16 text-gray-200 dark:text-gray-800 mb-4 opacity-50" />
                                 <span className="text-xs font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest italic">NO Data to showcase !</span>
                              </div>
                           ) : (
