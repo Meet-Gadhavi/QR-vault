@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShieldCheck, Zap, FolderOpen, Share2, FileText, Image, Package, Utensils, GraduationCap, Briefcase, HelpCircle, CheckCircle2, Star, Quote } from 'lucide-react';
+import { ShieldCheck, Zap, FolderOpen, Share2, FileText, Image, Package, Utensils, GraduationCap, Briefcase, HelpCircle, CheckCircle2, Star, Quote, QrCode, Globe, Shuffle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export const Home: React.FC = () => {

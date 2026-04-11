@@ -1114,7 +1114,7 @@ export const Dashboard: React.FC = () => {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
               <div>
                 <h1 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white tracking-tight leading-tight">
-                  Welcome, <span className="text-primary-600 dark:text-primary-400">{appUser.name}</span>
+                  Welcome back, <span className="text-primary-600 dark:text-primary-400">{appUser.name}</span>
                 </h1>
                 <p className="text-gray-500 dark:text-gray-400 text-sm font-medium mt-1 uppercase tracking-widest opacity-80">Vault Management Protocol Active</p>
               </div>
@@ -1654,10 +1654,11 @@ export const Dashboard: React.FC = () => {
                                          </div>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                      ))
+                    }
+                  </div>
+                )}
+              </div>
               ) : activeTab === 'analytics' ? (
            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-700 pb-20">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -2159,16 +2160,9 @@ export const Dashboard: React.FC = () => {
                 
                 <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-2 font-medium">Vault wipes itself once scan limit is reached.</p>
               </div>
-              
-              {/* Custom Domain Section (PRO Feature) */}
-              <div className="bg-white dark:bg-black/40 p-7 rounded-[2.5rem] border border-gray-100 dark:border-white/5 space-y-4 shadow-sm group transition-all hover:bg-white/80 dark:hover:bg-primary-900/5">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-indigo-500 text-white rounded-2xl shadow-lg shadow-indigo-500/20">
-                      <Globe className="w-5 h-5" />
-                    </div>
-              </div>
-              {/* END TWO-COLUMN GRID */}
+                          </div>
+          </div>
+          {/* END TWO-COLUMN GRID */}
 
               {/* Branded Domain Section (PRO Feature) - Moved to be standalone */}
               <div className="bg-white/50 dark:bg-black/40 p-10 rounded-[2.5rem] border border-gray-100 dark:border-white/5 space-y-6 shadow-sm group transition-all hover:bg-white/80 dark:hover:bg-primary-900/5 relative overflow-hidden">
@@ -2459,9 +2453,6 @@ export const Dashboard: React.FC = () => {
                 </div>
               </div>
             </div>
-          </div>
-
-
             <div className="border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-[#0d0f14] rounded-b-2xl">
               {/* Upload Progress Bar - always visible in footer */}
               {isSubmitting && (
@@ -2537,7 +2528,7 @@ export const Dashboard: React.FC = () => {
                   {isSubmitting ? (
                     <><Loader2 className="animate-spin w-4 h-4" /> Processing...</>
                   ) : (
-                    modalMode === 'CREATE' ? <>Initialize Vault <Box className="w-3 h-3" /></> : <>Save Changes <Zap className="w-3 h-3" /></>
+                    modalMode === 'CREATE' ? <>Create Vault <Box className="w-3 h-3" /></> : <>Save Changes <Zap className="w-3 h-3" /></>
                   )}
                 </button>
               </div>
@@ -3119,7 +3110,8 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
         </div>
-      )}
+       )}
+      </div>
     </div>
   );
 };
