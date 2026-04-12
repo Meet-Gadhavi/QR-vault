@@ -5,7 +5,7 @@ import { supabase } from '../services/supabaseClient';
 import { Vault, User, PlanType, VaultFile, FileType, PLAN_LIMITS, AccessLevel, AccessRequest, RequestStatus, Invoice } from '../types';
 import { PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, Legend } from 'recharts';
 import QRCode from 'react-qr-code';
-import { UploadCloud, File as FileIcon, Link as LinkIcon, Trash2, ExternalLink, Plus, X, Loader2, Eye, HardDrive, QrCode, Copy, Check, MoreVertical, Edit2, Search, Filter, ArrowUpDown, Download, Zap, ChevronDown, Lock, Users, Shield, UserCheck, UserX, Clock, ShieldCheck, AlertTriangle, AlertCircle, RotateCcw, FileText, Shuffle, Settings, Calendar, Share2, Box, Settings2, ChevronRight, TrendingUp, ArrowUp, Globe } from 'lucide-react';
+import { UploadCloud, File as FileIcon, Link as LinkIcon, Trash2, ExternalLink, Plus, X, Loader2, Eye, HardDrive, QrCode, Copy, Check, MoreVertical, Edit2, Search, Filter, ArrowUpDown, Download, Zap, ChevronDown, Lock, Users, Shield, UserCheck, UserX, Clock, ShieldCheck, AlertTriangle, AlertCircle, RotateCcw, FileText, Shuffle, Settings, Calendar, Share2, Box, Settings2, ChevronRight, TrendingUp, ArrowUp, Globe, Grid } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -1922,19 +1922,45 @@ export const Dashboard: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="relative">
-                    <input
-                      type="password"
-                      disabled={appUser?.plan !== PlanType.PRO}
-                      value={vaultPassword}
-                      onChange={(e) => setVaultPassword(e.target.value)}
-                      placeholder={appUser?.plan === PlanType.PRO ? "SET PASSCODE" : "PRO ONLY"}
-                      className={`w-full py-5 pl-14 pr-6 border rounded-2xl transition-all font-black text-xs tracking-widest shadow-inner ${appUser?.plan === PlanType.PRO
-                        ? 'bg-white dark:bg-black border-gray-200 dark:border-gray-800 focus:ring-4 focus:ring-primary-500/10 dark:text-white hover:border-primary-300 dark:hover:border-primary-700'
-                        : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-800 cursor-not-allowed opacity-50'
-                        }`}
-                    />
-                    <ShieldCheck className={`absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 ${appUser?.plan === PlanType.PRO ? 'text-primary-500 animate-pulse' : 'text-gray-400'}`} />
+                  <div className="space-y-4">
+                    <div className="relative">
+                      <input
+                        type="password"
+                        disabled={appUser?.plan !== PlanType.PRO}
+                        value={vaultPassword}
+                        onChange={(e) => setVaultPassword(e.target.value)}
+                        placeholder={appUser?.plan === PlanType.PRO ? "SET PASSCODE" : "PRO ONLY"}
+                        className={`w-full py-5 pl-14 pr-6 border rounded-2xl transition-all font-black text-xs tracking-widest shadow-inner ${appUser?.plan === PlanType.PRO
+                          ? 'bg-white dark:bg-black border-gray-200 dark:border-gray-800 focus:ring-4 focus:ring-primary-500/10 dark:text-white hover:border-primary-300 dark:hover:border-primary-700'
+                          : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-800 cursor-not-allowed opacity-50'
+                          }`}
+                      />
+                      <ShieldCheck className={`absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 ${appUser?.plan === PlanType.PRO ? 'text-primary-500 animate-pulse' : 'text-gray-400'}`} />
+                    </div>
+
+                    {/* Advanced Shielding Sub-section */}
+                    <div className="pt-2 space-y-4">
+                       <div className="flex items-center gap-2 mb-1">
+                         <Zap className="w-3.5 h-3.5 text-amber-500" />
+                         <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Advanced Shielding</span>
+                       </div>
+                       <div className="grid grid-cols-2 gap-3">
+                          <div className="relative group">
+                             <input 
+                               type="number"
+                               placeholder="DL LIMIT"
+                               className="w-full py-4 px-4 bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-xl font-black text-[10px] outline-none focus:ring-2 focus:ring-primary-500/20 transition-all text-center tracking-tighter"
+                             />
+                             <span className="absolute -top-2 left-3 px-1.5 bg-gray-50 dark:bg-gray-900 text-[8px] font-black text-gray-400 uppercase tracking-tighter">Self Destruct</span>
+                          </div>
+                          <button 
+                            type="button"
+                            className="flex items-center justify-center gap-2 py-4 px-4 bg-white/50 dark:bg-black border border-gray-200 dark:border-gray-800 rounded-xl font-black text-[10px] uppercase tracking-tighter hover:bg-white dark:hover:bg-white/5 transition-all text-gray-500"
+                          >
+                             <Shuffle className="w-3 h-3" /> Auto-Nuke
+                          </button>
+                       </div>
+                    </div>
                   </div>
                 </div>
 
@@ -1984,13 +2010,13 @@ export const Dashboard: React.FC = () => {
                         const isOpen = menuOpenId === 'modal-expiry';
 
                         return (
-                          <div className="relative">
+                          <div className="relative space-y-3">
                             <button
                               type="button"
                               onClick={(e) => { e.stopPropagation(); setMenuOpenId(isOpen ? null : 'modal-expiry'); }}
                               className="w-full flex items-center justify-between px-6 py-5 rounded-2xl text-[11px] font-black transition-all bg-white dark:bg-black border border-gray-200 dark:border-gray-800 dark:text-white uppercase tracking-widest shadow-inner hover:border-primary-300"
                             >
-                              {selected.label}
+                              {expiryHours === 'custom' ? 'Custom Hours' : selected.label}
                               <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isOpen ? 'rotate-180 text-primary-500' : 'text-gray-400'}`} />
                             </button>
                             {isOpen && (
@@ -2006,7 +2032,23 @@ export const Dashboard: React.FC = () => {
                                     {opt.label}
                                   </button>
                                 ))}
+                                <button
+                                  type="button"
+                                  onClick={() => { setExpiryHours('custom'); setMenuOpenId(null); }}
+                                  className={`w-full text-left px-6 py-4 text-[10px] font-black uppercase tracking-widest transition-colors ${expiryHours === 'custom' ? 'bg-primary-600 text-white' : 'hover:bg-primary-50 dark:hover:bg-white/5 text-gray-500 dark:text-gray-400'}`}
+                                >
+                                  Custom Range
+                                </button>
                               </div>
+                            )}
+                            {expiryHours === 'custom' && (
+                               <div className="animate-in slide-in-from-top-2 duration-300">
+                                 <input 
+                                   type="number" 
+                                   placeholder="HOURS..."
+                                   className="w-full px-6 py-5 bg-white dark:bg-black border border-primary-500/30 rounded-2xl font-black text-[11px] text-primary-600 dark:text-primary-400 outline-none shadow-inner text-center focus:ring-4 focus:ring-primary-500/10"
+                                 />
+                               </div>
                             )}
                           </div>
                         );
@@ -2031,13 +2073,13 @@ export const Dashboard: React.FC = () => {
                         const isOpen = menuOpenId === 'modal-scans';
 
                         return (
-                           <div className="relative">
+                           <div className="relative space-y-3">
                             <button
                               type="button"
                               onClick={(e) => { e.stopPropagation(); setMenuOpenId(isOpen ? null : 'modal-scans'); }}
                               className="w-full flex items-center justify-between px-6 py-5 rounded-2xl text-[11px] font-black transition-all bg-white dark:bg-black border border-gray-200 dark:border-gray-800 dark:text-white uppercase tracking-widest shadow-inner hover:border-primary-300"
                             >
-                              {selected.label}
+                              {maxViews === 'custom' ? 'Custom Limit' : selected.label}
                               <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isOpen ? 'rotate-180 text-primary-500' : 'text-gray-400'}`} />
                             </button>
                             {isOpen && (
@@ -2053,7 +2095,25 @@ export const Dashboard: React.FC = () => {
                                     {opt.label}
                                   </button>
                                 ))}
+                                <button
+                                  type="button"
+                                  onClick={() => { setMaxViews('custom'); setMenuOpenId(null); }}
+                                  className={`w-full text-left px-6 py-4 text-[10px] font-black uppercase tracking-widest transition-colors ${maxViews === 'custom' ? 'bg-primary-600 text-white' : 'hover:bg-primary-50 dark:hover:bg-white/5 text-gray-500 dark:text-gray-400'}`}
+                                >
+                                  Custom Limit
+                                </button>
                               </div>
+                            )}
+                            {maxViews === 'custom' && (
+                               <div className="animate-in slide-in-from-top-2 duration-300">
+                                 <input 
+                                   type="number" 
+                                   value={customMaxViews}
+                                   onChange={(e) => setCustomMaxViews(e.target.value)}
+                                   placeholder="MAX SCANS..."
+                                   className="w-full px-6 py-5 bg-white dark:bg-black border border-primary-500/30 rounded-2xl font-black text-[11px] text-primary-600 dark:text-primary-400 outline-none shadow-inner text-center focus:ring-4 focus:ring-primary-500/10"
+                                 />
+                               </div>
                             )}
                           </div>
                         );
@@ -2213,6 +2273,29 @@ export const Dashboard: React.FC = () => {
                         reader.readAsDataURL(file);
                       }
                     }} />
+                  </div>
+
+                  {/* QR Pattern Selection - RESTORED */}
+                  <div className="sm:col-span-2 pt-4">
+                    <p className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em] mb-4">Design Framework</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                      {[
+                        { id: 'standard', label: 'Classic Square', icon: Grid },
+                        { id: 'dots', label: 'Quantum Dots', icon: Settings },
+                        { id: 'squares', label: 'Modern Block', icon: Box },
+                        { id: 'smooth', label: 'Liquid Smooth', icon: Zap }
+                      ].map((design) => (
+                        <button
+                          key={design.id}
+                          type="button"
+                          onClick={() => setSelectedQrDesign(design.id)}
+                          className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-3 group ${selectedQrDesign === design.id ? 'border-primary-500 bg-primary-100/50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' : 'border-gray-100 dark:border-white/5 bg-white dark:bg-black/40 text-gray-400 hover:border-primary-200'}`}
+                        >
+                          <design.icon className={`w-6 h-6 ${selectedQrDesign === design.id ? 'animate-pulse' : 'opacity-40'}`} />
+                          <span className="text-[9px] font-black uppercase tracking-widest">{design.label}</span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
