@@ -388,8 +388,8 @@ export const PublicView: React.FC = () => {
   );
 
   if (isExpired) return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-gray-50 dark:bg-[#0a0a0a] relative overflow-hidden transition-colors duration-300">
-      <div className="bg-white dark:bg-gray-900 p-10 rounded-[3rem] shadow-2xl border border-gray-100 dark:border-white/5 max-w-lg w-full relative z-10">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 text-center bg-gray-50 dark:bg-[#0a0a0a] relative overflow-hidden transition-colors duration-300">
+      <div className="bg-white dark:bg-gray-900 p-8 sm:p-10 rounded-3xl sm:rounded-[3rem] shadow-2xl border border-gray-100 dark:border-white/5 max-w-lg w-full relative z-10">
         <div className="w-24 h-24 bg-red-50 dark:bg-red-500/10 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-inner">
           <Trash2 className="w-12 h-12 text-red-500 animate-pulse" />
         </div>
@@ -677,18 +677,19 @@ export const PublicView: React.FC = () => {
 
               {vault.files.some(f => f.type !== FileType.LINK) && (
                 <button
-                  className="bg-gray-900 dark:bg-white/10 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-xl shadow-gray-200/60 dark:shadow-none hover:bg-gray-800 dark:hover:bg-white/20 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-70 border border-transparent dark:border-white/10"
+                  className="bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-4 sm:px-5 py-2.5 rounded-xl text-[10px] sm:text-xs font-black shadow-xl hover:bg-gray-800 dark:hover:bg-gray-100 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-70 border border-transparent"
                   onClick={handleBulkDownload}
                   disabled={isDownloadingAll}
                 >
                   {isDownloadingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                  <span>
+                  <span className="hidden sm:inline">
                     {isDownloadingAll 
                       ? (downloadProgress 
                           ? `Downloading ${downloadProgress.current}/${downloadProgress.total}...` 
                           : 'Finalizing ZIP...') 
-                      : 'Download All as .ZIP'}
+                      : 'Download All'}
                   </span>
+                  <span className="sm:hidden font-black">ZIP ALL</span>
                 </button>
               )}
 
@@ -732,7 +733,7 @@ export const PublicView: React.FC = () => {
 
       <div className="max-w-5xl mx-auto px-4 py-8 flex-1 w-full">
         {currentFiles.length === 0 ? (
-          <div className="text-center py-32 bg-gray-50/50 rounded-3xl border border-dashed border-gray-200">
+          <div className="text-center py-32 bg-gray-50/50 dark:bg-white/5 rounded-3xl border border-dashed border-gray-200 dark:border-white/10">
             <Box className="text-gray-200 w-16 h-16 mx-auto mb-4" />
             <h3 className="text-lg font-bold text-gray-900">No files found</h3>
             <p className="text-gray-500 text-sm">There are no files in this category.</p>

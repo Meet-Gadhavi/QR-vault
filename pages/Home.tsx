@@ -21,7 +21,7 @@ export const Home: React.FC = () => {
             </span>
             New: Pro Plan with 20GB Storage
           </div>
-          <h1 className="text-5xl md:text-7xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-6 animate-fade-in-up-delay-1 opacity-0">
+          <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-6 animate-fade-in-up-delay-1 opacity-0">
             One QR. <span className="text-primary-600 dark:text-primary-400">Any File.</span> <br />
             Secure Sharing.
           </h1>
@@ -135,7 +135,7 @@ export const Home: React.FC = () => {
                           <h4 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest mb-2">QR Skins</h4>
                           <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed font-medium">Dynamic shapes, dots, and custom frames for your codes.</p>
                        </div>
-                       <div className="p-8 bg-primary-600 rounded-[2.5rem] shadow-xl shadow-primary-500/30 hover:scale-105 transition-transform">
+                       <div className="p-6 md:p-8 bg-primary-600 rounded-[2.5rem] shadow-xl shadow-primary-500/30 hover:scale-105 transition-transform">
                           <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-6 text-white">
                              <Globe className="w-6 h-6" />
                           </div>
@@ -143,8 +143,8 @@ export const Home: React.FC = () => {
                           <p className="text-[11px] text-white/80 leading-relaxed font-medium">Map your own custom domain (files.yourbrand.com) to your vaults.</p>
                        </div>
                     </div>
-                    <div className="space-y-4 pt-12">
-                       <div className="p-8 bg-gray-900 rounded-[2.5rem] shadow-2xl hover:scale-105 transition-transform">
+                    <div className="space-y-4 pt-0 sm:pt-12">
+                       <div className="p-6 md:p-8 bg-gray-900 rounded-[2.5rem] shadow-2xl hover:scale-105 transition-transform">
                           <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mb-6 text-primary-400">
                              <Image className="w-6 h-6" />
                           </div>

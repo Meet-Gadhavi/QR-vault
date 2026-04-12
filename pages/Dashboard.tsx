@@ -1116,10 +1116,10 @@ export const Dashboard: React.FC = () => {
           <div className="md:col-span-2 bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm relative overflow-hidden flex flex-col justify-between">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
               <div>
-                <h1 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white tracking-tight leading-tight">
+                <h1 className="text-xl md:text-3xl font-black text-gray-900 dark:text-white tracking-tight leading-tight">
                   Welcome back, <span className="text-primary-600 dark:text-primary-400">{appUser.name}</span>
                 </h1>
-                <p className="text-gray-500 dark:text-gray-400 text-sm font-medium mt-1 uppercase tracking-widest opacity-80">Vault Management Protocol Active</p>
+                <p className="text-[9px] md:text-sm text-gray-500 dark:text-gray-400 font-medium mt-1 uppercase tracking-widest opacity-80">Vault Management Protocol Active</p>
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <span className={`px-4 py-1.5 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-sm ${appUser.plan === PlanType.PRO ? 'bg-purple-600 text-white' : appUser.plan === PlanType.STARTER ? 'bg-indigo-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'}`}>
@@ -1330,7 +1330,7 @@ export const Dashboard: React.FC = () => {
             <input
               type="text"
               placeholder="Search vaults..."
-              className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-black/50 border border-transparent hover:bg-white dark:hover:bg-black hover:border-gray-200 dark:hover:border-gray-800 focus:bg-white dark:focus:bg-black focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 rounded-xl text-sm dark:text-white outline-none transition-all duration-200"
+              className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-black border border-transparent hover:bg-white dark:hover:bg-gray-800 hover:border-gray-200 dark:hover:border-gray-700 focus:bg-white dark:focus:bg-gray-800 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 rounded-xl text-sm dark:text-white outline-none transition-all duration-200"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -1400,7 +1400,7 @@ export const Dashboard: React.FC = () => {
                     onClick={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === 'filter-sort' ? null : 'filter-sort'); }}
                     className={`w-full flex items-center gap-2.5 pl-3.5 pr-3 py-2.5 rounded-xl text-sm font-medium cursor-pointer transition-all duration-200 border ${menuOpenId === 'filter-sort'
                       ? 'bg-primary-50 dark:bg-primary-900/30 border-primary-300 dark:border-primary-800 text-primary-700 dark:text-primary-400 shadow-md shadow-primary-100 dark:shadow-none ring-2 ring-primary-200 dark:ring-primary-900/30'
-                      : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-primary-200 dark:hover:border-primary-800 hover:bg-gray-50 dark:hover:bg-gray-750 shadow-sm hover:shadow-md'
+                      : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-primary-200 dark:hover:border-primary-800 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm hover:shadow-md'
                       }`}
                   >
                     <ArrowUpDown className={`w-4 h-4 transition-colors ${menuOpenId === 'filter-sort' ? 'text-primary-500' : 'text-gray-400 dark:text-gray-500'}`} />
@@ -1480,10 +1480,10 @@ export const Dashboard: React.FC = () => {
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredVaults.map(vault => (
-                  <div key={vault.id} className="relative z-10 w-full min-h-[500px] perspective-[1000px]">
+                  <div key={vault.id} className="relative z-10 w-full min-h-[460px] md:min-h-[500px] perspective-[1000px]">
                     <div
                       onClick={(e) => toggleMenu(e, vault.id)}
-                      className={`cursor-pointer relative w-full h-full min-h-[500px] flex flex-col rounded-2xl border-2 transition-all duration-700 shadow-sm hover:shadow-xl transform-gpu ${vault.reportCount && vault.reportCount > 0 ? 'bg-red-50 dark:bg-red-900/10 border-red-100 dark:border-red-900/30' : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800'}`}
+                      className={`cursor-pointer relative w-full h-full min-h-[460px] md:min-h-[500px] flex flex-col rounded-2xl border-2 transition-all duration-700 shadow-sm hover:shadow-xl transform-gpu ${vault.reportCount && vault.reportCount > 0 ? 'bg-red-50 dark:bg-red-900/10 border-red-100 dark:border-red-900/30' : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800'}`}
                       style={{ transformStyle: 'preserve-3d', transform: menuOpenId === vault.id ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
                     >
                       {/* FRONT FACE */}
@@ -1618,7 +1618,7 @@ export const Dashboard: React.FC = () => {
                         />
                       </div>
 
-                      <div className="absolute inset-0 w-full h-full bg-white dark:bg-[#0a0a0b] border-2 border-primary-500/20 dark:border-primary-500/10 rounded-2xl flex flex-col justify-start items-center text-gray-900 dark:text-white p-8 shadow-2xl overflow-hidden" style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
+                      <div className="absolute inset-0 w-full h-full bg-white dark:bg-[#0a0a0b] border-2 border-primary-500/20 dark:border-primary-500/10 rounded-2xl flex flex-col justify-start items-center text-gray-900 dark:text-white p-5 md:p-8 shadow-2xl overflow-hidden" style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
                         <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 to-transparent pointer-events-none"></div>
 
                         <button onClick={(e) => toggleMenu(e, vault.id)} className="absolute top-5 right-5 bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-md cursor-pointer text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 p-2.5 rounded-2xl transition-all active:scale-90 border border-transparent hover:border-primary-200 dark:hover:border-primary-800"><Shuffle className="w-5 h-5" /></button>
@@ -1665,7 +1665,7 @@ export const Dashboard: React.FC = () => {
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-700 pb-20">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Main Overview Stat */}
-              <div className="lg:col-span-2 bg-white dark:bg-[#0d0f14] p-8 md:p-10 rounded-[3rem] border border-gray-100 dark:border-white/5 shadow-2xl shadow-black/[0.02]">
+              <div className="lg:col-span-2 bg-white dark:bg-[#0d0f14] p-5 md:p-10 rounded-[2rem] md:rounded-[3rem] border border-gray-100 dark:border-white/5 shadow-2xl shadow-black/[0.02]">
                 <div className="flex items-center justify-between mb-10">
                   <div>
                     <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight italic">Vault Ecosystem Performance</h2>
@@ -1727,7 +1727,7 @@ export const Dashboard: React.FC = () => {
               </div>
 
               {/* Top Performers */}
-              <div className="bg-white dark:bg-[#0d0f14] p-8 rounded-[3rem] border border-gray-100 dark:border-white/5 shadow-2xl overflow-hidden relative group">
+              <div className="bg-white dark:bg-[#0d0f14] p-5 md:p-8 rounded-[2rem] md:rounded-[3rem] border border-gray-100 dark:border-white/5 shadow-2xl overflow-hidden relative group">
                 <div className="flex items-center gap-4 mb-8">
                   <div className="p-3 bg-amber-500 text-white rounded-2xl shadow-xl shadow-amber-500/20">
                     <Zap className="w-5 h-5 fill-current" />
@@ -1855,14 +1855,14 @@ export const Dashboard: React.FC = () => {
               </div>
 
               {deletedLogs.length > 0 && (
-                <div className="p-4 bg-amber-50 border-t border-amber-100 flex items-center gap-3">
-                  <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
-                  <p className="text-xs text-amber-700 leading-relaxed font-medium">
+                <div className="p-4 bg-amber-50 dark:bg-amber-900/10 border-t border-amber-100 dark:border-amber-900/20 flex items-center gap-3">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-500 flex-shrink-0" />
+                  <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed font-medium">
                     {appUser?.plan === PlanType.STARTER
                       ? "Your Plus vaults are automatically removed after 72 hours or once their scan limit is reached."
                       : "Free vaults are automatically deleted after 24 hours to save server space."}
                     {appUser?.plan !== PlanType.PRO && (
-                      <Link to="/pricing" className="ml-1 underline font-bold">Upgrade to Pro</Link>
+                      <Link to="/pricing" className="ml-1 underline font-bold text-amber-800 dark:text-amber-300">Upgrade to Pro</Link>
                     )} for permanent storage.
                   </p>
                 </div>
@@ -1874,7 +1874,7 @@ export const Dashboard: React.FC = () => {
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-4xl max-h-[95vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-800 custom-scrollbar"
+          <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-4xl max-h-[95vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-800 custom-scrollbar p-1"
             style={{
               scrollbarWidth: 'thin',
               scrollbarColor: 'rgba(139,92,246,0.35) transparent'
@@ -2397,7 +2397,7 @@ export const Dashboard: React.FC = () => {
             </div>
 
             {/* Footer */}
-            <div className="border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-[#0d0f14] p-6 rounded-b-2xl">
+            <div className="border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-[#0d0f14] p-4 sm:p-6 rounded-b-2xl">
               {isSubmitting && (
                 <div className="mb-8 p-6 bg-white dark:bg-black/40 border border-gray-100 dark:border-white/5 rounded-3xl animate-in slide-in-from-bottom-4 duration-500 shadow-sm">
                   {/* Header & Meta */}

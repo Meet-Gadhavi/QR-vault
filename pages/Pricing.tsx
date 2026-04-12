@@ -176,7 +176,7 @@ export const Pricing: React.FC = () => {
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-8 items-stretch">
+          <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
             {planData.map((plan, idx) => {
               const state = getButtonState(plan.id);
               const isFree = plan.id === PlanType.FREE;
@@ -186,7 +186,7 @@ export const Pricing: React.FC = () => {
                   key={plan.name} 
                   className={`group relative rounded-3xl transition-all duration-300 flex flex-col animate-fade-in-up-delay-${idx} ${
                     plan.primary 
-                      ? 'bg-white dark:bg-gray-800 border-2 border-primary-500 shadow-2xl shadow-primary-200/50 dark:shadow-primary-900/20 scale-105 z-10' 
+                      ? 'bg-white dark:bg-gray-800 border-2 border-primary-500 shadow-2xl shadow-primary-200/50 dark:shadow-primary-900/20 md:scale-105 z-10' 
                       : 'bg-white/80 dark:bg-white/5 backdrop-blur-sm border border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20 hover:shadow-xl'
                   }`}
                 >
