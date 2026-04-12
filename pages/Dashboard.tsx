@@ -2179,56 +2179,46 @@ export const Dashboard: React.FC = () => {
                 )}
 
                 {activeModalTab === 'security' && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in slide-in-from-right-4">
-                    {/* Security Section */}
-                    <div className="bg-gray-50/50 dark:bg-white/[0.02] p-8 rounded-[2rem] border border-gray-100 dark:border-white/5 space-y-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2.5 bg-gray-900 dark:bg-white text-white dark:text-black rounded-xl">
-                            <Lock className="w-5 h-5" />
-                          </div>
-                          <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em]">Security Protocol</h3>
+                  <div className="space-y-8 animate-in fade-in slide-in-from-right-4">
+                    {/* Security Protocol - Main Input */}
+                    <div className="bg-gray-50/50 dark:bg-white/[0.02] p-6 sm:p-10 rounded-[2.5rem] border border-gray-100 dark:border-white/5 space-y-8">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-primary-500/10 text-primary-600 dark:text-primary-400 rounded-2xl">
+                          <ShieldCheck className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] leading-none mb-1">Security Protocol</h3>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">End-to-End Vault Shielding</p>
                         </div>
                       </div>
 
-                      <div className="space-y-4">
-                        <div className="relative">
-                          <input
-                            type="password"
-                            disabled={appUser?.plan !== PlanType.PRO}
-                            value={vaultPassword}
-                            onChange={(e) => setVaultPassword(e.target.value)}
-                            placeholder={appUser?.plan === PlanType.PRO ? "SET PASSCODE" : "PRO ONLY"}
-                            className={`w-full py-5 pl-14 pr-6 border rounded-2xl transition-all font-black text-xs tracking-widest shadow-inner ${appUser?.plan === PlanType.PRO
-                              ? 'bg-white dark:bg-black border-gray-200 dark:border-gray-800 focus:ring-4 focus:ring-primary-500/10 dark:text-white hover:border-primary-300 dark:hover:border-primary-700'
-                              : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-800 cursor-not-allowed opacity-50'
-                              }`}
-                          />
-                          <Lock className={`absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 ${appUser?.plan === PlanType.PRO ? 'text-primary-500 animate-pulse' : 'text-gray-400'}`} />
-                        </div>
+                      <div className="relative group">
+                        <input
+                          type="password"
+                          disabled={appUser?.plan !== PlanType.PRO}
+                          value={vaultPassword}
+                          onChange={(e) => setVaultPassword(e.target.value)}
+                          placeholder={appUser?.plan === PlanType.PRO ? "SET ACCESS PASSCODE..." : "PRO PLAN REQUIRED"}
+                          className={`w-full py-6 pl-16 pr-8 border rounded-[1.5rem] transition-all font-black text-sm tracking-[0.3em] shadow-inner ${appUser?.plan === PlanType.PRO
+                            ? 'bg-white dark:bg-black border-gray-200 dark:border-gray-800 focus:ring-8 focus:ring-primary-500/5 dark:text-white hover:border-primary-400 dark:hover:border-primary-600'
+                            : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-800 cursor-not-allowed opacity-50'
+                            }`}
+                        />
+                        <ShieldCheck className={`absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 ${appUser?.plan === PlanType.PRO ? 'text-primary-500 animate-pulse' : 'text-gray-400'}`} />
+                      </div>
 
-                        {/* Advanced Shielding Sub-section */}
-                        <div className="pt-2 space-y-4">
-                           <div className="flex items-center gap-2 mb-1">
-                             <Zap className="w-3.5 h-3.5 text-amber-500" />
-                             <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Advanced Shielding</span>
-                           </div>
-                           <div className="grid grid-cols-2 gap-3">
-                              <div className="relative group">
-                                 <input 
-                                   type="number"
-                                   placeholder="DL LIMIT"
-                                   className="w-full py-4 px-4 bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-xl font-black text-[10px] outline-none focus:ring-2 focus:ring-primary-500/20 transition-all text-center tracking-tighter"
-                                 />
-                                 <span className="absolute -top-2 left-3 px-1.5 bg-gray-50 dark:bg-gray-900 text-[8px] font-black text-gray-400 uppercase tracking-tighter">Self Destruct</span>
-                              </div>
-                              <button 
-                                type="button"
-                                className="flex items-center justify-center gap-2 py-4 px-4 bg-white/50 dark:bg-black border border-gray-200 dark:border-gray-800 rounded-xl font-black text-[10px] uppercase tracking-tighter hover:bg-white dark:hover:bg-white/5 transition-all text-gray-500"
-                              >
-                                 <Shuffle className="w-3 h-3" /> Auto-Nuke
-                              </button>
-                           </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-gray-100 dark:border-gray-800/50">
+                        <div className="flex items-start gap-3 p-4 rounded-2xl bg-white/50 dark:bg-black/20">
+                           <Lock className="w-4 h-4 text-emerald-500 mt-0.5" />
+                           <p className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase leading-relaxed tracking-wider">
+                             AES-256 military-grade encryption applied automatically
+                           </p>
+                        </div>
+                        <div className="flex items-start gap-3 p-4 rounded-2xl bg-white/50 dark:bg-black/20">
+                           <Zap className="w-4 h-4 text-amber-500 mt-0.5" />
+                           <p className="text-[9px] font-bold text-gray-500 dark:text-gray-400 uppercase leading-relaxed tracking-wider">
+                             Real-time threat monitoring enabled for this vault
+                           </p>
                         </div>
                       </div>
                     </div>
@@ -2239,22 +2229,27 @@ export const Dashboard: React.FC = () => {
                           <div className="p-2.5 bg-gray-900 dark:bg-white text-white dark:text-black rounded-xl">
                             <Users className="w-5 h-5" />
                           </div>
-                          <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em]">Access Control</h3>
+                          <div>
+                            <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] leading-none mb-1">Access Control</h3>
+                            <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Visibility Permissions</p>
+                          </div>
                         </div>
-                       <div className="flex gap-4">
+                       <div className="flex flex-col sm:flex-row gap-4">
                         <button
                           type="button"
                           onClick={() => setAccessLevel(AccessLevel.PUBLIC)}
-                          className={`flex-1 py-5 px-4 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-1 shadow-sm ${accessLevel === AccessLevel.PUBLIC ? 'border-primary-500 bg-primary-100/50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' : 'border-gray-200 dark:border-gray-800 bg-white dark:bg-black opacity-60 text-gray-500'}`}
+                          className={`flex-1 py-5 px-6 rounded-2xl border-2 transition-all flex items-center justify-center gap-3 shadow-sm ${accessLevel === AccessLevel.PUBLIC ? 'border-primary-500 bg-primary-500/10 text-primary-600 dark:text-primary-400' : 'border-gray-200 dark:border-gray-800 bg-white dark:bg-black opacity-60 text-gray-500'}`}
                         >
-                          <span className="text-[10px] font-black uppercase tracking-widest">Public</span>
+                          <Globe className="w-4 h-4" />
+                          <span className="text-[10px] font-black uppercase tracking-widest">Public Access</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => setAccessLevel(AccessLevel.RESTRICTED)}
-                          className={`flex-1 py-5 px-4 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-1 shadow-sm ${accessLevel === AccessLevel.RESTRICTED ? 'border-primary-500 bg-primary-100/50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400' : 'border-gray-200 dark:border-gray-800 bg-white dark:bg-black opacity-60 text-gray-500'}`}
+                          className={`flex-1 py-5 px-6 rounded-2xl border-2 transition-all flex items-center justify-center gap-3 shadow-sm ${accessLevel === AccessLevel.RESTRICTED ? 'border-primary-500 bg-primary-500/10 text-primary-600 dark:text-primary-400' : 'border-gray-200 dark:border-gray-800 bg-white dark:bg-black opacity-60 text-gray-500'}`}
                         >
-                          <span className="text-[10px] font-black uppercase tracking-widest">Request</span>
+                          <ShieldCheck className="w-4 h-4" />
+                          <span className="text-[10px] font-black uppercase tracking-widest">By Request</span>
                         </button>
                       </div>
                     </div>
