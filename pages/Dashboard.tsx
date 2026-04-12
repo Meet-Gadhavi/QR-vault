@@ -1693,6 +1693,7 @@ export const Dashboard: React.FC = () => {
                 }
               </div>
             )}
+          </div>
         ) : activeTab === 'analytics' ? (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-700 pb-20">
             {vaults.length === 0 ? (
