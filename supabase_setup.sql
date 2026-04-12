@@ -171,6 +171,10 @@ ALTER TABLE public.vaults
 ALTER TABLE public.vaults 
   ADD COLUMN IF NOT EXISTS max_views integer default null;
 
+-- Ensure custom_domain column exists in vaults
+ALTER TABLE public.vaults 
+  ADD COLUMN IF NOT EXISTS custom_domain text;
+
 -- Ensure invoices RLS is enabled
 alter table public.invoices enable row level security;
 create policy "Public invoices access" on public.invoices for all using (true) with check (true);
