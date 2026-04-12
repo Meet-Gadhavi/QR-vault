@@ -1995,18 +1995,68 @@ export const Dashboard: React.FC = () => {
                         <p className="text-[9px] text-gray-400 mt-1 font-black uppercase tracking-widest leading-none">Quantum Encryption</p>
                       </div>
                       
-                      {selectedFiles.length > 0 && (
-                        <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                          {selectedFiles.map((f, i) => (
-                            <div key={i} className="flex items-center justify-between text-[11px] bg-emerald-500/5 dark:bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-xl">
-                              <span className="truncate flex items-center gap-3 font-black text-emerald-800 dark:text-emerald-400 uppercase tracking-tight">
-                                <FileIcon className="w-4 h-4" /> {f.name}
-                              </span>
-                              <button onClick={(e) => { e.stopPropagation(); removeSelectedFile(i); }} className="text-gray-400 hover:text-red-500 p-2"><X className="w-4 h-4" /></button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                      {/* File Listings */}
+                      <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 no-scrollbar">
+                        {/* Previously Uploaded Files (Edit Mode) */}
+                        {modalMode === 'EDIT' && existingFiles.length > 0 && (
+                          <div className="space-y-2">
+                             <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1 mb-2">Vaulted Assets</p>
+                             {existingFiles.map((f, i) => (
+                               <div key={f.id} className="group flex items-center justify-between text-[11px] bg-white dark:bg-black/40 border border-gray-100 dark:border-white/5 p-4 rounded-2xl shadow-sm hover:border-primary-500/30 transition-all">
+                                 <div className="flex items-center gap-3 truncate min-w-0">
+                                   <div className="w-8 h-8 bg-gray-50 dark:bg-white/5 rounded-xl flex items-center justify-center flex-shrink-0">
+                                     <FileText className="w-4 h-4 text-gray-400" />
+                                   </div>
+                                   <div className="truncate">
+                                     <p className="font-black text-gray-900 dark:text-white uppercase tracking-tight truncate">{f.name}</p>
+                                     <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">{formatBytes(f.size)}</p>
+                                   </div>
+                                 </div>
+                                 <div className="flex items-center gap-1">
+                                    <button 
+                                      onClick={(e) => { e.stopPropagation(); setSelectedFileForSettings({ type: 'EXISTING', index: i }); }}
+                                      className="p-2.5 text-gray-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-xl transition-all"
+                                      title="File Destruct Protocol"
+                                    >
+                                      <ShieldCheck className="w-4 h-4" />
+                                    </button>
+                                    <button onClick={(e) => { e.stopPropagation(); handleMarkFileDeleted(f.id); }} className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl transition-all"><X className="w-4 h-4" /></button>
+                                 </div>
+                               </div>
+                             ))}
+                          </div>
+                        )}
+
+                        {/* Staged for Upload */}
+                        {selectedFiles.length > 0 && (
+                          <div className="space-y-2">
+                            <p className="text-[9px] font-black text-primary-500 uppercase tracking-widest ml-1 mb-2">Staged for Transmission</p>
+                            {selectedFiles.map((f, i) => (
+                              <div key={i} className="group flex items-center justify-between text-[11px] bg-primary-500/[0.02] dark:bg-primary-500/5 border border-primary-500/10 p-4 rounded-2xl shadow-sm hover:border-primary-500/30 transition-all">
+                                <div className="flex items-center gap-3 truncate min-w-0">
+                                   <div className="w-8 h-8 bg-primary-50 dark:bg-primary-900/40 rounded-xl flex items-center justify-center flex-shrink-0">
+                                     <UploadCloud className="w-4 h-4 text-primary-500" />
+                                   </div>
+                                   <div className="truncate">
+                                     <p className="font-black text-primary-600 dark:text-primary-400 uppercase tracking-tight truncate">{f.name}</p>
+                                     <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">{formatBytes(f.size)}</p>
+                                   </div>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                    <button 
+                                      onClick={(e) => { e.stopPropagation(); setSelectedFileForSettings({ type: 'NEW', index: i }); }}
+                                      className="p-2.5 text-primary-500/60 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-xl transition-all"
+                                      title="File Destruct Protocol"
+                                    >
+                                      <ShieldCheck className="w-4 h-4" />
+                                    </button>
+                                    <button onClick={(e) => { e.stopPropagation(); removeSelectedFile(i); }} className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl transition-all"><X className="w-4 h-4" /></button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     {/* Redirect Network - Links */}
@@ -2153,10 +2203,11 @@ export const Dashboard: React.FC = () => {
                                     ))}
                                     <button
                                       type="button"
+                                      disabled={appUser?.plan !== PlanType.PRO}
                                       onClick={() => { setMaxViews('custom'); setMenuOpenId(null); }}
-                                      className={`w-full text-left px-6 py-4 text-[10px] font-black uppercase tracking-widest transition-colors ${maxViews === 'custom' ? 'bg-primary-600 text-white' : 'hover:bg-primary-50 dark:hover:bg-white/5 text-gray-500 dark:text-gray-400'}`}
+                                      className={`w-full text-left px-6 py-4 text-[10px] font-black uppercase tracking-widest transition-colors ${maxViews === 'custom' ? 'bg-primary-600 text-white' : 'hover:bg-primary-50 dark:hover:bg-white/5 text-gray-500 dark:text-gray-400 disabled:opacity-30'}`}
                                     >
-                                      Custom Limit
+                                      Custom Limit {appUser?.plan !== PlanType.PRO && ' (PRO)'}
                                     </button>
                                   </div>
                                 )}
@@ -2348,15 +2399,57 @@ export const Dashboard: React.FC = () => {
             {/* Footer */}
             <div className="border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-[#0d0f14] p-6 rounded-b-2xl">
               {isSubmitting && (
-                <div className="mb-6 animate-in slide-in-from-bottom-2">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-black text-primary-600 dark:text-primary-400 flex items-center gap-2 uppercase tracking-widest">
-                      <Loader2 className="animate-spin w-3 h-3" /> Processing...
-                    </span>
-                    <span className="text-xs font-black text-primary-700 dark:text-primary-500">{uploadProgress}%</span>
+                <div className="mb-8 p-6 bg-white dark:bg-black/40 border border-gray-100 dark:border-white/5 rounded-3xl animate-in slide-in-from-bottom-4 duration-500 shadow-sm">
+                  {/* Header & Meta */}
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-primary-500/10 rounded-xl flex items-center justify-center">
+                        <Loader2 className="w-4 h-4 text-primary-500 animate-spin" />
+                      </div>
+                      <div>
+                        <h4 className="text-[11px] font-black text-gray-900 dark:text-white uppercase tracking-widest leading-none mb-1">Transmission Pipeline</h4>
+                        <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Active Data Stream</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xl font-black text-primary-600 dark:text-primary-400 leading-none">{uploadProgress}%</span>
+                      {estimatedSeconds > 0 && (
+                        <p className="text-[8px] text-gray-400 font-black uppercase tracking-[0.2em] mt-1">ETA: {estimatedSeconds}s</p>
+                      )}
+                    </div>
                   </div>
-                  <div className="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-2 overflow-hidden">
-                    <div className="h-full bg-primary-500 transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
+
+                  {/* Todo List / Steps */}
+                  <div className="space-y-4 mb-6">
+                    {[
+                      { id: 1, label: 'Initializing & Security Scan', desc: 'Verifying protocol integrity' },
+                      { id: 2, label: 'Transmitting Assets', desc: 'Executing high-speed data mesh' },
+                      { id: 3, label: 'Finalizing Link Network', desc: 'Syncing metadata distribution' }
+                    ].map((step) => {
+                      const isDone = uploadTask > step.id || uploadProgress === 100;
+                      const isActive = uploadTask === step.id && uploadProgress < 100;
+                      return (
+                        <div key={step.id} className={`flex items-start gap-4 transition-all duration-300 ${isDone || isActive ? 'opacity-100' : 'opacity-30'}`}>
+                          <div className={`mt-0.5 w-5 h-5 rounded-full flex items-center justify-center border-2 transition-all duration-500 ${isDone ? 'bg-primary-500 border-primary-500 text-white' : isActive ? 'border-primary-500 text-primary-500' : 'border-gray-200 dark:border-gray-800'}`}>
+                            {isDone ? <Check className="w-3 h-3" /> : isActive ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <div className="w-1.5 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full" />}
+                          </div>
+                          <div>
+                            <p className={`text-[10px] font-black uppercase tracking-widest ${isActive ? 'text-primary-600 dark:text-primary-400' : 'text-gray-500 dark:text-gray-400'}`}>{step.label}</p>
+                            {isActive && <p className="text-[8px] text-gray-400 font-bold uppercase tracking-wider mt-0.5 animate-pulse">{step.desc}</p>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Progress Bar Container */}
+                  <div className="w-full bg-gray-100 dark:bg-gray-800 h-1.5 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-primary-500 shadow-[0_0_15px_rgba(var(--primary-rgb),0.5)] transition-all duration-700 ease-out relative"
+                      style={{ width: `${uploadProgress}%` }}
+                    >
+                      <div className="absolute inset-0 bg-white/20 animate-pulse" />
+                    </div>
                   </div>
                 </div>
               )}
@@ -2407,6 +2500,81 @@ export const Dashboard: React.FC = () => {
               </div>
             </div>
           )}
+
+          {/* File Destruct Settings Modal */}
+          {selectedFileForSettings && (() => {
+            const isNew = selectedFileForSettings.type === 'NEW';
+            const file = isNew ? selectedFiles[selectedFileForSettings.index] : existingFiles[selectedFileForSettings.index];
+            if (!file) { setSelectedFileForSettings(null); return null; }
+            
+            const fileId = isNew ? selectedFileForSettings.index : (file as any).id;
+            const currentSettings = fileSettings[fileId] || {};
+
+            return (
+              <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
+                <div className="bg-white dark:bg-[#0d0f14] rounded-[2.5rem] w-full max-w-lg shadow-2xl border border-gray-100 dark:border-white/5 overflow-hidden animate-in zoom-in-95 duration-300">
+                  <div className="p-8 border-b border-gray-50 dark:border-white/5 flex justify-between items-center bg-gray-50/50 dark:bg-black/20">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-primary-500/10 rounded-2xl flex items-center justify-center text-primary-600 dark:text-primary-400">
+                        <ShieldCheck className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] leading-none mb-1">File Security</h3>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest truncate max-w-[200px]">{file.name}</p>
+                      </div>
+                    </div>
+                    <button onClick={() => setSelectedFileForSettings(null)} className="p-3 hover:bg-white dark:hover:bg-white/5 rounded-2xl transition-all border border-transparent hover:border-gray-200 dark:hover:border-white/10 shadow-sm"><X className="text-gray-400 w-5 h-5" /></button>
+                  </div>
+                  
+                  <div className="p-10 space-y-8">
+                    {/* Max Downloads */}
+                    <div className="space-y-4">
+                      <label className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                        <Download className="w-3.5 h-3.5" /> Access Capacity
+                      </label>
+                      <input 
+                        type="number"
+                        placeholder="UNLIMITED..."
+                        className="w-full px-6 py-5 bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-2xl font-black text-[11px] dark:text-white uppercase tracking-widest outline-none focus:ring-4 focus:ring-primary-500/10 shadow-inner"
+                        value={currentSettings.maxDownloads || ''}
+                        onChange={(e) => setFileSettings(prev => ({
+                          ...prev,
+                          [fileId]: { ...currentSettings, maxDownloads: parseInt(e.target.value) || undefined }
+                        }))}
+                      />
+                    </div>
+
+                    {/* Auto-Nuke Timer */}
+                    <div className="space-y-4">
+                      <label className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                        <Zap className="w-3.5 h-3.5 text-yellow-500" /> Auto-Nuke Timer
+                      </label>
+                      <div className="relative">
+                        <input 
+                          type="number"
+                          placeholder="EXPIRES IN (MINUTES)..."
+                          className="w-full px-6 py-5 bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-2xl font-black text-[11px] dark:text-white uppercase tracking-widest outline-none focus:ring-4 focus:ring-primary-500/10 shadow-inner"
+                          value={currentSettings.deleteAfterMinutes || ''}
+                          onChange={(e) => setFileSettings(prev => ({
+                            ...prev,
+                            [fileId]: { ...currentSettings, deleteAfterMinutes: parseInt(e.target.value) || undefined }
+                          }))}
+                        />
+                        <div className="absolute right-6 top-1/2 -translate-y-1/2 text-[9px] font-black text-gray-400 uppercase tracking-widest">MINS</div>
+                      </div>
+                    </div>
+
+                    <button 
+                      onClick={() => setSelectedFileForSettings(null)}
+                      className="w-full py-5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] shadow-xl hover:shadow-primary-500/10 active:scale-95 transition-all mt-4"
+                    >
+                      Authenticate Protocol
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Access Management Modal */}
           {isAccessModalOpen && managingVault && (
