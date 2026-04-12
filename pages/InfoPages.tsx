@@ -331,7 +331,44 @@ export const Changelog: React.FC = () => (
       
       <div className="space-y-8 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 dark:before:via-gray-800 before:to-transparent">
         
-        {/* Update 1.3 */}
+        {/* Update 1.4 */}
+        <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group select-none">
+          <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white dark:border-gray-900 bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 transition-colors group-hover:bg-primary-600 group-hover:text-white">
+            <Send className="w-5 h-5" />
+          </div>
+          <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm transition-all hover:shadow-md hover:border-primary-100 dark:hover:border-primary-900/40">
+            <div className="flex items-center justify-between mb-2">
+              <time className="font-black text-primary-600 dark:text-primary-400 text-xs uppercase tracking-widest">Update 1.4</time>
+              <span className="text-[10px] font-bold text-gray-400 uppercase">April 2026</span>
+            </div>
+            <h3 className="text-xl font-extrabold text-gray-900 dark:text-white mb-4 tracking-tight">The Collection Epoch</h3>
+            
+            <div className="space-y-6">
+              <div>
+                 <span className="text-[10px] font-black text-gray-400 uppercase block mb-3 tracking-[0.2em] leading-none">Data Receiving Protocol</span>
+                 <ul className="space-y-2.5">
+                   {[
+                     'New "Collection Mode" (Dropbox-style) for receiving files from anyone',
+                     'Interactive Form Builder for custom data fields (Name, Email, etc.)',
+                     'Integrated Submission Manager for real-time response tracking'
+                   ].map((item, i) => (
+                     <li key={i} className="flex items-start gap-2.5 text-sm text-gray-600 dark:text-gray-400">
+                       <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary-500 shrink-0" />
+                       {item}
+                     </li>
+                   ))}
+                 </ul>
+              </div>
+
+              <div className="bg-primary-500/5 dark:bg-primary-500/10 p-5 rounded-2xl border border-primary-500/20">
+                <span className="text-[10px] font-black text-primary-600 dark:text-primary-400 uppercase block mb-3 tracking-[0.2em] leading-none">How to Use</span>
+                <p className="text-xs leading-relaxed text-gray-700 dark:text-gray-300 font-medium italic">
+                  Launch the **Create Vault** modal and flip the switcher to **Receiving Mode**. Build your custom form, set file restrictions, and share the link. Your visitors will see a secure upload portal, and you'll see their responses in your **Submission Console**.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
         <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group select-none">
           <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white dark:border-gray-900 bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 transition-colors group-hover:bg-primary-600 group-hover:text-white">
             <Zap className="w-5 h-5" />
