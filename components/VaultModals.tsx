@@ -15,9 +15,12 @@ import {
     Loader2,
     Lock,
     UserCheck,
-    UserX
+    UserX,
+    Send,
+    Inbox
 } from 'lucide-react';
-import { AccessLevel, RequestStatus, Vault, VaultFile, FileType } from '../types';
+import { AccessLevel, RequestStatus, Vault, VaultFile, FileType, VaultType, ReceivingConfig } from '../types';
+import { ReceivingConfigBuilder } from './Submissions/ReceivingConfigBuilder';
 
 interface VaultModalsProps {
     isModalOpen: boolean;
@@ -56,6 +59,10 @@ interface VaultModalsProps {
     copied: boolean;
     isLimitModalOpen: boolean;
     setIsLimitModalOpen: (val: boolean) => void;
+    vaultType: VaultType;
+    setVaultType: (val: VaultType) => void;
+    receivingConfig: ReceivingConfig;
+    setReceivingConfig: (val: ReceivingConfig) => void;
 }
 
 export const VaultModals: React.FC<VaultModalsProps> = ({
@@ -95,6 +102,10 @@ export const VaultModals: React.FC<VaultModalsProps> = ({
     copied,
     isLimitModalOpen,
     setIsLimitModalOpen,
+    vaultType,
+    setVaultType,
+    receivingConfig,
+    setReceivingConfig,
 }) => {
     return (
         <>
@@ -110,6 +121,36 @@ export const VaultModals: React.FC<VaultModalsProps> = ({
                         </div>
 
                         <div className="p-6 space-y-6">
+                            {/* Vault Mode Selector */}
+                            <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700">
+                                <button
+                                    type="button"
+                                    onClick={() => setVaultType(VaultType.SENDING)}
+                                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${vaultType === VaultType.SENDING ? 'bg-white dark:bg-gray-900 text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                                >
+                                    <Send className="w-4 h-4" /> Sharing Mode
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setVaultType(VaultType.RECEIVING)}
+                                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${vaultType === VaultType.RECEIVING ? 'bg-white dark:bg-gray-900 text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                                >
+                                    <Inbox className="w-4 h-4" /> Collection Mode
+                                </button>
+                            </div>
+
+                            <div className="bg-primary-50 dark:bg-primary-900/10 p-4 rounded-xl border border-primary-100 dark:border-primary-900/20">
+                                <div className="flex gap-3">
+                                    <Info className="w-5 h-5 text-primary-600 shrink-0" />
+                                    <p className="text-xs text-primary-900 dark:text-primary-300 leading-relaxed font-medium">
+                                        {vaultType === VaultType.SENDING 
+                                            ? "Sharing Mode allows you to upload files and links for others to view and download. Perfect for portfolios, event photos, or project assets."
+                                            : "Collection Mode (Drobox-style) allows visitors to upload files directly into your vault. Perfect for assignments, client documents, or mass photo collection."}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Standard Fields (Always visible) */}
 
                             {/* Name Input */}
                             <div>
@@ -152,7 +193,9 @@ export const VaultModals: React.FC<VaultModalsProps> = ({
                                 </div>
                             </div>
 
-                            {/* Existing Files List (Edit Mode Only) */}
+                            {vaultType === VaultType.SENDING ? (
+                                <>
+                                    {/* Existing Files List (Edit Mode Only) */}
                             {modalMode === 'EDIT' && existingFiles.length > 0 && (
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">Existing Files</label>
@@ -243,6 +286,13 @@ export const VaultModals: React.FC<VaultModalsProps> = ({
                                     </div>
                                 )}
                             </div>
+                                </>
+                            ) : (
+                                <ReceivingConfigBuilder 
+                                    config={receivingConfig}
+                                    onChange={setReceivingConfig}
+                                />
+                            )}
                         </div>
 
                         <div className="p-6 border-t border-gray-100 bg-gray-50 rounded-b-2xl flex justify-end gap-3">

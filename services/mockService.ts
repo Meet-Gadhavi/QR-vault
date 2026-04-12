@@ -1,4 +1,4 @@
-import { Vault, FileType, AccessLevel, RequestStatus, User, PlanType, PLAN_LIMITS, Invoice } from '../types';
+import { Vault, FileType, AccessLevel, RequestStatus, User, PlanType, PLAN_LIMITS, Invoice, VaultType, ReceivingConfig, Submission } from '../types';
 import { supabase } from './supabaseClient';
 
 // --- DB HELPERS ---
@@ -62,6 +62,8 @@ function mapDbVault(v: any): Vault {
         maxViews: v.max_views,
         password: v.password,
         customDomain: v.custom_domain,
+        vaultType: v.vault_type as VaultType || VaultType.SENDING,
+        receivingConfig: v.receiving_config as ReceivingConfig,
         analytics: generateMockAnalytics(v.name, v.views, files)
     };
 }
@@ -250,7 +252,7 @@ const supabaseImpl = {
         }
     },
 
-    createVault: async (userId: string, name: string, files: File[], links: string[], accessLevel: AccessLevel, email?: string, expiresAt?: string, maxViews?: number, password?: string, customDomain?: string): Promise<Vault> => {
+    createVault: async (userId: string, name: string, files: File[], links: string[], accessLevel: AccessLevel, email?: string, expiresAt?: string, maxViews?: number, password?: string, customDomain?: string, vaultType: VaultType = VaultType.SENDING, receivingConfig?: ReceivingConfig): Promise<Vault> => {
         await supabaseImpl.ensureProfile(userId, email);
 
         // 1. Create Vault Record
@@ -264,7 +266,9 @@ const supabaseImpl = {
             expires_at: expiresAt,
             max_views: maxViews,
             password: password,
-            custom_domain: customDomain
+            custom_domain: customDomain,
+            vault_type: vaultType,
+            receiving_config: receivingConfig
         }).select().single();
 
         if (error) throw new Error(`Failed to create vault: ${error.message}`);
@@ -307,7 +311,7 @@ const supabaseImpl = {
         return (await supabaseImpl.getVaultById(vault.id)) as Vault;
     },
 
-    updateVault: async (userId: string, id: string, name: string, newFiles: File[], newLinks: string[], deletedFileIds: string[], accessLevel?: AccessLevel, email?: string, expiresAt?: string, maxViews?: number, password?: string, customDomain?: string) => {
+    updateVault: async (userId: string, id: string, name: string, newFiles: File[], newLinks: string[], deletedFileIds: string[], accessLevel?: AccessLevel, email?: string, expiresAt?: string, maxViews?: number, password?: string, customDomain?: string, vaultType?: VaultType, receivingConfig?: ReceivingConfig) => {
         await supabaseImpl.ensureProfile(userId, email);
 
         const updatePayload: any = { name };
@@ -316,6 +320,8 @@ const supabaseImpl = {
         if (maxViews !== undefined) updatePayload.max_views = maxViews;
         if (password !== undefined) updatePayload.password = password;
         if (customDomain !== undefined) updatePayload.custom_domain = customDomain;
+        if (vaultType !== undefined) updatePayload.vault_type = vaultType;
+        if (receivingConfig !== undefined) updatePayload.receiving_config = receivingConfig;
 
         const { error } = await supabase.from('vaults').update({ ...updatePayload, report_count: 0 }).eq('id', id);
         if (error) throw new Error(`Update failed: ${error.message}`);
@@ -563,6 +569,65 @@ const supabaseImpl = {
             return true;
         }
         throw new Error("Invalid verification code. Please try again.");
+    },
+
+    // --- SUBMISSION METHODS ---
+    submitToVault: async (vaultId: string, senderData: Record<string, string>, files: File[]): Promise<void> => {
+        // 1. Create Submission Entry
+        const { data: submission, error: subError } = await supabase.from('submissions').insert({
+            vault_id: vaultId,
+            sender_data: senderData,
+            created_at: new Date().toISOString()
+        }).select().single();
+
+        if (subError) throw new Error(`Submission failed: ${subError.message}`);
+
+        // 2. Upload Files linked to this submission
+        for (const file of files) {
+            const cleanName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+            const path = `${vaultId}/submissions/${submission.id}/${Math.random().toString(36).slice(2)}_${cleanName}`;
+
+            const { error: uploadError } = await supabase.storage.from('vault-files').upload(path, file);
+            if (uploadError) throw new Error(`Upload failed for ${file.name}: ${uploadError.message}`);
+
+            const { data: { publicUrl } } = supabase.storage.from('vault-files').getPublicUrl(path);
+
+            // Create file record linked to submission
+            await supabase.from('files').insert({
+                vault_id: vaultId,
+                submission_id: submission.id,
+                name: file.name,
+                size: file.size,
+                type: file.type.startsWith('image/') ? FileType.IMAGE : (file.type === 'application/pdf' ? FileType.PDF : FileType.OTHER),
+                mime_type: file.type,
+                url: publicUrl
+            });
+        }
+    },
+
+    getSubmissions: async (vaultId: string): Promise<Submission[]> => {
+        const { data, error } = await supabase
+            .from('submissions')
+            .select(`*, files (*)`)
+            .eq('vault_id', vaultId)
+            .order('created_at', { ascending: false });
+
+        if (error) return [];
+
+        return (data || []).map((s: any) => ({
+            id: s.id,
+            vaultId: s.vault_id,
+            senderData: s.sender_data,
+            fileIds: (s.files || []).map((f: any) => f.id),
+            createdAt: s.created_at,
+            files: (s.files || []).map((f: any) => ({
+                id: f.id,
+                name: f.name,
+                size: f.size,
+                type: f.type,
+                url: f.url
+            }))
+        }));
     }
 };
 

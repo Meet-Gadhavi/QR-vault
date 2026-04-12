@@ -6,6 +6,8 @@ import { Vault, FileType, VaultFile, AccessLevel, RequestStatus, PlanType } from
 import { Download, ExternalLink, FileText, Image as ImageIcon, Box, Loader2, ShieldCheck, AlertCircle, Eye, Link as LinkIcon, Info, X, File, Lock, Send, Clock, Zap, RefreshCw, Sun, Moon, Search, Play, Trash2 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import JSZip from 'jszip';
+import { SubmissionPublicForm } from '../components/Submissions/SubmissionPublicForm';
+import { VaultType } from '../types';
 
 type Tab = 'ALL' | 'PHOTOS' | 'DOCS' | 'LINKS';
 

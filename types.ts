@@ -42,6 +42,11 @@ export enum AccessLevel {
   RESTRICTED = 'RESTRICTED'
 }
 
+export enum VaultType {
+  SENDING = 'SENDING',
+  RECEIVING = 'RECEIVING'
+}
+
 export enum RequestStatus {
   PENDING = 'PENDING',
   APPROVED = 'APPROVED',
@@ -81,6 +86,37 @@ export interface Vault {
   lockedUntil?: string;                            // NEW: ISO Date for temporary block
   analytics?: EngagementData;                      // NEW: Engagement analytics
   customDomain?: string;                           // NEW: Branded URL (PRO only)
+  vaultType?: VaultType;                           // SENDING or RECEIVING
+  receivingConfig?: ReceivingConfig;               // Configuration for collection mode
+}
+
+export interface FormField {
+  label: string;
+  type: 'text' | 'email' | 'number' | 'tel';
+  required: boolean;
+}
+
+export interface FileRequest {
+  label: string;
+  fileType: string;
+  required: boolean;
+}
+
+export interface ReceivingConfig {
+  allowedFileTypes: string[];
+  maxFiles: number;
+  minFiles: number;
+  formFields: FormField[];
+  fileRequests: FileRequest[];
+  thankYouMessage: string;
+}
+
+export interface Submission {
+  id: string;
+  vaultId: string;
+  senderData: Record<string, string>;
+  fileIds: string[];
+  createdAt: string;
 }
 
 export interface Report {

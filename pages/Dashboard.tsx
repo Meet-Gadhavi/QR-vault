@@ -9,8 +9,26 @@ import { UploadCloud, File as FileIcon, Link as LinkIcon, Trash2, ExternalLink, 
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 
+import { VaultModals } from '../components/VaultModals';
+import { ReceivingConfigBuilder } from '../components/Submissions/ReceivingConfigBuilder';
+import { SubmissionManager } from '../components/Submissions/SubmissionManager';
+
 type SortOption = 'date-newest' | 'date-oldest' | 'name-asc' | 'name-desc' | 'size-desc' | 'size-asc';
 type FilterTime = 'all' | '10-days' | '30-days';
+
+const DEFAULT_RECEIVING_CONFIG: ReceivingConfig = {
+  allowedFileTypes: ['pdf', 'zip'],
+  maxFiles: 5,
+  minFiles: 1,
+  formFields: [
+    { label: 'Full Name', type: 'text', required: true },
+    { label: 'Email', type: 'email', required: true }
+  ],
+  fileRequests: [
+    { label: 'Upload document', fileType: 'PDF', required: true }
+  ],
+  thankYouMessage: 'Thank you for your submission!'
+};
 
 const generateTrendData = (vaultId: string, level: 'high' | 'medium' | 'low') => {
   const seed = vaultId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -144,6 +162,8 @@ export const Dashboard: React.FC = () => {
   // Form State
   const [vaultName, setVaultName] = useState('');
   const [customDomain, setCustomDomain] = useState('');
+  const [vaultType, setVaultType] = useState<VaultType>(VaultType.SENDING);
+  const [receivingConfig, setReceivingConfig] = useState<ReceivingConfig>(DEFAULT_RECEIVING_CONFIG);
   const [accessLevel, setAccessLevel] = useState<AccessLevel>(AccessLevel.PUBLIC);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [links, setLinks] = useState<string[]>([]);
@@ -173,6 +193,8 @@ export const Dashboard: React.FC = () => {
   // UI State
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [viewQrVault, setViewQrVault] = useState<Vault | null>(null);
+  const [submittingVault, setSubmittingVault] = useState<Vault | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [selectedFileForSettings, setSelectedFileForSettings] = useState<{ type: 'NEW' | 'EXISTING', index: number } | null>(null);
   const [fileSettings, setFileSettings] = useState<Record<string, any>>({}); // key is index for NEW, id for EXISTING
@@ -437,6 +459,8 @@ export const Dashboard: React.FC = () => {
     setCustomMaxViews('');
     setVaultPassword('');
     setCustomDomain('');
+    setVaultType(VaultType.SENDING);
+    setReceivingConfig(DEFAULT_RECEIVING_CONFIG);
     setActiveModalTab('identity');
     setIsModalOpen(true);
   };
@@ -458,6 +482,8 @@ export const Dashboard: React.FC = () => {
     setCustomDomain(vault.customDomain || '');
     setExistingFiles(vault.files);
     setDeletedFileIds([]);
+    setVaultType(vault.vaultType || VaultType.SENDING);
+    setReceivingConfig(vault.receivingConfig || DEFAULT_RECEIVING_CONFIG);
 
     // In edit mode, try to infer expiryHours if possible or just set it
     if (vault.expiresAt) {
@@ -687,9 +713,9 @@ export const Dashboard: React.FC = () => {
 
       setUploadTask(3); // Finalizing
       if (modalMode === 'CREATE') {
-        await mockService.createVault(appUser.id, vaultName, finalFiles, links, accessLevel, appUser.email, expiresAt, finalMaxViews, vaultPassword, customDomain);
+        await mockService.createVault(appUser.id, vaultName, finalFiles, links, accessLevel, appUser.email, expiresAt, finalMaxViews, vaultPassword, customDomain, vaultType, receivingConfig);
       } else if (modalMode === 'EDIT' && editingVaultId) {
-        await mockService.updateVault(appUser.id, editingVaultId, vaultName, finalFiles, links, deletedFileIds, accessLevel, appUser.email, expiresAt, finalMaxViews, vaultPassword, customDomain);
+        await mockService.updateVault(appUser.id, editingVaultId, vaultName, finalFiles, links, deletedFileIds, accessLevel, appUser.email, expiresAt, finalMaxViews, vaultPassword, customDomain, vaultType, receivingConfig);
       }
 
       success = true;
@@ -1323,20 +1349,20 @@ export const Dashboard: React.FC = () => {
         )}
 
         {/* Tools Bar (Search & Filter) */}
-        <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
+        <div className="bg-white dark:bg-[#0a0a0b] p-5 rounded-[2rem] border border-gray-100 dark:border-white/5 shadow-2xl shadow-gray-200/50 dark:shadow-none mb-10 flex flex-col lg:flex-row gap-6 items-center justify-between animate-in fade-in slide-in-from-top-4 duration-500">
           {/* Search */}
           <div className="relative w-full md:w-96 group">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 group-focus-within:text-primary-500 transition-colors w-5 h-5" />
             <input
               type="text"
               placeholder="Search vaults..."
-              className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-black border border-transparent hover:bg-white dark:hover:bg-gray-800 hover:border-gray-200 dark:hover:border-gray-700 focus:bg-white dark:focus:bg-gray-800 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 rounded-xl text-sm dark:text-white outline-none transition-all duration-200"
+              className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-black border border-transparent hover:bg-white dark:hover:bg-gray-800/50 hover:border-gray-200 dark:hover:border-gray-800 focus:bg-white dark:focus:bg-[#0d0f14] focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 rounded-xl text-sm dark:text-white outline-none transition-all duration-200"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
 
-          <div className="flex w-full md:w-auto gap-3 flex-wrap md:flex-nowrap">
+          <div className="flex w-full lg:w-auto gap-3 flex-wrap md:flex-nowrap">
             {/* Time Filter - Custom Dropdown */}
             {(() => {
               const filterOptions: { value: FilterTime; label: string; dot: string }[] = [
@@ -1349,15 +1375,15 @@ export const Dashboard: React.FC = () => {
                 <div className="relative w-full md:w-auto md:min-w-[170px]">
                   <button
                     onClick={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === 'filter-time' ? null : 'filter-time'); }}
-                    className={`w-full flex items-center gap-2.5 pl-3.5 pr-3 py-2.5 rounded-xl text-sm font-medium cursor-pointer transition-all duration-200 border ${menuOpenId === 'filter-time'
-                      ? 'bg-primary-50 dark:bg-primary-900/30 border-primary-300 dark:border-primary-800 text-primary-700 dark:text-primary-400 shadow-md shadow-primary-100 dark:shadow-none ring-2 ring-primary-200 dark:ring-primary-900/30'
-                      : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-primary-200 dark:hover:border-primary-800 hover:bg-gray-50 dark:hover:bg-gray-750 shadow-sm hover:shadow-md'
+                    className={`w-full flex items-center gap-2.5 pl-4 pr-3 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest cursor-pointer transition-all duration-300 border ${menuOpenId === 'filter-time'
+                      ? 'bg-primary-600 border-primary-600 text-white shadow-xl shadow-primary-500/20'
+                      : 'bg-gray-50 dark:bg-black border-transparent hover:border-gray-200 dark:hover:border-gray-800 text-gray-500 dark:text-gray-400 hover:bg-white dark:hover:bg-white/5'
                       }`}
                   >
-                    <Filter className={`w-4 h-4 transition-colors ${menuOpenId === 'filter-time' ? 'text-primary-500' : 'text-gray-400 dark:text-gray-500'}`} />
+                    <Filter className={`w-4 h-4 transition-colors ${menuOpenId === 'filter-time' ? 'text-white' : 'text-gray-400 dark:text-gray-500'}`} />
                     <div className={`w-2 h-2 rounded-full ${selectedFilter.dot}`} />
                     <span className="flex-1 text-left">{selectedFilter.label}</span>
-                    <ChevronDown className={`w-4 h-4 transition-all duration-200 ${menuOpenId === 'filter-time' ? 'rotate-180 text-primary-500' : 'text-gray-400 dark:text-gray-500'}`} />
+                    <ChevronDown className={`w-4 h-4 transition-all duration-200 ${menuOpenId === 'filter-time' ? 'rotate-180 text-white' : 'text-gray-400 dark:text-gray-500'}`} />
                   </button>
                   {menuOpenId === 'filter-time' && (
                     <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-100 dark:border-gray-800 z-50 overflow-hidden ring-1 ring-black/5 animate-in fade-in slide-in-from-top-2 duration-150">
@@ -1398,14 +1424,14 @@ export const Dashboard: React.FC = () => {
                 <div className="relative w-full md:w-auto md:min-w-[190px]">
                   <button
                     onClick={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === 'filter-sort' ? null : 'filter-sort'); }}
-                    className={`w-full flex items-center gap-2.5 pl-3.5 pr-3 py-2.5 rounded-xl text-sm font-medium cursor-pointer transition-all duration-200 border ${menuOpenId === 'filter-sort'
-                      ? 'bg-primary-50 dark:bg-primary-900/30 border-primary-300 dark:border-primary-800 text-primary-700 dark:text-primary-400 shadow-md shadow-primary-100 dark:shadow-none ring-2 ring-primary-200 dark:ring-primary-900/30'
-                      : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-primary-200 dark:hover:border-primary-800 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm hover:shadow-md'
+                    className={`w-full flex items-center gap-2.5 pl-4 pr-3 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest cursor-pointer transition-all duration-300 border ${menuOpenId === 'filter-sort'
+                      ? 'bg-primary-600 border-primary-600 text-white shadow-xl shadow-primary-500/20'
+                      : 'bg-gray-50 dark:bg-black border-transparent hover:border-gray-200 dark:hover:border-gray-800 text-gray-500 dark:text-gray-400 hover:bg-white dark:hover:bg-white/5'
                       }`}
                   >
-                    <ArrowUpDown className={`w-4 h-4 transition-colors ${menuOpenId === 'filter-sort' ? 'text-primary-500' : 'text-gray-400 dark:text-gray-500'}`} />
+                    <ArrowUpDown className={`w-4 h-4 transition-colors ${menuOpenId === 'filter-sort' ? 'text-white' : 'text-gray-400 dark:text-gray-500'}`} />
                     <span className="flex-1 text-left">{selectedSort.label}</span>
-                    <ChevronDown className={`w-4 h-4 transition-all duration-200 ${menuOpenId === 'filter-sort' ? 'rotate-180 text-primary-500' : 'text-gray-400 dark:text-gray-500'}`} />
+                    <ChevronDown className={`w-4 h-4 transition-all duration-200 ${menuOpenId === 'filter-sort' ? 'rotate-180 text-white' : 'text-gray-400 dark:text-gray-500'}`} />
                   </button>
                   {menuOpenId === 'filter-sort' && (
                     <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-100 dark:border-gray-800 z-50 overflow-hidden ring-1 ring-black/5 animate-in fade-in slide-in-from-top-2 duration-150">
@@ -1647,6 +1673,13 @@ export const Dashboard: React.FC = () => {
                             <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
                           </button>
 
+                          {vault.vaultType === VaultType.RECEIVING && (
+                             <button onClick={(e) => { e.stopPropagation(); setSubmittingVault(vault); setMenuOpenId(null); }} className="group w-full bg-primary-600 text-white border-none cursor-pointer hover:bg-primary-700 active:scale-95 py-4 px-6 rounded-2xl text-[11px] uppercase tracking-widest font-black flex items-center justify-between transition-all shadow-lg shadow-primary-500/20">
+                               <span className="flex items-center gap-3"><Inbox className="w-4 h-4" /> Manage Submissions</span>
+                               <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
+                             </button>
+                          )}
+
                           <div className="pt-2">
                             <button onClick={(e) => handleDeleteVault(vault.id, e)} className="w-full bg-red-600 hover:bg-red-700 text-white cursor-pointer py-4 px-6 rounded-2xl text-[11px] uppercase tracking-widest font-black flex items-center justify-center gap-3 transition-all shadow-xl shadow-red-500/20 dark:shadow-none active:scale-95">
                               <Trash2 className="w-4 h-4" /> Self Destruct Protocol
@@ -1660,128 +1693,145 @@ export const Dashboard: React.FC = () => {
                 }
               </div>
             )}
-          </div>
         ) : activeTab === 'analytics' ? (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-700 pb-20">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Main Overview Stat */}
-              <div className="lg:col-span-2 bg-white dark:bg-[#0d0f14] p-5 md:p-10 rounded-[2rem] md:rounded-[3rem] border border-gray-100 dark:border-white/5 shadow-2xl shadow-black/[0.02]">
-                <div className="flex items-center justify-between mb-10">
-                  <div>
-                    <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight italic">Vault Ecosystem Performance</h2>
-                    <p className="text-[10px] font-black text-primary-500 uppercase tracking-[0.3em] mt-1">Global Engagement Matrix</p>
-                  </div>
-                  <div className="hidden md:flex items-center gap-4 bg-gray-50 dark:bg-white/5 p-2 rounded-2xl border border-gray-100 dark:border-white/5">
-                    {vaults.slice(0, 3).map((v, i) => (
-                      <div key={v.id} className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${i === 0 ? 'bg-primary-500' : i === 1 ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-                        <span className="text-[9px] font-bold text-gray-500 uppercase truncate max-w-[60px]">{v.name}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="h-[400px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={(() => {
-                      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                      return days.map(day => {
-                        const entry: any = { day };
-                        vaults.forEach((v, idx) => {
-                          if (idx < 5) entry[v.name] = Math.floor(Math.random() * (v.views + 1) * 0.8) + (v.views / 7);
-                        });
-                        return entry;
-                      });
-                    })()}>
-                      <defs>
-                        {vaults.slice(0, 5).map((v, i) => (
-                          <linearGradient key={v.id} id={`color${i}`} x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor={i === 0 ? '#8b5cf6' : i === 1 ? '#10b981' : i === 2 ? '#f59e0b' : i === 3 ? '#3b82f6' : '#ec4899'} stopOpacity={0.2} />
-                            <stop offset="95%" stopColor={i === 0 ? '#8b5cf6' : i === 1 ? '#10b981' : i === 2 ? '#f59e0b' : i === 3 ? '#3b82f6' : '#ec4899'} stopOpacity={0} />
-                          </linearGradient>
-                        ))}
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#88888815" />
-                      <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#888' }} />
-                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#888' }} />
-                      <Tooltip
-                        contentStyle={{ backgroundColor: '#000', border: 'none', borderRadius: '16px', padding: '16px', boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}
-                        labelStyle={{ color: '#888', marginBottom: '8px', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase' }}
-                        itemStyle={{ fontSize: '12px', fontWeight: 900, padding: '2px 0' }}
-                      />
-                      {vaults.slice(0, 5).map((v, i) => (
-                        <Area
-                          key={v.id}
-                          type="monotone"
-                          dataKey={v.name}
-                          stroke={i === 0 ? '#8b5cf6' : i === 1 ? '#10b981' : i === 2 ? '#f59e0b' : i === 3 ? '#3b82f6' : '#ec4899'}
-                          strokeWidth={4}
-                          fillOpacity={1}
-                          fill={`url(#color${i})`}
-                          animationDuration={1500 + (i * 300)}
-                        />
-                      ))}
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
+            {vaults.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-32 bg-white dark:bg-[#0a0a0b] border border-gray-100 dark:border-white/5 rounded-[3rem] shadow-xl">
+                 <div className="w-20 h-20 bg-gray-50 dark:bg-white/5 rounded-[2rem] flex items-center justify-center mb-6">
+                    <TrendingUp className="w-10 h-10 text-gray-300 dark:text-gray-700" />
+                 </div>
+                 <h2 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">No Data to showcase !</h2>
+                 <p className="text-[10px] font-bold text-gray-400 dark:text-gray-600 uppercase tracking-widest mt-2">Create your first vault to unlock global intelligence</p>
+                 <button 
+                   onClick={openCreateModal}
+                   className="mt-8 px-8 py-4 bg-primary-600 hover:bg-primary-700 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all shadow-xl shadow-primary-500/20 active:scale-95"
+                 >
+                   Launch First Vault
+                 </button>
               </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Main Overview Stat */}
+                  <div className="lg:col-span-2 bg-white dark:bg-[#0d0f14] p-5 md:p-10 rounded-[2rem] md:rounded-[3rem] border border-gray-100 dark:border-white/5 shadow-2xl shadow-black/[0.02]">
+                    <div className="flex items-center justify-between mb-10">
+                      <div>
+                        <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight italic">Vault Ecosystem Performance</h2>
+                        <p className="text-[10px] font-black text-primary-500 uppercase tracking-[0.3em] mt-1">Global Engagement Matrix</p>
+                      </div>
+                      <div className="hidden md:flex items-center gap-4 bg-gray-50 dark:bg-white/5 p-2 rounded-2xl border border-gray-100 dark:border-white/5">
+                        {vaults.slice(0, 3).map((v, i) => (
+                          <div key={v.id} className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${i === 0 ? 'bg-primary-500' : i === 1 ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                            <span className="text-[9px] font-bold text-gray-500 uppercase truncate max-w-[60px]">{v.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
 
-              {/* Top Performers */}
-              <div className="bg-white dark:bg-[#0d0f14] p-5 md:p-8 rounded-[2rem] md:rounded-[3rem] border border-gray-100 dark:border-white/5 shadow-2xl overflow-hidden relative group">
-                <div className="flex items-center gap-4 mb-8">
-                  <div className="p-3 bg-amber-500 text-white rounded-2xl shadow-xl shadow-amber-500/20">
-                    <Zap className="w-5 h-5 fill-current" />
+                    <div className="h-[400px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={(() => {
+                          const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                          return days.map(day => {
+                            const entry: any = { day };
+                            vaults.forEach((v, idx) => {
+                              if (idx < 5) entry[v.name] = Math.floor(Math.random() * (v.views + 1) * 0.8) + (v.views / 7);
+                            });
+                            return entry;
+                          });
+                        })()}>
+                          <defs>
+                            {vaults.slice(0, 5).map((v, i) => (
+                              <linearGradient key={v.id} id={`color${i}`} x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor={i === 0 ? '#8b5cf6' : i === 1 ? '#10b981' : i === 2 ? '#f59e0b' : i === 3 ? '#3b82f6' : '#ec4899'} stopOpacity={0.2} />
+                                <stop offset="95%" stopColor={i === 0 ? '#8b5cf6' : i === 1 ? '#10b981' : i === 2 ? '#f59e0b' : i === 3 ? '#3b82f6' : '#ec4899'} stopOpacity={0} />
+                              </linearGradient>
+                            ))}
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#88888815" />
+                          <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#888' }} />
+                          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#888' }} />
+                          <Tooltip
+                            contentStyle={{ backgroundColor: '#000', border: 'none', borderRadius: '16px', padding: '16px', boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}
+                            labelStyle={{ color: '#888', marginBottom: '8px', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase' }}
+                            itemStyle={{ fontSize: '12px', fontWeight: 900, padding: '2px 0' }}
+                          />
+                          {vaults.slice(0, 5).map((v, i) => (
+                            <Area
+                              key={v.id}
+                              type="monotone"
+                              dataKey={v.name}
+                              stroke={i === 0 ? '#8b5cf6' : i === 1 ? '#10b981' : i === 2 ? '#f59e0b' : i === 3 ? '#3b82f6' : '#ec4899'}
+                              strokeWidth={4}
+                              fillOpacity={1}
+                              fill={`url(#color${i})`}
+                              animationDuration={1500 + (i * 300)}
+                            />
+                          ))}
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest">Hall of Fame</h3>
-                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Highest Scan Assets</p>
+
+                  {/* Top Performers */}
+                  <div className="bg-white dark:bg-[#0d0f14] p-5 md:p-8 rounded-[2rem] md:rounded-[3rem] border border-gray-100 dark:border-white/5 shadow-2xl overflow-hidden relative group">
+                    <div className="flex items-center gap-4 mb-8">
+                      <div className="p-3 bg-amber-500 text-white rounded-2xl shadow-xl shadow-amber-500/20">
+                        <Zap className="w-5 h-5 fill-current" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest">Hall of Fame</h3>
+                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Highest Scan Assets</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-6">
+                      {[...vaults].sort((a, b) => b.views - a.views).slice(0, 5).map((v, idx) => (
+                        <div key={v.id} className="flex items-center justify-between group/v">
+                          <div className="flex items-center gap-4">
+                            <span className="text-lg font-black text-gray-200 dark:text-white/10 italic w-6">#{idx + 1}</span>
+                            <div>
+                              <div className="text-sm font-black text-gray-800 dark:text-gray-200 truncate max-w-[120px]">{v.name}</div>
+                              <div className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{v.files.length} Security Objects</div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-lg font-black text-primary-600 tabular-nums">{v.views}</div>
+                            <div className="text-[8px] font-bold text-gray-400 uppercase tracking-tight">TOTAL SCANS</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <button className="w-full mt-10 py-4 bg-gray-50 dark:bg-white/5 rounded-2xl text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 hover:bg-primary-500 hover:text-white transition-all">
+                      Expand Full Report
+                    </button>
                   </div>
                 </div>
 
-                <div className="space-y-6">
-                  {[...vaults].sort((a, b) => b.views - a.views).slice(0, 5).map((v, idx) => (
-                    <div key={v.id} className="flex items-center justify-between group/v">
-                      <div className="flex items-center gap-4">
-                        <span className="text-lg font-black text-gray-200 dark:text-white/10 italic w-6">#{idx + 1}</span>
-                        <div>
-                          <div className="text-sm font-black text-gray-800 dark:text-gray-200 truncate max-w-[120px]">{v.name}</div>
-                          <div className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{v.files.length} Security Objects</div>
-                        </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {[
+                    { label: 'Network Reach', val: vaults.reduce((a, b) => a + b.views, 0), icon: Eye, unit: 'Views', color: 'primary' },
+                    { label: 'Scan Volume', val: vaults.reduce((a, b) => a + (b.analytics?.totalScans || 0), 0), icon: QrCode, unit: 'Scans', color: 'emerald' },
+                    { label: 'Data Protected', val: formatBytes(vaults.reduce((a, b) => a + b.files.reduce((fa, fb) => fa + fb.size, 0), 0)), icon: Box, unit: 'Storage', color: 'blue' },
+                    { label: 'Active Reports', val: vaults.reduce((a, b) => a + (b.reportCount || 0), 0), icon: AlertTriangle, unit: 'Flags', color: 'red' }
+                  ].map((stat, i) => (
+                    <div key={i} className="bg-white dark:bg-[#0d0f14] p-6 rounded-[2rem] border border-gray-100 dark:border-white/5 hover:shadow-2xl transition-all group">
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110 ${stat.color === 'primary' ? 'bg-primary-500' : stat.color === 'emerald' ? 'bg-emerald-500' : stat.color === 'blue' ? 'bg-blue-500' : 'bg-red-500'
+                        } text-white shadow-xl ${stat.color === 'primary' ? 'shadow-primary-500/20' : stat.color === 'emerald' ? 'shadow-emerald-500/20' : stat.color === 'blue' ? 'shadow-blue-500/20' : 'shadow-red-500/20'}`}>
+                        <stat.icon className="w-6 h-6" />
                       </div>
-                      <div className="text-right">
-                        <div className="text-lg font-black text-primary-600 tabular-nums">{v.views}</div>
-                        <div className="text-[8px] font-bold text-gray-400 uppercase tracking-tight">TOTAL SCANS</div>
+                      <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">{stat.label}</div>
+                      <div className="flex items-baseline gap-2">
+                        <div className="text-2xl font-black text-gray-900 dark:text-white italic">{stat.val}</div>
+                        <span className="text-[10px] font-bold text-gray-400 dark:text-gray-600 uppercase">{stat.unit}</span>
                       </div>
                     </div>
                   ))}
                 </div>
-
-                <button className="w-full mt-10 py-4 bg-gray-50 dark:bg-white/5 rounded-2xl text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 hover:bg-primary-500 hover:text-white transition-all">
-                  Expand Full Report
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[
-                { label: 'Network Reach', val: vaults.reduce((a, b) => a + b.views, 0), icon: Eye, unit: 'Views', color: 'primary' },
-                { label: 'Scan Volume', val: vaults.reduce((a, b) => a + (b.analytics?.totalScans || 0), 0), icon: QrCode, unit: 'Scans', color: 'emerald' },
-                { label: 'Data Protected', val: formatBytes(vaults.reduce((a, b) => a + b.files.reduce((fa, fb) => fa + fb.size, 0), 0)), icon: Box, unit: 'Storage', color: 'blue' },
-                { label: 'Active Reports', val: vaults.reduce((a, b) => a + (b.reportCount || 0), 0), icon: AlertTriangle, unit: 'Flags', color: 'red' }
-              ].map((stat, i) => (
-                <div key={i} className="bg-white dark:bg-[#0d0f14] p-6 rounded-[2rem] border border-gray-100 dark:border-white/5 hover:shadow-2xl transition-all group">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110 ${stat.color === 'primary' ? 'bg-primary-500' : stat.color === 'emerald' ? 'bg-emerald-500' : stat.color === 'blue' ? 'bg-blue-500' : 'bg-red-500'
-                    } text-white shadow-xl ${stat.color === 'primary' ? 'shadow-primary-500/20' : stat.color === 'emerald' ? 'shadow-emerald-500/20' : stat.color === 'blue' ? 'shadow-blue-500/20' : 'shadow-red-500/20'}`}>
-                    <stat.icon className="w-6 h-6" />
-                  </div>
-                  <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">{stat.label}</div>
-                  <div className="flex items-baseline gap-2">
-                    <div className="text-2xl font-black text-gray-900 dark:text-white italic">{stat.val}</div>
-                    <span className="text-[10px] font-bold text-gray-400 dark:text-gray-600 uppercase">{stat.unit}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+              </>
+            )}
           </div>
         ) : (
           /* Recently Deleted Logs Tab */
@@ -1895,6 +1945,24 @@ export const Dashboard: React.FC = () => {
 
             {/* Tab Navigation */}
             <div className="flex px-8 sm:px-10 pt-4 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 gap-6 sm:gap-8 overflow-x-auto no-scrollbar sticky top-[73px] z-10">
+              {/* Vault Mode Selector */}
+              <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 mx-8 sm:mx-10 mt-6 mb-2">
+                <button
+                  type="button"
+                  onClick={() => setVaultType(VaultType.SENDING)}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${vaultType === VaultType.SENDING ? 'bg-white dark:bg-gray-900 text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                >
+                  <Send className="w-4 h-4" /> Sharing Mode
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setVaultType(VaultType.RECEIVING)}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${vaultType === VaultType.RECEIVING ? 'bg-white dark:bg-gray-900 text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                >
+                  <Inbox className="w-4 h-4" /> Collection Mode
+                </button>
+              </div>
+
               {[
                 { id: 'identity', label: 'Identity', icon: Globe },
                 { id: 'content', label: 'Content', icon: Grid },
@@ -1920,7 +1988,6 @@ export const Dashboard: React.FC = () => {
               ))}
             </div>
 
-            {/* Content Body */}
             {/* Content Body */}
             <div className="p-6 sm:p-10 space-y-12">
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -1967,8 +2034,10 @@ export const Dashboard: React.FC = () => {
                 )}
 
                 {activeModalTab === 'content' && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in slide-in-from-right-4">
-                    {/* Asset Pipeline - Files */}
+                  <div className="animate-in fade-in slide-in-from-right-4">
+                    {vaultType === VaultType.SENDING ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {/* Asset Pipeline - Files */}
                     <div className="space-y-4">
                       <label className="block text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] ml-1">Asset Pipeline</label>
                       <div
@@ -2013,13 +2082,6 @@ export const Dashboard: React.FC = () => {
                                    </div>
                                  </div>
                                  <div className="flex items-center gap-1">
-                                    <button 
-                                      onClick={(e) => { e.stopPropagation(); setSelectedFileForSettings({ type: 'EXISTING', index: i }); }}
-                                      className="p-2.5 text-gray-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-xl transition-all"
-                                      title="File Destruct Protocol"
-                                    >
-                                      <ShieldCheck className="w-4 h-4" />
-                                    </button>
                                     <button onClick={(e) => { e.stopPropagation(); handleMarkFileDeleted(f.id); }} className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl transition-all"><X className="w-4 h-4" /></button>
                                  </div>
                                </div>
@@ -2043,13 +2105,6 @@ export const Dashboard: React.FC = () => {
                                    </div>
                                 </div>
                                 <div className="flex items-center gap-1">
-                                    <button 
-                                      onClick={(e) => { e.stopPropagation(); setSelectedFileForSettings({ type: 'NEW', index: i }); }}
-                                      className="p-2.5 text-primary-500/60 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-xl transition-all"
-                                      title="File Destruct Protocol"
-                                    >
-                                      <ShieldCheck className="w-4 h-4" />
-                                    </button>
                                     <button onClick={(e) => { e.stopPropagation(); removeSelectedFile(i); }} className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl transition-all"><X className="w-4 h-4" /></button>
                                 </div>
                               </div>
@@ -2095,12 +2150,18 @@ export const Dashboard: React.FC = () => {
                       </div>
                     </div>
                   </div>
+                    ) : (
+                      <ReceivingConfigBuilder 
+                        config={receivingConfig}
+                        onChange={setReceivingConfig}
+                      />
+                    )}
+                  </div>
                 )}
 
                 {activeModalTab === 'lifecycle' && (
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-right-4">
                     {/* Expiry */}
-                    <div className="bg-white/50 dark:bg-white/[0.02] p-8 rounded-[2rem] border border-gray-100 dark:border-white/5 space-y-4 shadow-sm">
                        <div className="flex items-center gap-2 mb-2">
                          <Clock className="w-5 h-5 text-primary-500" />
                          <span className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">Vault Lifetime</span>
@@ -2202,13 +2263,13 @@ export const Dashboard: React.FC = () => {
                                       </button>
                                     ))}
                                     <button
-                                      type="button"
-                                      disabled={appUser?.plan !== PlanType.PRO}
-                                      onClick={() => { setMaxViews('custom'); setMenuOpenId(null); }}
-                                      className={`w-full text-left px-6 py-4 text-[10px] font-black uppercase tracking-widest transition-colors ${maxViews === 'custom' ? 'bg-primary-600 text-white' : 'hover:bg-primary-50 dark:hover:bg-white/5 text-gray-500 dark:text-gray-400 disabled:opacity-30'}`}
-                                    >
-                                      Custom Limit {appUser?.plan !== PlanType.PRO && ' (PRO)'}
-                                    </button>
+                                       type="button"
+                                       disabled={appUser?.plan !== PlanType.PRO && appUser?.plan !== PlanType.PLUS}
+                                       onClick={() => { setMaxViews('custom'); setMenuOpenId(null); }}
+                                       className={`w-full text-left px-6 py-4 text-[10px] font-black uppercase tracking-widest transition-colors ${maxViews === 'custom' ? 'bg-primary-600 text-white' : 'hover:bg-primary-50 dark:hover:bg-white/5 text-gray-500 dark:text-gray-400 disabled:opacity-30'}`}
+                                     >
+                                       Custom Limit {appUser?.plan !== PlanType.PRO && appUser?.plan !== PlanType.PLUS && ' (PLUS/PRO)'}
+                                     </button>
                                   </div>
                                 )}
                                 {maxViews === 'custom' && (
@@ -2913,6 +2974,201 @@ export const Dashboard: React.FC = () => {
                     ) : (
                       <button onClick={() => setSelectedFileForSettings(null)} className="w-full bg-primary-600 hover:bg-primary-700 text-white py-4 px-8 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary-500/20 dark:shadow-none active:scale-95 transition-all">
                         Apply Protocol
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight leading-none mb-1">Reports History</h3>
+                      <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em]">{reportVault.name}</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setReportVault(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors text-gray-400"><X className="w-6 h-6" /></button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto pr-2 space-y-4 no-scrollbar">
+                  {loadingReports ? (
+                    <div className="flex flex-col items-center justify-center py-20 gap-4">
+                      <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
+                      <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Scanning History...</span>
+                    </div>
+                  ) : vaultReports.length === 0 ? (
+                    <div className="text-center py-20 bg-gray-50/50 dark:bg-black/20 rounded-3xl border-2 border-dashed border-gray-100 dark:border-white/5">
+                      <ShieldCheck className="w-12 h-12 text-emerald-400 mx-auto mb-4" />
+                      <p className="text-sm font-black text-gray-900 uppercase">Vault Clean</p>
+                      <p className="text-xs text-gray-400 font-medium mt-1">No community reports received for this vault.</p>
+                    </div>
+                  ) : (
+                    vaultReports.map((report) => (
+                      <div key={report.id} className="p-5 bg-white border-2 border-gray-50 rounded-3xl hover:border-red-50 transition-all hover:shadow-lg hover:shadow-red-50/20 group">
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="flex flex-wrap gap-2">
+                            {report.reason_virus && <span className="bg-red-50 text-red-600 px-2 py-1 rounded-lg text-[9px] font-black uppercase ring-1 ring-red-100">Virus/Malware</span>}
+                            {report.reason_content && <span className="bg-primary-50 text-primary-600 px-2 py-1 rounded-lg text-[9px] font-black uppercase ring-1 ring-orange-100">Illegal Content</span>}
+                            {!report.reason_virus && !report.reason_content && <span className="bg-gray-50 text-gray-500 px-2 py-1 rounded-lg text-[9px] font-black uppercase ring-1 ring-gray-100">Other Violation</span>}
+                          </div>
+                          <span className="text-[10px] font-black text-gray-300 uppercase tracking-tighter">{new Date(report.created_at).toLocaleString()}</span>
+                        </div>
+                        {report.fileIds && report.fileIds.length > 0 && (
+                          <div className="mt-3 space-y-2">
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-red-50/50 rounded-xl border border-red-100/50 w-fit">
+                              <AlertTriangle className="w-3 h-3 text-red-500" />
+                              <span className="text-[10px] font-black text-red-600 uppercase tracking-tight">Reported Content:</span>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              {report.fileIds.map((fid: string) => {
+                                const file = reportVault?.files?.find((f: any) => f.id === fid);
+                                return (
+                                  <div key={fid} className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-white/5 rounded-xl border border-gray-100 dark:border-white/5">
+                                    <FileText className="w-3 h-3 text-gray-400" />
+                                    <span className="text-[10px] font-medium text-gray-700 truncate">
+                                      {file?.name || "Unknown File"}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                        {report.custom_message && (
+                          <div className="bg-gray-50/50 dark:bg-white/5 p-4 rounded-2xl italic text-gray-600 dark:text-gray-400 text-xs font-medium border-l-4 border-l-red-100 dark:border-l-red-900/50 mt-3">
+                            "{report.custom_message}"
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <div className="mt-8 bg-amber-50 border border-amber-100 rounded-2xl p-5 flex items-start gap-4">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-[10px] font-black text-amber-800 uppercase tracking-tight mb-1">Owner Warning</p>
+                    <p className="text-[11px] text-amber-700/80 font-medium leading-relaxed">
+                      Accumulating 4 reports will result in a 10-day lock. 10 reports will trigger automatic permanent deletion for community safety.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          {/* File-Specific Setting Modal (Self-Destruct) - Redesigned Broad Layout */}
+          {selectedFileForSettings && (
+            <div className="fixed inset-0 bg-black/60 dark:bg-black/95 backdrop-blur-xl z-[100] flex items-center justify-center p-4 animate-in fade-in duration-500">
+              <div className="bg-white dark:bg-[#0d0f14] rounded-[3rem] w-full max-w-5xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] dark:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.8)] animate-in zoom-in-95 duration-500 border border-white/20 dark:border-white/5 overflow-hidden relative">
+                <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary-600 via-primary-400 to-indigo-600 opacity-80"></div>
+
+                <div className="p-10 md:p-12">
+                  <div className="flex justify-between items-start mb-10">
+                    <div className="flex items-center gap-5">
+                      <div className="w-14 h-14 bg-primary-600 dark:bg-primary-500 rounded-[1.5rem] flex items-center justify-center shadow-2xl shadow-primary-500/20 rotate-3">
+                        <ShieldCheck className="w-7 h-7 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tighter uppercase italic leading-none">File Destruct</h3>
+                        <p className="text-[10px] font-black text-primary-600 dark:text-primary-400 uppercase tracking-[0.2em] mt-2">Advanced Security Protocol</p>
+                      </div>
+                    </div>
+                    <button onClick={() => setSelectedFileForSettings(null)} className="p-3 hover:bg-gray-100 dark:hover:bg-white/5 rounded-2xl transition-all active:scale-90 text-gray-400 hover:text-gray-900 dark:hover:text-white border border-transparent hover:border-gray-200 dark:hover:border-white/10"><X className="w-6 h-6" /></button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* 1. Max Downloads */}
+                    <div className="bg-gray-50 dark:bg-black/60 p-6 rounded-[2rem] border border-gray-100 dark:border-white/5 relative group transition-all hover:bg-white dark:hover:bg-primary-900/10 hover:shadow-xl hover:shadow-primary-500/5">
+                      <div className="flex items-center justify-between mb-5">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-xl">
+                            <Download className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                          </div>
+                          <span className="text-xs font-black text-gray-900 dark:text-gray-200 uppercase tracking-tight">Download Limit</span>
+                        </div>
+                        {appUser?.plan === PlanType.FREE && (
+                          <span className="text-[9px] font-black bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-300 px-2 py-0.5 rounded-full uppercase tracking-widest">Plus+</span>
+                        )}
+                      </div>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          disabled={appUser?.plan === PlanType.FREE}
+                          placeholder="Unlimited"
+                          value={fileSettings[selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any]?.maxDownloads || ''}
+                          onChange={(e) => {
+                            const val = e.target.value === '' ? undefined : parseInt(e.target.value);
+                            const key = selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any;
+                            setFileSettings({ ...fileSettings, [key]: { ...fileSettings[key], maxDownloads: val } });
+                          }}
+                          className={`w-full bg-white dark:bg-black/40 dark:text-white border border-gray-200 dark:border-white/10 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-primary-500 transition-all font-bold text-sm ${appUser?.plan === PlanType.FREE ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        />
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest pointer-events-none">Hits</div>
+                      </div>
+                      <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-4 font-bold uppercase tracking-tight leading-relaxed">Auto-delete after reaching this many successful downloads.</p>
+                    </div>
+
+                    {/* 2. Vanishing Timer */}
+                    <div className="bg-gray-50 dark:bg-black/60 p-6 rounded-[2rem] border border-gray-100 dark:border-white/5 relative group transition-all hover:bg-white dark:hover:bg-primary-900/10 hover:shadow-xl hover:shadow-primary-500/5">
+                      <div className="flex items-center justify-between mb-5">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-xl">
+                            <Clock className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                          </div>
+                          <span className="text-xs font-black text-gray-900 dark:text-gray-200 uppercase tracking-tight">Vanishing Timer</span>
+                        </div>
+                        {appUser?.plan === PlanType.FREE && (
+                          <span className="text-[9px] font-black bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-300 px-2 py-0.5 rounded-full uppercase tracking-widest">Plus+</span>
+                        )}
+                      </div>
+                      <select
+                        disabled={appUser?.plan === PlanType.FREE}
+                        value={fileSettings[selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any]?.deleteAfterMinutes || ''}
+                        onChange={(e) => {
+                          const val = e.target.value === '' ? undefined : parseInt(e.target.value);
+                          const key = selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any;
+                          setFileSettings({ ...fileSettings, [key]: { ...fileSettings[key], deleteAfterMinutes: val } });
+                        }}
+                        className={`w-full bg-white dark:bg-black/60 dark:text-white border border-gray-200 dark:border-white/10 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-primary-500 transition-all font-bold text-sm appearance-none ${appUser?.plan === PlanType.FREE ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        <option className="dark:bg-gray-900" value="">Never vanish</option>
+                        <option className="dark:bg-gray-900" value="1">1 Minute after opening</option>
+                        <option className="dark:bg-gray-900" value="5">5 Minutes after opening</option>
+                        <option className="dark:bg-gray-900" value="60">1 Hour after opening</option>
+                        <option className="dark:bg-gray-900" value="1440">24 Hours after opening</option>
+                      </select>
+                      <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-4 font-bold uppercase tracking-tight leading-relaxed">Countdown begins once the visitor first previews or downloads this file.</p>
+                    </div>
+
+                    {/* 3. Hard Expiry */}
+                    <div className="bg-gray-50 dark:bg-black/60 p-6 rounded-[2rem] border border-gray-100 dark:border-white/5 relative group transition-all hover:bg-white dark:hover:bg-primary-900/10 hover:shadow-xl hover:shadow-primary-500/5">
+                      <div className="flex items-center justify-between mb-5">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-xl">
+                            <Calendar className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                          </div>
+                          <span className="text-xs font-black text-gray-900 dark:text-gray-200 uppercase tracking-tight">Hard Expiry</span>
+                        </div>
+                        {appUser?.plan === PlanType.FREE && (
+                          <span className="text-[9px] font-black bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-300 px-2 py-0.5 rounded-full uppercase tracking-widest">Plus+</span>
+                        )}
+                      </div>
+                      <input
+                        type="datetime-local"
+                        disabled={appUser?.plan === PlanType.FREE}
+                        value={fileSettings[selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any]?.expiresAt || ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const key = selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any;
+                          setFileSettings({ ...fileSettings, [key]: { ...fileSettings[key], expiresAt: val } });
+                        }}
+                        className={`w-full bg-white dark:bg-black/60 dark:text-white border border-gray-200 dark:border-white/10 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-primary-500 transition-all font-bold text-sm ${appUser?.plan === PlanType.FREE ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      />
+                      <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-4 font-bold uppercase tracking-tight leading-relaxed">File will vanish on this specific date regardless of views.</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-12 flex gap-4 max-w-xs mx-auto md:mx-0">
+                    {appUser?.plan === PlanType.FREE ? (
+                      <Link to="/pricing" onClick={() => setSelectedFileForSettings(null)} className="w-full bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-700 hover:to-indigo-700 text-white py-4 px-8 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary-500/20 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-95">
+                        <Zap className="w-4 h-4 fill-current text-white" /> Upgrade to Plus
+                      </Link>
+                    ) : (
+                      <button onClick={() => setSelectedFileForSettings(null)} className="w-full bg-primary-600 hover:bg-primary-700 text-white py-4 px-8 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary-500/20 dark:shadow-none active:scale-95 transition-all">
+                        Apply Protocol
                       </button>
                     )}
                   </div>
@@ -2920,214 +3176,235 @@ export const Dashboard: React.FC = () => {
               </div>
             </div>
           )}
-
-          {/* Analytics Modal */}
-          {selectedAnalyticsVault && (
-            <div className="fixed inset-0 bg-black/60 dark:bg-black/90 backdrop-blur-md z-[60] flex items-center justify-center p-4">
-              <div className="bg-white dark:bg-[#0a0a0b] rounded-[2.5rem] w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl border border-gray-100 dark:border-white/5 flex flex-col animate-in fade-in zoom-in-95 duration-300">
-                {/* Modal Header */}
-                <div className="p-8 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02] flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-3 mb-1">
-                      <div className="p-2 bg-primary-500 text-white rounded-xl shadow-lg shadow-primary-500/20 dark:shadow-none">
-                        <TrendingUp className="w-5 h-5" />
-                      </div>
-                      <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Vault Analytics</h2>
+        {/* Analytics Modal */}
+        {selectedAnalyticsVault && (
+          <div className="fixed inset-0 bg-black/60 dark:bg-black/90 backdrop-blur-md z-[60] flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-[#0a0a0b] rounded-[2.5rem] w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl border border-gray-100 dark:border-white/5 flex flex-col animate-in fade-in zoom-in-95 duration-300">
+              {/* Modal Header */}
+              <div className="p-8 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02] flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-3 mb-1">
+                    <div className="p-2 bg-primary-500 text-white rounded-xl shadow-lg shadow-primary-500/20 dark:shadow-none">
+                      <TrendingUp className="w-5 h-5" />
                     </div>
-                    <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-11">Real-time Intelligence for <span className="text-primary-500">{selectedAnalyticsVault.name}</span></p>
+                    <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Vault Analytics</h2>
                   </div>
+                  <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-11">Real-time Intelligence for <span className="text-primary-500">{selectedAnalyticsVault.name}</span></p>
+                </div>
+                <button
+                  onClick={() => setSelectedAnalyticsVault(null)}
+                  className="p-3 bg-white dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-2xl transition-all border border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white group"
+                >
+                  <X className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />
+                </button>
+              </div>
+
+              {/* Modal Navigation */}
+              <div className="px-8 pt-6 pb-2 border-b border-gray-100 dark:border-white/5 flex gap-8">
+                {[
+                  { id: 'overview', label: 'Overview', icon: Box },
+                  { id: 'engagement', label: 'Engagement Timeline', icon: Clock },
+                  { id: 'files', label: 'File Performance', icon: FileText }
+                ].map((tab) => (
                   <button
-                    onClick={() => setSelectedAnalyticsVault(null)}
-                    className="p-3 bg-white dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-2xl transition-all border border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white group"
+                    key={tab.id}
+                    onClick={() => setActiveAnalyticsTab(tab.id as any)}
+                    className={`pb-4 text-[10px] font-black uppercase tracking-[0.2em] relative flex items-center gap-2.5 transition-all ${activeAnalyticsTab === tab.id
+                      ? 'text-primary-600 dark:text-primary-400'
+                      : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                      }`}
                   >
-                    <X className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />
+                    <tab.icon className="w-3.5 h-3.5" />
+                    {tab.label}
+                    {activeAnalyticsTab === tab.id && (
+                      <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-500 rounded-t-full shadow-[0_-4px_12px_rgba(124,58,237,0.4)]" />
+                    )}
                   </button>
-                </div>
+                ))}
+              </div>
 
-                {/* Modal Navigation */}
-                <div className="px-8 pt-6 pb-2 border-b border-gray-100 dark:border-white/5 flex gap-8">
-                  {[
-                    { id: 'overview', label: 'Overview', icon: Box },
-                    { id: 'engagement', label: 'Engagement Timeline', icon: Clock },
-                    { id: 'files', label: 'File Performance', icon: FileText }
-                  ].map((tab) => (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveAnalyticsTab(tab.id as any)}
-                      className={`pb-4 text-[10px] font-black uppercase tracking-[0.2em] relative flex items-center gap-2.5 transition-all ${activeAnalyticsTab === tab.id
-                        ? 'text-primary-600 dark:text-primary-400'
-                        : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
-                        }`}
-                    >
-                      <tab.icon className="w-3.5 h-3.5" />
-                      {tab.label}
-                      {activeAnalyticsTab === tab.id && (
-                        <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-500 rounded-t-full shadow-[0_-4px_12px_rgba(124,58,237,0.4)]" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-                  {activeAnalyticsTab === 'overview' && (
-                    <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                        {[
-                          { label: 'Unique Viewers', value: selectedAnalyticsVault.analytics?.uniqueViewers, icon: Users, color: 'primary' },
-                          { label: 'Total Scans', value: selectedAnalyticsVault.analytics?.totalScans, icon: QrCode, color: 'blue' },
-                          { label: 'Views', value: selectedAnalyticsVault.views, icon: Eye, color: 'emerald' },
-                          { label: 'Total Downloads', value: selectedAnalyticsVault.analytics?.totalDownloads, icon: Download, color: 'amber' }
-                        ].map((stat) => (
-                          <div key={stat.label} className="p-6 bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-3xl hover:bg-white dark:hover:bg-white/[0.04] transition-all hover:shadow-xl group">
-                            <div className={`w-10 h-10 rounded-2xl mb-4 flex items-center justify-center transition-transform group-hover:scale-110 ${stat.color === 'primary' ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/20' :
-                              stat.color === 'blue' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' :
-                                stat.color === 'emerald' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' :
-                                  'bg-primary-500 text-white shadow-lg shadow-primary-500/20'
-                              }`}>
-                              <stat.icon className="w-5 h-5" />
-                            </div>
-                            <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{stat.label}</div>
-                            <div className="text-2xl font-black text-gray-900 dark:text-white tabular-nums">{stat.value}</div>
+              <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                {activeAnalyticsTab === 'overview' && (
+                  <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                      {[
+                        { label: 'Unique Viewers', value: selectedAnalyticsVault.analytics?.uniqueViewers, icon: Users, color: 'primary' },
+                        { label: 'Total Scans', value: selectedAnalyticsVault.analytics?.totalScans, icon: QrCode, color: 'blue' },
+                        { label: 'Views', value: selectedAnalyticsVault.views, icon: Eye, color: 'emerald' },
+                        { label: 'Total Downloads', value: selectedAnalyticsVault.analytics?.totalDownloads, icon: Download, color: 'amber' }
+                      ].map((stat) => (
+                        <div key={stat.label} className="p-6 bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-3xl hover:bg-white dark:hover:bg-white/[0.04] transition-all hover:shadow-xl group">
+                          <div className={`w-10 h-10 rounded-2xl mb-4 flex items-center justify-center transition-transform group-hover:scale-110 ${stat.color === 'primary' ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/20' :
+                            stat.color === 'blue' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' :
+                              stat.color === 'emerald' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' :
+                                'bg-primary-500 text-white shadow-lg shadow-primary-500/20'
+                            }`}>
+                            <stat.icon className="w-5 h-5" />
                           </div>
-                        ))}
-                      </div>
-
-                      <div className="p-8 bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-[2rem] min-h-[400px] flex flex-col">
-                        <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] mb-8 flex items-center gap-2">
-                          <TrendingUp className="w-4 h-4 text-primary-500" /> Mixed engagement trends
-                        </h3>
-                        <div className="flex-1 w-full flex items-center justify-center">
-                          {selectedAnalyticsVault.views === 0 ? (
-                            <div className="flex flex-col items-center">
-                              <TrendingUp className="w-16 h-16 text-gray-200 dark:text-gray-800 mb-4 opacity-50" />
-                              <span className="text-xs font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest italic">NO Data to showcase !</span>
-                            </div>
-                          ) : (
-                            <ResponsiveContainer width="100%" height="100%">
-                              <AreaChart data={selectedAnalyticsVault.analytics?.timestampComparison}>
-                                <defs>
-                                  <linearGradient id="colorEngage" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.3} />
-                                    <stop offset="95%" stopColor="#7c3aed" stopOpacity={0} />
-                                  </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#88888822" />
-                                <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900 }} />
-                                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900 }} />
-                                <Tooltip
-                                  contentStyle={{ backgroundColor: '#000', border: 'none', borderRadius: '12px', padding: '12px' }}
-                                  labelStyle={{ color: '#888', marginBottom: '4px', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase' }}
-                                  itemStyle={{ color: '#fff', fontSize: '14px', fontWeight: 900 }}
-                                />
-                                <Area type="monotone" dataKey="engagement" stroke="#7c3aed" strokeWidth={4} fillOpacity={1} fill="url(#colorEngage)" />
-                              </AreaChart>
-                            </ResponsiveContainer>
-                          )}
+                          <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{stat.label}</div>
+                          <div className="text-2xl font-black text-gray-900 dark:text-white tabular-nums">{stat.value}</div>
                         </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {activeAnalyticsTab === 'engagement' && selectedAnalyticsVault.views > 0 && (
-                    <div className="animate-in slide-in-from-bottom-4 duration-500">
-                      <div className="bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-[2rem] p-8">
-                        <div className="flex items-center justify-between mb-8">
-                          <div>
-                            <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] mb-1">Peak Engagement Hours</h3>
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">At which time vault have more engagement</p>
-                          </div>
-                          <div className="px-4 py-2 bg-primary-50 dark:bg-primary-900/30 rounded-full border border-primary-100 dark:border-primary-800">
-                            <span className="text-[9px] font-black text-primary-600 dark:text-primary-400 uppercase tracking-widest">Live Updates</span>
-                          </div>
-                        </div>
-                        <div className="h-[350px] flex items-center justify-center">{selectedAnalyticsVault.views === 0 ? <div className="flex flex-col items-center"><TrendingUp className="w-16 h-16 text-gray-200 dark:text-gray-800 mb-4 opacity-50" /><span className="text-xs font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest italic">NO Data to showcase !</span></div> : <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={selectedAnalyticsVault.analytics?.timestampComparison}>
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#88888822" />
-                            <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900 }} />
-                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900 }} />
-                            <Tooltip
-                              cursor={{ fill: '#88888811' }}
-                              contentStyle={{ backgroundColor: '#000', border: 'none', borderRadius: '12px' }}
-                              itemStyle={{ color: '#fff' }}
-                            />
-                            <Bar dataKey="engagement" fill="#7c3aed" radius={[8, 8, 0, 0]} barSize={40} />
-                          </BarChart>
-                        </ResponsiveContainer>
-                        }</div>
-                      </div>
-                    </div>
-                  )}
-
-                  {activeAnalyticsTab === 'files' && (
-                    <div className="animate-in slide-in-from-bottom-4 duration-500 space-y-6">
-                      <div className="bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-[2rem] p-8">
-                        <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] mb-8">File Engagement vs Downloads</h3>
-                        <div className="h-[350px] flex items-center justify-center">{selectedAnalyticsVault.views === 0 ? <div className="flex flex-col items-center"><TrendingUp className="w-16 h-16 text-gray-200 dark:text-gray-800 mb-4 opacity-50" /><span className="text-xs font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest italic">NO Data to showcase !</span></div> : <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={selectedAnalyticsVault.analytics?.fileEngagement} layout="vertical">
-                            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#88888822" />
-                            <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900 }} />
-                            <YAxis dataKey="fileName" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900 }} width={120} />
-                            <Tooltip
-                              contentStyle={{ backgroundColor: '#000', border: 'none', borderRadius: '12px' }}
-                              itemStyle={{ color: '#fff' }}
-                            />
-                            <Legend wrapperStyle={{ paddingTop: '20px', textTransform: 'uppercase', fontSize: '9px', fontWeight: 900, letterSpacing: '1px' }} />
-                            <Bar dataKey="engagement" name="Engagement" fill="#7c3aed" radius={[0, 4, 4, 0]} />
-                            <Bar dataKey="downloads" name="Downloads" fill="#10b981" radius={[0, 4, 4, 0]} />
-                          </BarChart>
-                        </ResponsiveContainer>
-                        }</div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {selectedAnalyticsVault.views === 0 ? <div className="col-span-full py-12 flex flex-col items-center"><Box className="w-12 h-12 text-gray-200 dark:text-gray-800 mb-3" /><span className="text-[10px] font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest italic">NO Data to showcase !</span></div> : selectedAnalyticsVault.analytics?.fileEngagement.slice(0, 4).map((file, i) => (
-                          <div key={i} className="p-5 bg-white dark:bg-white/[0.01] border border-gray-100 dark:border-white/5 rounded-3xl flex items-center justify-between group">
-                            <div className="flex items-center gap-4">
-                              <div className="w-10 h-10 bg-gray-100 dark:bg-white/5 rounded-2xl flex items-center justify-center text-gray-500 group-hover:bg-primary-500 group-hover:text-white transition-all">
-                                <FileIcon className="w-5 h-5" />
-                              </div>
-                              <div>
-                                <div className="text-xs font-bold text-gray-900 dark:text-white truncate max-w-[150px]">{file.fileName}</div>
-                                <div className="text-[9px] text-gray-400 font-black uppercase tracking-widest mt-0.5">{file.downloads} Downloads</div>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-lg font-black text-primary-600 tabular-nums">{file.engagement}</div>
-                              <div className="text-[8px] text-gray-400 font-bold uppercase tracking-tight">ENGAGEMENT</div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="p-8 border-t border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02] flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="flex -space-x-2">
-                      {[1, 2, 3].map(i => (
-                        <div key={i} className="w-8 h-8 rounded-full border-2 border-white dark:border-[#0a0a0b] bg-gray-200 dark:bg-gray-800 flex items-center justify-center text-[10px] font-black">{i}</div>
                       ))}
                     </div>
-                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Active nodes monitoring traffic</span>
+
+                    <div className="p-8 bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-[2rem] min-h-[400px] flex flex-col">
+                      <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] mb-8 flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4 text-primary-500" /> Mixed engagement trends
+                      </h3>
+                      <div className="flex-1 w-full flex items-center justify-center">
+                        {selectedAnalyticsVault.views === 0 ? (
+                          <div className="flex flex-col items-center">
+                            <TrendingUp className="w-16 h-16 text-gray-200 dark:text-gray-800 mb-4 opacity-50" />
+                            <span className="text-xs font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest italic">NO Data to showcase !</span>
+                          </div>
+                        ) : (
+                          <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={selectedAnalyticsVault.analytics?.timestampComparison}>
+                              <defs>
+                                <linearGradient id="colorEngage" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.3} />
+                                  <stop offset="95%" stopColor="#7c3aed" stopOpacity={0} />
+                                </linearGradient>
+                              </defs>
+                              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#88888822" />
+                              <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900 }} />
+                              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900 }} />
+                              <Tooltip
+                                contentStyle={{ backgroundColor: '#000', border: 'none', borderRadius: '12px', padding: '12px' }}
+                                labelStyle={{ color: '#888', marginBottom: '4px', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase' }}
+                                itemStyle={{ color: '#fff', fontSize: '14px', fontWeight: 900 }}
+                              />
+                              <Area type="monotone" dataKey="engagement" stroke="#7c3aed" strokeWidth={4} fillOpacity={1} fill="url(#colorEngage)" />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <button
-                    onClick={() => setSelectedAnalyticsVault(null)}
-                    className="px-8 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl transition-all hover:scale-105 active:shadow-inner"
-                  >
-                    Close Report
-                  </button>
+                )}
+
+                {activeAnalyticsTab === 'engagement' && selectedAnalyticsVault.views > 0 && (
+                  <div className="animate-in slide-in-from-bottom-4 duration-500">
+                    <div className="bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-[2rem] p-8">
+                      <div className="flex items-center justify-between mb-8">
+                        <div>
+                          <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] mb-1">Peak Engagement Hours</h3>
+                          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">At which time vault have more engagement</p>
+                        </div>
+                        <div className="px-4 py-2 bg-primary-50 dark:bg-primary-900/30 rounded-full border border-primary-100 dark:border-primary-800">
+                          <span className="text-[9px] font-black text-primary-600 dark:text-primary-400 uppercase tracking-widest">Live Updates</span>
+                        </div>
+                      </div>
+                      <div className="h-[350px] flex items-center justify-center">{selectedAnalyticsVault.views === 0 ? <div className="flex flex-col items-center"><TrendingUp className="w-16 h-16 text-gray-200 dark:text-gray-800 mb-4 opacity-50" /><span className="text-xs font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest italic">NO Data to showcase !</span></div> : <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={selectedAnalyticsVault.analytics?.timestampComparison}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#88888822" />
+                          <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900 }} />
+                          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900 }} />
+                          <Tooltip
+                            cursor={{ fill: '#88888811' }}
+                            contentStyle={{ backgroundColor: '#000', border: 'none', borderRadius: '12px' }}
+                            itemStyle={{ color: '#fff' }}
+                          />
+                          <Bar dataKey="engagement" fill="#7c3aed" radius={[8, 8, 0, 0]} barSize={40} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                      }</div>
+                    </div>
+                  </div>
+                )}
+
+                {activeAnalyticsTab === 'files' && (
+                  <div className="animate-in slide-in-from-bottom-4 duration-500 space-y-6">
+                    <div className="bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-[2rem] p-8">
+                      <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] mb-8">File Engagement vs Downloads</h3>
+                      <div className="h-[350px] flex items-center justify-center">{selectedAnalyticsVault.views === 0 ? <div className="flex flex-col items-center"><TrendingUp className="w-16 h-16 text-gray-200 dark:text-gray-800 mb-4 opacity-50" /><span className="text-xs font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest italic">NO Data to showcase !</span></div> : <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={selectedAnalyticsVault.analytics?.fileEngagement} layout="vertical">
+                          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#88888822" />
+                          <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900 }} />
+                          <YAxis dataKey="fileName" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900 }} width={120} />
+                          <Tooltip
+                            contentStyle={{ backgroundColor: '#000', border: 'none', borderRadius: '12px' }}
+                            itemStyle={{ color: '#fff' }}
+                          />
+                          <Legend wrapperStyle={{ paddingTop: '20px', textTransform: 'uppercase', fontSize: '9px', fontWeight: 900, letterSpacing: '1px' }} />
+                          <Bar dataKey="engagement" name="Engagement" fill="#7c3aed" radius={[0, 4, 4, 0]} />
+                          <Bar dataKey="downloads" name="Downloads" fill="#10b981" radius={[0, 4, 4, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                      }</div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {selectedAnalyticsVault.views === 0 ? <div className="col-span-full py-12 flex flex-col items-center"><Box className="w-12 h-12 text-gray-200 dark:text-gray-800 mb-3" /><span className="text-[10px] font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest italic">NO Data to showcase !</span></div> : selectedAnalyticsVault.analytics?.fileEngagement.slice(0, 4).map((file, i) => (
+                        <div key={i} className="p-5 bg-white dark:bg-white/[0.01] border border-gray-100 dark:border-white/5 rounded-3xl flex items-center justify-between group">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-gray-100 dark:bg-white/5 rounded-2xl flex items-center justify-center text-gray-500 group-hover:bg-primary-500 group-hover:text-white transition-all">
+                              <FileIcon className="w-5 h-5" />
+                            </div>
+                            <div>
+                              <div className="text-xs font-bold text-gray-900 dark:text-white truncate max-w-[150px]">{file.fileName}</div>
+                              <div className="text-[9px] text-gray-400 font-black uppercase tracking-widest mt-0.5">{file.downloads} Downloads</div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-lg font-black text-primary-600 tabular-nums">{file.engagement}</div>
+                            <div className="text-[8px] text-gray-400 font-bold uppercase tracking-tight">ENGAGEMENT</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-8 border-t border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02] flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="flex -space-x-2">
+                    {[1, 2, 3].map(i => (
+                      <div key={i} className="w-8 h-8 rounded-full border-2 border-white dark:border-[#0a0a0b] bg-gray-200 dark:bg-gray-800 flex items-center justify-center text-[10px] font-black">{i}</div>
+                    ))}
+                  </div>
+                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Active nodes monitoring traffic</span>
                 </div>
+                <button
+                  onClick={() => setSelectedAnalyticsVault(null)}
+                  className="px-8 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl transition-all hover:scale-105 active:shadow-inner"
+                >
+                  Close Report
+                </button>
               </div>
             </div>
-          )}
-        </div>
-    );
-  };
+          </div>
+        )}
 
-
-
-
-
-
-
+        {/* Submissions Modal */}
+        {submittingVault && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[60] flex items-center justify-center p-4 sm:p-8 animate-in fade-in duration-300">
+            <div className="bg-white dark:bg-[#0a0a0b] w-full max-w-4xl max-h-[90vh] rounded-[2.5rem] shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-800 flex flex-col animate-in zoom-in-95 duration-500">
+              <div className="p-8 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between bg-white/50 dark:bg-black/20 backdrop-blur-md">
+                <div>
+                  <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Submission Console</h2>
+                  <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.3em] mt-1">{submittingVault.name}</p>
+                </div>
+                <button 
+                  onClick={() => setSubmittingVault(null)}
+                  className="p-3 bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-red-500 rounded-2xl transition-all active:scale-90"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-4 sm:p-8 no-scrollbar">
+                <SubmissionManager vault={submittingVault} />
+              </div>
+              
+              <div className="p-6 bg-gray-50 dark:bg-black/40 border-t border-gray-100 dark:border-gray-800 text-center">
+                 <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Quantum Hub Encryption Protocol v4.0 Active</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
