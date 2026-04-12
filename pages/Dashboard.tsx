@@ -36,10 +36,10 @@ type DeletedVaultLog = {
   deletion_reason?: string;
 };
 
-const VaultTimer: React.FC<{ 
-  createdAt: string; 
-  expiresAt?: string; 
-  views: number; 
+const VaultTimer: React.FC<{
+  createdAt: string;
+  expiresAt?: string;
+  views: number;
   maxViews?: number;
   lockedUntil?: string;
 }> = ({ createdAt, expiresAt, views, maxViews, lockedUntil }) => {
@@ -456,22 +456,22 @@ export const Dashboard: React.FC = () => {
     setCustomDomain(vault.customDomain || '');
     setExistingFiles(vault.files);
     setDeletedFileIds([]);
-    
+
     // In edit mode, try to infer expiryHours if possible or just set it
     if (vault.expiresAt) {
-        const diff = new Date(vault.expiresAt).getTime() - new Date(vault.createdAt).getTime();
-        const hours = Math.round(diff / (1000 * 60 * 60));
-        setExpiryHours(hours as any);
+      const diff = new Date(vault.expiresAt).getTime() - new Date(vault.createdAt).getTime();
+      const hours = Math.round(diff / (1000 * 60 * 60));
+      setExpiryHours(hours as any);
     } else {
-        setExpiryHours('never');
+      setExpiryHours('never');
     }
 
     if (vault.maxViews) {
-        setMaxViews(vault.maxViews);
-        setCustomMaxViews(vault.maxViews.toString());
+      setMaxViews(vault.maxViews);
+      setCustomMaxViews(vault.maxViews.toString());
     } else {
-        setMaxViews(null);
-        setCustomMaxViews('');
+      setMaxViews(null);
+      setCustomMaxViews('');
     }
 
     setIsModalOpen(true);
@@ -545,7 +545,7 @@ export const Dashboard: React.FC = () => {
 
     const totalNewSize = selectedFiles.reduce((acc, f) => acc + f.size, 0);
     const projectedStorage = (googleTokens ? driveStorageUsed : appUser.storageUsed) + totalNewSize;
-    
+
     if (projectedStorage > appUser.storageLimit) {
       alert(`Upload failed: This vault exceeds your total ${formatBytes(appUser.storageLimit, 0)} storage plan limit. Please delete files or upgrade your plan.`);
       return;
@@ -560,16 +560,16 @@ export const Dashboard: React.FC = () => {
     // Calculate Expires At
     let expiresAt: string | undefined = undefined;
     if (expiryHours !== 'never') {
-        const now = new Date();
-        now.setHours(now.getHours() + Number(expiryHours));
-        expiresAt = now.toISOString();
+      const now = new Date();
+      now.setHours(now.getHours() + Number(expiryHours));
+      expiresAt = now.toISOString();
     }
 
     let finalMaxViews: number | undefined = undefined;
     if (maxViews === 'custom') {
-        finalMaxViews = parseInt(customMaxViews) || undefined;
+      finalMaxViews = parseInt(customMaxViews) || undefined;
     } else if (maxViews !== null) {
-        finalMaxViews = Number(maxViews);
+      finalMaxViews = Number(maxViews);
     }
 
     const totalSize = selectedFiles.reduce((acc, file) => acc + file.size, 0);
@@ -613,7 +613,7 @@ export const Dashboard: React.FC = () => {
           return uploadFileToDrive(file, vaultFolderId, (loaded) => {
             fileProgresses[index] = loaded;
             const totalLoaded = fileProgresses.reduce((a, b) => a + b, 0);
-            
+
             // Progress Calculation (0-98%)
             const percent = totalSize > 0 ? Math.min(Math.round((totalLoaded / totalSize) * 98), 98) : 50;
             setUploadProgress(percent);
@@ -624,11 +624,11 @@ export const Dashboard: React.FC = () => {
             if (timeDiff >= 0.5) { // Update speed every 0.5s for smoothness
               const bytesSinceLast = totalLoaded - lastBytesLoaded;
               const currentSpeed = bytesSinceLast / timeDiff;
-              
+
               // Exponential Moving Average (EMA) to prevent jumps
               if (smoothedSpeed === 0) smoothedSpeed = currentSpeed;
               else smoothedSpeed = (smoothedSpeed * 0.8) + (currentSpeed * 0.2);
-              
+
               lastBytesLoaded = totalLoaded;
               lastUpdateTime = now;
 
@@ -649,10 +649,10 @@ export const Dashboard: React.FC = () => {
         finalFiles = driveResults.map((driveFile, i) => ({
           name: driveFile.name,
           size: driveFile.size || selectedFiles[i].size,
-          type: selectedFiles[i].type.startsWith('image/') 
-            ? FileType.IMAGE 
-            : (selectedFiles[i].type.startsWith('video/') 
-              ? FileType.VIDEO 
+          type: selectedFiles[i].type.startsWith('image/')
+            ? FileType.IMAGE
+            : (selectedFiles[i].type.startsWith('video/')
+              ? FileType.VIDEO
               : (selectedFiles[i].type === 'application/pdf' ? FileType.PDF : FileType.OTHER)),
           mimeType: selectedFiles[i].type,
           url: driveFile.webViewLink,
@@ -688,7 +688,7 @@ export const Dashboard: React.FC = () => {
       } else if (modalMode === 'EDIT' && editingVaultId) {
         await mockService.updateVault(appUser.id, editingVaultId, vaultName, finalFiles, links, deletedFileIds, accessLevel, appUser.email, expiresAt, finalMaxViews, vaultPassword, customDomain);
       }
-      
+
       success = true;
 
       // Auto-save metadata (and QR) to Google Drive if connected
@@ -728,53 +728,53 @@ export const Dashboard: React.FC = () => {
   const handleRecoverVault = async (log: DeletedVaultLog) => {
     if (!appUser) return;
     if (appUser.plan === PlanType.FREE) {
-        alert("Vault recovery is only available for Plus and Pro members. Please upgrade to recover your data.");
-        return;
+      alert("Vault recovery is only available for Plus and Pro members. Please upgrade to recover your data.");
+      return;
     }
 
     if (!googleTokens) {
-        alert("Please connect your Google Drive to recover vaults stored there.");
-        return;
+      alert("Please connect your Google Drive to recover vaults stored there.");
+      return;
     }
 
     const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000';
     setIsSubmitting(true);
 
     try {
-        // 1. Get Folder ID
-        const ensureRes = await fetch(`${apiBase}/api/google-drive/ensure-folder`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ tokens: googleTokens }),
-        });
-        const folderData = await ensureRes.json();
-        if (!ensureRes.ok) throw new Error("Failed to access Google Drive root folder.");
+      // 1. Get Folder ID
+      const ensureRes = await fetch(`${apiBase}/api/google-drive/ensure-folder`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tokens: googleTokens }),
+      });
+      const folderData = await ensureRes.json();
+      if (!ensureRes.ok) throw new Error("Failed to access Google Drive root folder.");
 
-        // 2. Search and list files
-        const listRes = await fetch(`${apiBase}/api/google-drive/list-vault-files`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                tokens: googleTokens,
-                folderId: folderData.folderId,
-                vaultName: log.vault_name
-            }),
-        });
-        
-        const listData = await listRes.json();
-        if (!listRes.ok) {
-            throw new Error(listData.error || "your data is not still in google data not found yet !!");
-        }
+      // 2. Search and list files
+      const listRes = await fetch(`${apiBase}/api/google-drive/list-vault-files`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tokens: googleTokens,
+          folderId: folderData.folderId,
+          vaultName: log.vault_name
+        }),
+      });
 
-        // 3. Recover in Supabase
-        await mockService.recoverVault(appUser.id, log.vault_name, listData.files);
-        
-        alert(`Successfully recovered "${log.vault_name}"!`);
-        await loadData(appUser.id);
+      const listData = await listRes.json();
+      if (!listRes.ok) {
+        throw new Error(listData.error || "your data is not still in google data not found yet !!");
+      }
+
+      // 3. Recover in Supabase
+      await mockService.recoverVault(appUser.id, log.vault_name, listData.files);
+
+      alert(`Successfully recovered "${log.vault_name}"!`);
+      await loadData(appUser.id);
     } catch (err: any) {
-        alert(err.message);
+      alert(err.message);
     } finally {
-        setIsSubmitting(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -806,7 +806,7 @@ export const Dashboard: React.FC = () => {
       // 1. If Google Drive is connected, delete the folder from Drive
       if (googleTokens) {
         const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-        
+
         // First, get the QRVM folder ID
         const ensureRes = await fetch(`${apiBase}/api/google-drive/ensure-folder`, {
           method: 'POST',
@@ -814,7 +814,7 @@ export const Dashboard: React.FC = () => {
           body: JSON.stringify({ tokens: googleTokens }),
         });
         const folderData = await ensureRes.json();
-        
+
         if (ensureRes.ok && folderData.folderId) {
           await fetch(`${apiBase}/api/google-drive/delete-vault`, {
             method: 'POST',
@@ -1076,11 +1076,11 @@ export const Dashboard: React.FC = () => {
     { name: 'Used', value: storageUsedDisplay },
     { name: 'Free', value: Math.max(0, appUser.storageLimit - storageUsedDisplay) },
   ] : [];
-  
+
   // Use current theme to set pie colors
   const { theme, toggleTheme } = useTheme();
-  const COLORS = isOverLimit 
-    ? ['#ef4444', theme === 'dark' ? '#450a0a' : '#fee2e2'] 
+  const COLORS = isOverLimit
+    ? ['#ef4444', theme === 'dark' ? '#450a0a' : '#fee2e2']
     : ['#7c3aed', theme === 'dark' ? '#1e1b4b' : '#f5f3ff'];
 
   if (isLoading) return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary-600 w-10 h-10" /></div>;
@@ -1478,8 +1478,8 @@ export const Dashboard: React.FC = () => {
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredVaults.map(vault => (
                   <div key={vault.id} className="relative z-10 w-full min-h-[500px] perspective-[1000px]">
-                    <div 
-                      onClick={(e) => toggleMenu(e, vault.id)} 
+                    <div
+                      onClick={(e) => toggleMenu(e, vault.id)}
                       className={`cursor-pointer relative w-full h-full min-h-[500px] flex flex-col rounded-2xl border-2 transition-all duration-700 shadow-sm hover:shadow-xl transform-gpu ${vault.reportCount && vault.reportCount > 0 ? 'bg-red-50 dark:bg-red-900/10 border-red-100 dark:border-red-900/30' : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800'}`}
                       style={{ transformStyle: 'preserve-3d', transform: menuOpenId === vault.id ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
                     >
@@ -1502,7 +1502,7 @@ export const Dashboard: React.FC = () => {
                                 </button>
                               )}
                             </div>
-                            
+
                             <div className="relative">
                               <button
                                 onClick={(e) => toggleMenu(e, vault.id)}
@@ -1528,11 +1528,11 @@ export const Dashboard: React.FC = () => {
                               </div>
                             </div>
                             <div className="flex items-center gap-2 mt-2">
-                               {vault.accessLevel === AccessLevel.RESTRICTED ? (
-                                 <span className="flex items-center gap-1 text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tight"><Shield className="w-3 h-3" /> Restricted</span>
-                               ) : (
-                                 <span className="flex items-center gap-1 text-green-600 bg-green-50 px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tight"><Users className="w-3 h-3" /> Public</span>
-                               )}
+                              {vault.accessLevel === AccessLevel.RESTRICTED ? (
+                                <span className="flex items-center gap-1 text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tight"><Shield className="w-3 h-3" /> Restricted</span>
+                              ) : (
+                                <span className="flex items-center gap-1 text-green-600 bg-green-50 px-1.5 py-0.5 rounded text-[10px] font-black uppercase tracking-tight"><Users className="w-3 h-3" /> Public</span>
+                              )}
                             </div>
                           </div>
                           <div className="mt-2 text-[11px] text-gray-400 font-bold flex items-center gap-2">
@@ -1544,244 +1544,242 @@ export const Dashboard: React.FC = () => {
                           </div>
 
                           {/* Engagement Indicator Box - Compact Dynamic Graph */}
-                            <div className={`w-full mt-4 rounded-[1.5rem] border relative transition-all duration-500 group/engage hover:scale-[1.01] shadow-sm overflow-hidden ${
-                                vault.views > 80 
-                                ? 'bg-emerald-500/[0.02] border-emerald-500/10 text-emerald-500' 
-                                : vault.views > 30 
-                                ? 'bg-primary-500/[0.02] border-primary-500/10 text-primary-500' 
-                                : 'bg-red-500/[0.02] border-red-500/10 text-red-500'
+                          <div className={`w-full mt-4 rounded-[1.5rem] border relative transition-all duration-500 group/engage hover:scale-[1.01] shadow-sm overflow-hidden ${vault.views > 80
+                            ? 'bg-emerald-500/[0.02] border-emerald-500/10 text-emerald-500'
+                            : vault.views > 30
+                              ? 'bg-primary-500/[0.02] border-primary-500/10 text-primary-500'
+                              : 'bg-red-500/[0.02] border-red-500/10 text-red-500'
                             }`} style={{ minHeight: '9rem' }}>
-                                { /* Action Arrow - Inclined only, no background square */ }
-                                <button 
-                                  onClick={(e) => { e.stopPropagation(); setSelectedAnalyticsVault(vault); }}
-                                  className="absolute top-3 right-3 z-20 group/arrow cursor-pointer transition-all active:scale-90"
-                                  title="View Detailed Analytics"
-                                >
-                                  <ArrowUp className="w-5 h-5 rotate-45 text-primary-500/60 group-hover/arrow:text-primary-500 group-hover/arrow:scale-125 transition-all drop-shadow-sm" />
-                                </button>
+                            { /* Action Arrow - Inclined only, no background square */}
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setSelectedAnalyticsVault(vault); }}
+                              className="absolute top-3 right-3 z-20 group/arrow cursor-pointer transition-all active:scale-90"
+                              title="View Detailed Analytics"
+                            >
+                              <ArrowUp className="w-5 h-5 rotate-45 text-primary-500/60 group-hover/arrow:text-primary-500 group-hover/arrow:scale-125 transition-all drop-shadow-sm" />
+                            </button>
 
-                                {vault.views === 0 ? (
-                                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                    <TrendingUp className="w-12 h-12 text-gray-200 dark:text-gray-800 mb-2 opacity-50" />
-                                    <span className="text-[10px] font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest italic px-8 text-center leading-relaxed">NO Data to showcase !</span>
-                                  </div>
-                                ) : (
-                                  <div className="absolute inset-0 w-full h-full opacity-30 dark:opacity-50 -mb-2">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                      <AreaChart data={generateTrendData(vault.id, vault.views > 80 ? 'high' : vault.views > 30 ? 'medium' : 'low')}>
-                                          <defs>
-                                            <linearGradient id={`grad-${vault.id}`} x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="0%" stopColor="currentColor" stopOpacity={0.5}/>
-                                                <stop offset="100%" stopColor="currentColor" stopOpacity={0}/>
-                                            </linearGradient>
-                                          </defs>
-                                          <Area 
-                                            type="monotone" 
-                                            dataKey="value" 
-                                            stroke="currentColor" 
-                                            strokeWidth={3} 
-                                            fill={`url(#grad-${vault.id})`} 
-                                            isAnimationActive={true}
-                                          />
-                                      </AreaChart>
-                                    </ResponsiveContainer>
-                                  </div>
-                                )}
+                            {vault.views === 0 ? (
+                              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                <TrendingUp className="w-12 h-12 text-gray-200 dark:text-gray-800 mb-2 opacity-50" />
+                                <span className="text-[10px] font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest italic px-8 text-center leading-relaxed">NO Data to showcase !</span>
+                              </div>
+                            ) : (
+                              <div className="absolute inset-0 w-full h-full opacity-30 dark:opacity-50 -mb-2">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <AreaChart data={generateTrendData(vault.id, vault.views > 80 ? 'high' : vault.views > 30 ? 'medium' : 'low')}>
+                                    <defs>
+                                      <linearGradient id={`grad-${vault.id}`} x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stopColor="currentColor" stopOpacity={0.5} />
+                                        <stop offset="100%" stopColor="currentColor" stopOpacity={0} />
+                                      </linearGradient>
+                                    </defs>
+                                    <Area
+                                      type="monotone"
+                                      dataKey="value"
+                                      stroke="currentColor"
+                                      strokeWidth={3}
+                                      fill={`url(#grad-${vault.id})`}
+                                      isAnimationActive={true}
+                                    />
+                                  </AreaChart>
+                                </ResponsiveContainer>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="mt-auto pt-4 border-t border-gray-50 dark:border-gray-800 flex flex-col gap-3">
+                            <div className="flex gap-2">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setViewQrVault(vault); }}
+                                className="flex-1 flex items-center justify-center gap-2 py-3 bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-xl text-sm font-semibold hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-all border border-primary-100 dark:border-primary-800 cursor-pointer"
+                              >
+                                <QrCode className="w-4 h-4" /> View QR
+                              </button>
+                              <Link
+                                to={`/v/${vault.id}`}
+                                onClick={(e) => e.stopPropagation()}
+                                className="flex-1 flex items-center justify-center cursor-pointer gap-2 py-3 bg-gray-900 dark:bg-white dark:text-gray-900 text-white rounded-xl text-sm font-semibold hover:bg-gray-800 dark:hover:bg-gray-200 transition-all shadow-md active:scale-95"
+                              >
+                                <ExternalLink className="w-4 h-4" /> Open
+                              </Link>
                             </div>
-
-                            <div className="mt-auto pt-4 border-t border-gray-50 dark:border-gray-800 flex flex-col gap-3">
-                             <div className="flex gap-2">
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); setViewQrVault(vault); }}
-                                  className="flex-1 flex items-center justify-center gap-2 py-3 bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-xl text-sm font-semibold hover:bg-primary-100 dark:hover:bg-primary-900/50 transition-all border border-primary-100 dark:border-primary-800 cursor-pointer"
-                                >
-                                  <QrCode className="w-4 h-4" /> View QR
-                                </button>
-                                <Link
-                                  to={`/v/${vault.id}`}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="flex-1 flex items-center justify-center cursor-pointer gap-2 py-3 bg-gray-900 dark:bg-white dark:text-gray-900 text-white rounded-xl text-sm font-semibold hover:bg-gray-800 dark:hover:bg-gray-200 transition-all shadow-md active:scale-95"
-                                >
-                                  <ExternalLink className="w-4 h-4" /> Open
-                                </Link>
-                             </div>
                           </div>
                         </div>
-                        <VaultTimer 
-                          createdAt={vault.createdAt} 
-                          expiresAt={vault.expiresAt} 
-                          views={vault.views} 
-                          maxViews={vault.maxViews} 
-                          lockedUntil={vault.lockedUntil} 
+                        <VaultTimer
+                          createdAt={vault.createdAt}
+                          expiresAt={vault.expiresAt}
+                          views={vault.views}
+                          maxViews={vault.maxViews}
+                          lockedUntil={vault.lockedUntil}
                         />
                       </div>
 
                       <div className="absolute inset-0 w-full h-full bg-white dark:bg-[#0a0a0b] border-2 border-primary-500/20 dark:border-primary-500/10 rounded-2xl flex flex-col justify-start items-center text-gray-900 dark:text-white p-8 shadow-2xl overflow-hidden" style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
-                           <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 to-transparent pointer-events-none"></div>
-                           
-                           <button onClick={(e) => toggleMenu(e, vault.id)} className="absolute top-5 right-5 bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-md cursor-pointer text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 p-2.5 rounded-2xl transition-all active:scale-90 border border-transparent hover:border-primary-200 dark:hover:border-primary-800"><Shuffle className="w-5 h-5"/></button>
-                           
-                           <div className="w-full mb-8 text-center px-4">
-                               <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4 text-primary-600 dark:text-primary-400 shadow-inner">
-                                  <Settings2 className="w-6 h-6" />
-                               </div>
-                               <h3 className="text-xl font-black tracking-tight text-gray-900 dark:text-white truncate uppercase">{vault.name}</h3>
-                               <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.3em] mt-1">Management Console</p>
-                           </div>
-                           
-                           <div className="w-full space-y-3 relative z-10">
-                               <button disabled={isOverLimit} onClick={(e) => openEditModal(vault, e)} className={`group w-full py-4 px-6 rounded-2xl text-[11px] uppercase tracking-widest cursor-pointer font-black flex items-center justify-between transition-all shadow-lg active:scale-95 ${isOverLimit ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed' : 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:shadow-primary-500/10'}`}>
-                                  <span className="flex items-center gap-3"><Edit2 className="w-4 h-4"/> Edit Vault</span>
-                                  <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
-                               </button>
-                               
-                               <button onClick={(e) => openManageAccess(vault, e)} className="group w-full bg-white dark:bg-gray-900 border cursor-pointer border-gray-200 dark:border-gray-800 hover:border-primary-500/50 hover:bg-primary-50/30 dark:hover:bg-primary-900/10 active:scale-95 text-gray-700 dark:text-gray-300 py-4 px-6 rounded-2xl text-[11px] uppercase tracking-widest font-black flex items-center justify-between transition-all">
-                                  <span className="flex items-center gap-3"><Users className="w-4 h-4"/> Security & Access</span>
-                                  <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
-                               </button>
-                               
-                               <button onClick={(e) => { e.stopPropagation(); setReportVault(vault); setMenuOpenId(null); }} className="group w-full bg-white dark:bg-gray-900 border cursor-pointer border-gray-200 dark:border-gray-800 hover:border-red-500/50 hover:bg-red-50/30 dark:hover:bg-red-900/10 active:scale-95 text-gray-700 dark:text-gray-300 py-4 px-6 rounded-2xl text-[11px] uppercase tracking-widest font-black flex items-center justify-between transition-all">
-                                  <span className="flex items-center gap-3 flex-1 text-left"><AlertTriangle className="w-4 h-4 text-red-500"/> Activity Intelligence {(vault.reportCount || 0) > 0 && <span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-[9px] ml-2 animate-pulse">{vault.reportCount}</span>}</span>
-                                  <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
-                               </button>
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 to-transparent pointer-events-none"></div>
 
-                               <div className="pt-2">
-<button onClick={(e) => handleDeleteVault(vault.id, e)} className="w-full bg-red-600 hover:bg-red-700 text-white cursor-pointer py-4 px-6 rounded-2xl text-[11px] uppercase tracking-widest font-black flex items-center justify-center gap-3 transition-all shadow-xl shadow-red-500/20 dark:shadow-none active:scale-95">
-                                     <Trash2 className="w-4 h-4"/> Self Destruct Protocol
-                                  </button>
-                               </div>
-                           </div>
-                                         </div>
+                        <button onClick={(e) => toggleMenu(e, vault.id)} className="absolute top-5 right-5 bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-md cursor-pointer text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 p-2.5 rounded-2xl transition-all active:scale-90 border border-transparent hover:border-primary-200 dark:hover:border-primary-800"><Shuffle className="w-5 h-5" /></button>
+
+                        <div className="w-full mb-8 text-center px-4">
+                          <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4 text-primary-600 dark:text-primary-400 shadow-inner">
+                            <Settings2 className="w-6 h-6" />
+                          </div>
+                          <h3 className="text-xl font-black tracking-tight text-gray-900 dark:text-white truncate uppercase">{vault.name}</h3>
+                          <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.3em] mt-1">Management Console</p>
+                        </div>
+
+                        <div className="w-full space-y-3 relative z-10">
+                          <button disabled={isOverLimit} onClick={(e) => openEditModal(vault, e)} className={`group w-full py-4 px-6 rounded-2xl text-[11px] uppercase tracking-widest cursor-pointer font-black flex items-center justify-between transition-all shadow-lg active:scale-95 ${isOverLimit ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed' : 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:shadow-primary-500/10'}`}>
+                            <span className="flex items-center gap-3"><Edit2 className="w-4 h-4" /> Edit Vault</span>
+                            <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
+                          </button>
+
+                          <button onClick={(e) => openManageAccess(vault, e)} className="group w-full bg-white dark:bg-gray-900 border cursor-pointer border-gray-200 dark:border-gray-800 hover:border-primary-500/50 hover:bg-primary-50/30 dark:hover:bg-primary-900/10 active:scale-95 text-gray-700 dark:text-gray-300 py-4 px-6 rounded-2xl text-[11px] uppercase tracking-widest font-black flex items-center justify-between transition-all">
+                            <span className="flex items-center gap-3"><Users className="w-4 h-4" /> Security & Access</span>
+                            <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
+                          </button>
+
+                          <button onClick={(e) => { e.stopPropagation(); setReportVault(vault); setMenuOpenId(null); }} className="group w-full bg-white dark:bg-gray-900 border cursor-pointer border-gray-200 dark:border-gray-800 hover:border-red-500/50 hover:bg-red-50/30 dark:hover:bg-red-900/10 active:scale-95 text-gray-700 dark:text-gray-300 py-4 px-6 rounded-2xl text-[11px] uppercase tracking-widest font-black flex items-center justify-between transition-all">
+                            <span className="flex items-center gap-3 flex-1 text-left"><AlertTriangle className="w-4 h-4 text-red-500" /> Activity Intelligence {(vault.reportCount || 0) > 0 && <span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-[9px] ml-2 animate-pulse">{vault.reportCount}</span>}</span>
+                            <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0" />
+                          </button>
+
+                          <div className="pt-2">
+                            <button onClick={(e) => handleDeleteVault(vault.id, e)} className="w-full bg-red-600 hover:bg-red-700 text-white cursor-pointer py-4 px-6 rounded-2xl text-[11px] uppercase tracking-widest font-black flex items-center justify-center gap-3 transition-all shadow-xl shadow-red-500/20 dark:shadow-none active:scale-95">
+                              <Trash2 className="w-4 h-4" /> Self Destruct Protocol
+                            </button>
                           </div>
                         </div>
-                      ))
-                    }
+                      </div>
+                    </div>
                   </div>
-                )}
+                ))
+                }
               </div>
-              ) : activeTab === 'analytics' ? (
-           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-700 pb-20">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                 {/* Main Overview Stat */}
-                 <div className="lg:col-span-2 bg-white dark:bg-[#0d0f14] p-8 md:p-10 rounded-[3rem] border border-gray-100 dark:border-white/5 shadow-2xl shadow-black/[0.02]">
-                    <div className="flex items-center justify-between mb-10">
-                       <div>
-                          <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight italic">Vault Ecosystem Performance</h2>
-                          <p className="text-[10px] font-black text-primary-500 uppercase tracking-[0.3em] mt-1">Global Engagement Matrix</p>
-                       </div>
-                       <div className="hidden md:flex items-center gap-4 bg-gray-50 dark:bg-white/5 p-2 rounded-2xl border border-gray-100 dark:border-white/5">
-                          {vaults.slice(0, 3).map((v, i) => (
-                             <div key={v.id} className="flex items-center gap-2">
-                                <div className={`w-2 h-2 rounded-full ${i === 0 ? 'bg-primary-500' : i === 1 ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-                                <span className="text-[9px] font-bold text-gray-500 uppercase truncate max-w-[60px]">{v.name}</span>
-                             </div>
-                          ))}
-                       </div>
-                    </div>
-                    
-                    <div className="h-[400px] w-full">
-                       <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={(() => {
-                             const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-                             return days.map(day => {
-                                const entry: any = { day };
-                                vaults.forEach((v, idx) => {
-                                   if (idx < 5) entry[v.name] = Math.floor(Math.random() * (v.views + 1) * 0.8) + (v.views / 7);
-                                });
-                                return entry;
-                             });
-                          })()}>
-                             <defs>
-                                {vaults.slice(0, 5).map((v, i) => (
-                                   <linearGradient key={v.id} id={`color${i}`} x1="0" y1="0" x2="0" y2="1">
-                                      <stop offset="5%" stopColor={i === 0 ? '#8b5cf6' : i === 1 ? '#10b981' : i === 2 ? '#f59e0b' : i === 3 ? '#3b82f6' : '#ec4899'} stopOpacity={0.2}/>
-                                      <stop offset="95%" stopColor={i === 0 ? '#8b5cf6' : i === 1 ? '#10b981' : i === 2 ? '#f59e0b' : i === 3 ? '#3b82f6' : '#ec4899'} stopOpacity={0}/>
-                                   </linearGradient>
-                                ))}
-                             </defs>
-                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#88888815" />
-                             <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 900, fill: '#888'}} />
-                             <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 900, fill: '#888'}} />
-                             <Tooltip 
-                               contentStyle={{ backgroundColor: '#000', border: 'none', borderRadius: '16px', padding: '16px', boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}
-                               labelStyle={{ color: '#888', marginBottom: '8px', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase' }}
-                               itemStyle={{ fontSize: '12px', fontWeight: 900, padding: '2px 0' }}
-                             />
-                             {vaults.slice(0, 5).map((v, i) => (
-                                <Area 
-                                   key={v.id}
-                                   type="monotone" 
-                                   dataKey={v.name} 
-                                   stroke={i === 0 ? '#8b5cf6' : i === 1 ? '#10b981' : i === 2 ? '#f59e0b' : i === 3 ? '#3b82f6' : '#ec4899'} 
-                                   strokeWidth={4} 
-                                   fillOpacity={1} 
-                                   fill={`url(#color${i})`}
-                                   animationDuration={1500 + (i * 300)}
-                                />
-                             ))}
-                          </AreaChart>
-                       </ResponsiveContainer>
-                    </div>
-                 </div>
+            )}
+          </div>
+        ) : activeTab === 'analytics' ? (
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-700 pb-20">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Main Overview Stat */}
+              <div className="lg:col-span-2 bg-white dark:bg-[#0d0f14] p-8 md:p-10 rounded-[3rem] border border-gray-100 dark:border-white/5 shadow-2xl shadow-black/[0.02]">
+                <div className="flex items-center justify-between mb-10">
+                  <div>
+                    <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight italic">Vault Ecosystem Performance</h2>
+                    <p className="text-[10px] font-black text-primary-500 uppercase tracking-[0.3em] mt-1">Global Engagement Matrix</p>
+                  </div>
+                  <div className="hidden md:flex items-center gap-4 bg-gray-50 dark:bg-white/5 p-2 rounded-2xl border border-gray-100 dark:border-white/5">
+                    {vaults.slice(0, 3).map((v, i) => (
+                      <div key={v.id} className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${i === 0 ? 'bg-primary-500' : i === 1 ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                        <span className="text-[9px] font-bold text-gray-500 uppercase truncate max-w-[60px]">{v.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
-                 {/* Top Performers */}
-                 <div className="bg-white dark:bg-[#0d0f14] p-8 rounded-[3rem] border border-gray-100 dark:border-white/5 shadow-2xl overflow-hidden relative group">
-                    <div className="flex items-center gap-4 mb-8">
-                       <div className="p-3 bg-amber-500 text-white rounded-2xl shadow-xl shadow-amber-500/20">
-                          <Zap className="w-5 h-5 fill-current" />
-                       </div>
-                       <div>
-                          <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest">Hall of Fame</h3>
-                          <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Highest Scan Assets</p>
-                       </div>
-                    </div>
-
-                    <div className="space-y-6">
-                       {[...vaults].sort((a,b) => b.views - a.views).slice(0, 5).map((v, idx) => (
-                          <div key={v.id} className="flex items-center justify-between group/v">
-                             <div className="flex items-center gap-4">
-                                <span className="text-lg font-black text-gray-200 dark:text-white/10 italic w-6">#{idx+1}</span>
-                                <div>
-                                   <div className="text-sm font-black text-gray-800 dark:text-gray-200 truncate max-w-[120px]">{v.name}</div>
-                                   <div className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{v.files.length} Security Objects</div>
-                                </div>
-                             </div>
-                             <div className="text-right">
-                                <div className="text-lg font-black text-primary-600 tabular-nums">{v.views}</div>
-                                <div className="text-[8px] font-bold text-gray-400 uppercase tracking-tight">TOTAL SCANS</div>
-                             </div>
-                          </div>
-                       ))}
-                    </div>
-
-                    <button className="w-full mt-10 py-4 bg-gray-50 dark:bg-white/5 rounded-2xl text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 hover:bg-primary-500 hover:text-white transition-all">
-                       Expand Full Report
-                    </button>
-                 </div>
+                <div className="h-[400px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={(() => {
+                      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                      return days.map(day => {
+                        const entry: any = { day };
+                        vaults.forEach((v, idx) => {
+                          if (idx < 5) entry[v.name] = Math.floor(Math.random() * (v.views + 1) * 0.8) + (v.views / 7);
+                        });
+                        return entry;
+                      });
+                    })()}>
+                      <defs>
+                        {vaults.slice(0, 5).map((v, i) => (
+                          <linearGradient key={v.id} id={`color${i}`} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={i === 0 ? '#8b5cf6' : i === 1 ? '#10b981' : i === 2 ? '#f59e0b' : i === 3 ? '#3b82f6' : '#ec4899'} stopOpacity={0.2} />
+                            <stop offset="95%" stopColor={i === 0 ? '#8b5cf6' : i === 1 ? '#10b981' : i === 2 ? '#f59e0b' : i === 3 ? '#3b82f6' : '#ec4899'} stopOpacity={0} />
+                          </linearGradient>
+                        ))}
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#88888815" />
+                      <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#888' }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: '#888' }} />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: '#000', border: 'none', borderRadius: '16px', padding: '16px', boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}
+                        labelStyle={{ color: '#888', marginBottom: '8px', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase' }}
+                        itemStyle={{ fontSize: '12px', fontWeight: 900, padding: '2px 0' }}
+                      />
+                      {vaults.slice(0, 5).map((v, i) => (
+                        <Area
+                          key={v.id}
+                          type="monotone"
+                          dataKey={v.name}
+                          stroke={i === 0 ? '#8b5cf6' : i === 1 ? '#10b981' : i === 2 ? '#f59e0b' : i === 3 ? '#3b82f6' : '#ec4899'}
+                          strokeWidth={4}
+                          fillOpacity={1}
+                          fill={`url(#color${i})`}
+                          animationDuration={1500 + (i * 300)}
+                        />
+                      ))}
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                 {[
-                    { label: 'Network Reach', val: vaults.reduce((a,b) => a+b.views, 0), icon: Eye, unit: 'Views', color: 'primary' },
-                    { label: 'Scan Volume', val: vaults.reduce((a,b) => a+(b.analytics?.totalScans || 0), 0), icon: QrCode, unit: 'Scans', color: 'emerald' },
-                    { label: 'Data Protected', val: formatBytes(vaults.reduce((a,b) => a + b.files.reduce((fa, fb) => fa + fb.size, 0), 0)), icon: Box, unit: 'Storage', color: 'blue' },
-                    { label: 'Active Reports', val: vaults.reduce((a,b) => a+(b.reportCount || 0), 0), icon: AlertTriangle, unit: 'Flags', color: 'red' }
-                 ].map((stat, i) => (
-                    <div key={i} className="bg-white dark:bg-[#0d0f14] p-6 rounded-[2rem] border border-gray-100 dark:border-white/5 hover:shadow-2xl transition-all group">
-                       <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110 ${
-                          stat.color === 'primary' ? 'bg-primary-500' : stat.color === 'emerald' ? 'bg-emerald-500' : stat.color === 'blue' ? 'bg-blue-500' : 'bg-red-500'
-                       } text-white shadow-xl ${stat.color === 'primary' ? 'shadow-primary-500/20' : stat.color === 'emerald' ? 'shadow-emerald-500/20' : stat.color === 'blue' ? 'shadow-blue-500/20' : 'shadow-red-500/20'}`}>
-                          <stat.icon className="w-6 h-6" />
-                       </div>
-                       <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">{stat.label}</div>
-                       <div className="flex items-baseline gap-2">
-                          <div className="text-2xl font-black text-gray-900 dark:text-white italic">{stat.val}</div>
-                          <span className="text-[10px] font-bold text-gray-400 dark:text-gray-600 uppercase">{stat.unit}</span>
-                       </div>
+              {/* Top Performers */}
+              <div className="bg-white dark:bg-[#0d0f14] p-8 rounded-[3rem] border border-gray-100 dark:border-white/5 shadow-2xl overflow-hidden relative group">
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="p-3 bg-amber-500 text-white rounded-2xl shadow-xl shadow-amber-500/20">
+                    <Zap className="w-5 h-5 fill-current" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest">Hall of Fame</h3>
+                    <p className="text-[9px] font-bold text-gray-400 uppercase tracking-tighter">Highest Scan Assets</p>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  {[...vaults].sort((a, b) => b.views - a.views).slice(0, 5).map((v, idx) => (
+                    <div key={v.id} className="flex items-center justify-between group/v">
+                      <div className="flex items-center gap-4">
+                        <span className="text-lg font-black text-gray-200 dark:text-white/10 italic w-6">#{idx + 1}</span>
+                        <div>
+                          <div className="text-sm font-black text-gray-800 dark:text-gray-200 truncate max-w-[120px]">{v.name}</div>
+                          <div className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{v.files.length} Security Objects</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-black text-primary-600 tabular-nums">{v.views}</div>
+                        <div className="text-[8px] font-bold text-gray-400 uppercase tracking-tight">TOTAL SCANS</div>
+                      </div>
                     </div>
-                 ))}
+                  ))}
+                </div>
+
+                <button className="w-full mt-10 py-4 bg-gray-50 dark:bg-white/5 rounded-2xl text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 hover:bg-primary-500 hover:text-white transition-all">
+                  Expand Full Report
+                </button>
               </div>
-           </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[
+                { label: 'Network Reach', val: vaults.reduce((a, b) => a + b.views, 0), icon: Eye, unit: 'Views', color: 'primary' },
+                { label: 'Scan Volume', val: vaults.reduce((a, b) => a + (b.analytics?.totalScans || 0), 0), icon: QrCode, unit: 'Scans', color: 'emerald' },
+                { label: 'Data Protected', val: formatBytes(vaults.reduce((a, b) => a + b.files.reduce((fa, fb) => fa + fb.size, 0), 0)), icon: Box, unit: 'Storage', color: 'blue' },
+                { label: 'Active Reports', val: vaults.reduce((a, b) => a + (b.reportCount || 0), 0), icon: AlertTriangle, unit: 'Flags', color: 'red' }
+              ].map((stat, i) => (
+                <div key={i} className="bg-white dark:bg-[#0d0f14] p-6 rounded-[2rem] border border-gray-100 dark:border-white/5 hover:shadow-2xl transition-all group">
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110 ${stat.color === 'primary' ? 'bg-primary-500' : stat.color === 'emerald' ? 'bg-emerald-500' : stat.color === 'blue' ? 'bg-blue-500' : 'bg-red-500'
+                    } text-white shadow-xl ${stat.color === 'primary' ? 'shadow-primary-500/20' : stat.color === 'emerald' ? 'shadow-emerald-500/20' : stat.color === 'blue' ? 'shadow-blue-500/20' : 'shadow-red-500/20'}`}>
+                    <stat.icon className="w-6 h-6" />
+                  </div>
+                  <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">{stat.label}</div>
+                  <div className="flex items-baseline gap-2">
+                    <div className="text-2xl font-black text-gray-900 dark:text-white italic">{stat.val}</div>
+                    <span className="text-[10px] font-bold text-gray-400 dark:text-gray-600 uppercase">{stat.unit}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         ) : (
           /* Recently Deleted Logs Tab */
           <div className="animate-in fade-in duration-300">
@@ -1839,13 +1837,13 @@ export const Dashboard: React.FC = () => {
                           <p className="text-[10px] text-gray-400">{new Date(log.deleted_at).toLocaleDateString()}</p>
                         </div>
                         {(appUser?.plan === PlanType.STARTER || appUser?.plan === PlanType.PRO) && (
-                            <button
-                             onClick={() => handleRecoverVault(log)}
-                             disabled={isSubmitting}
-                             className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary-500/20 dark:shadow-none dark:shadow-none transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2"
-                           >
-                             <RotateCcw className="w-3 h-3" /> Recover
-                           </button>
+                          <button
+                            onClick={() => handleRecoverVault(log)}
+                            disabled={isSubmitting}
+                            className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary-500/20 dark:shadow-none dark:shadow-none transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2"
+                          >
+                            <RotateCcw className="w-3 h-3" /> Recover
+                          </button>
                         )}
                       </div>
                     </div>
@@ -1857,8 +1855,8 @@ export const Dashboard: React.FC = () => {
                 <div className="p-4 bg-amber-50 border-t border-amber-100 flex items-center gap-3">
                   <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />
                   <p className="text-xs text-amber-700 leading-relaxed font-medium">
-                    {appUser?.plan === PlanType.STARTER 
-                      ? "Your Plus vaults are automatically removed after 72 hours or once their scan limit is reached." 
+                    {appUser?.plan === PlanType.STARTER
+                      ? "Your Plus vaults are automatically removed after 72 hours or once their scan limit is reached."
                       : "Free vaults are automatically deleted after 24 hours to save server space."}
                     {appUser?.plan !== PlanType.PRO && (
                       <Link to="/pricing" className="ml-1 underline font-bold">Upgrade to Pro</Link>
@@ -1883,8 +1881,8 @@ export const Dashboard: React.FC = () => {
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                 {modalMode === 'CREATE' ? 'Create New Vault' : 'Edit Vault'}
               </h2>
-              <button 
-                onClick={() => setIsModalOpen(false)} 
+              <button
+                onClick={() => setIsModalOpen(false)}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"
               >
                 <X className="text-gray-500 dark:text-gray-400 w-5 h-5" />
@@ -1898,522 +1896,516 @@ export const Dashboard: React.FC = () => {
                 <div className="space-y-6">
 
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vault Name</label>
-                <input
-                  type="text"
-                  className="w-full p-3 bg-white dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all dark:text-white"
-                  value={vaultName}
-                  onChange={(e) => setVaultName(e.target.value)}
-                  placeholder="e.g. Project Assets"
-                />
-              </div>
-
-              {/* Security Section (NEW: Password) */}
-              <div className="bg-gray-50 dark:bg-black/40 p-6 rounded-2xl border border-gray-100 dark:border-gray-800">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <Lock className="w-5 h-5 text-gray-900 dark:text-white" />
-                    <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-tight">Security & Privacy</h3>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vault Name</label>
+                    <input
+                      type="text"
+                      className="w-full p-3 bg-white dark:bg-black border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all dark:text-white"
+                      value={vaultName}
+                      onChange={(e) => setVaultName(e.target.value)}
+                      placeholder="e.g. Project Assets"
+                    />
                   </div>
-                  {appUser?.plan !== PlanType.PRO && (
-                    <span className="flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-primary-400 to-indigo-600 text-white text-[10px] font-black rounded-full shadow-lg shadow-amber-500/20 uppercase tracking-widest animate-pulse">
-                      <Zap className="w-3 h-3 fill-current" /> Pro Feature
-                    </span>
-                  )}
-                </div>
-                
-                <div className="relative">
-                  <input
-                    type="password"
-                    disabled={appUser?.plan !== PlanType.PRO}
-                    value={vaultPassword}
-                    onChange={(e) => setVaultPassword(e.target.value)}
-                    placeholder={appUser?.plan === PlanType.PRO ? "Set a vault password (optional)" : "Upgrade to Pro to set passwords"}
-                    className={`w-full p-4 pl-12 border rounded-xl transition-all font-medium ${
-                      appUser?.plan === PlanType.PRO 
-                        ? 'bg-white dark:bg-black border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary-500 hover:border-primary-200 dark:text-white' 
-                        : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 cursor-not-allowed text-gray-400 dark:text-gray-500'
-                    }`}
-                  />
-                  <ShieldCheck className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 ${appUser?.plan === PlanType.PRO ? 'text-primary-500' : 'text-gray-300 dark:text-gray-600'}`} />
-                </div>
-                <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-3 flex items-center gap-1.5 px-1 font-medium">
-                  {appUser?.plan === PlanType.PRO 
-                    ? "Visitors must enter this password to view files." 
-                    : "Password protection is only available for professional users."}
-                </p>
-              </div>
 
-              {/* Access Level */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Access Control</label>
-                <div className="flex gap-4">
-                  <button
-                    type="button"
-                    onClick={() => setAccessLevel(AccessLevel.PUBLIC)}
-                    className={`flex-1 p-4 rounded-xl border-2 text-left transition-all ${accessLevel === AccessLevel.PUBLIC ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' : 'border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-white dark:bg-gray-900'}`}
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      <Users className={`w-5 h-5 ${accessLevel === AccessLevel.PUBLIC ? 'text-primary-600' : 'text-gray-400'}`} />
-                      <span className={`font-bold ${accessLevel === AccessLevel.PUBLIC ? 'text-primary-900 dark:text-white' : 'text-gray-700 dark:text-gray-400'}`}>Public</span>
+                  {/* Security Section (NEW: Password) */}
+                  <div className="bg-gray-50 dark:bg-black/40 p-6 rounded-2xl border border-gray-100 dark:border-gray-800">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <Lock className="w-5 h-5 text-gray-900 dark:text-white" />
+                        <h3 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-tight">Security & Privacy</h3>
+                      </div>
+                      {appUser?.plan !== PlanType.PRO && (
+                        <span className="flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-primary-400 to-indigo-600 text-white text-[10px] font-black rounded-full shadow-lg shadow-amber-500/20 uppercase tracking-widest animate-pulse">
+                          <Zap className="w-3 h-3 fill-current" /> Pro Feature
+                        </span>
+                      )}
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Anyone with the link or QR code can view and download.</p>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setAccessLevel(AccessLevel.RESTRICTED)}
-                    className={`flex-1 p-4 rounded-xl border-2 text-left transition-all ${accessLevel === AccessLevel.RESTRICTED ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' : 'border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-white dark:bg-gray-900'}`}
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      <Shield className={`w-5 h-5 ${accessLevel === AccessLevel.RESTRICTED ? 'text-primary-600' : 'text-gray-400'}`} />
-                      <span className={`font-bold ${accessLevel === AccessLevel.RESTRICTED ? 'text-primary-900 dark:text-white' : 'text-gray-700 dark:text-gray-400'}`}>Restricted</span>
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Users must request access. You approve who can view.</p>
-                  </button>
-                </div>
-              </div>
 
-                {/* RIGHT COLUMN */}
+                    <div className="relative">
+                      <input
+                        type="password"
+                        disabled={appUser?.plan !== PlanType.PRO}
+                        value={vaultPassword}
+                        onChange={(e) => setVaultPassword(e.target.value)}
+                        placeholder={appUser?.plan === PlanType.PRO ? "Set a vault password (optional)" : "Upgrade to Pro to set passwords"}
+                        className={`w-full p-4 pl-12 border rounded-xl transition-all font-medium ${appUser?.plan === PlanType.PRO
+                          ? 'bg-white dark:bg-black border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-primary-500 hover:border-primary-200 dark:text-white'
+                          : 'bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 cursor-not-allowed text-gray-400 dark:text-gray-500'
+                          }`}
+                      />
+                      <ShieldCheck className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 ${appUser?.plan === PlanType.PRO ? 'text-primary-500' : 'text-gray-300 dark:text-gray-600'}`} />
+                    </div>
+                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-3 flex items-center gap-1.5 px-1 font-medium">
+                      {appUser?.plan === PlanType.PRO
+                        ? "Visitors must enter this password to view files."
+                        : "Password protection is only available for professional users."}
+                    </p>
+                  </div>
+
+                  {/* Access Level */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Access Control</label>
+                    <div className="flex gap-4">
+                      <button
+                        type="button"
+                        onClick={() => setAccessLevel(AccessLevel.PUBLIC)}
+                        className={`flex-1 p-4 rounded-xl border-2 text-left transition-all ${accessLevel === AccessLevel.PUBLIC ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' : 'border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-white dark:bg-gray-900'}`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <Users className={`w-5 h-5 ${accessLevel === AccessLevel.PUBLIC ? 'text-primary-600' : 'text-gray-400'}`} />
+                          <span className={`font-bold ${accessLevel === AccessLevel.PUBLIC ? 'text-primary-900 dark:text-white' : 'text-gray-700 dark:text-gray-400'}`}>Public</span>
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Anyone with the link or QR code can view and download.</p>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAccessLevel(AccessLevel.RESTRICTED)}
+                        className={`flex-1 p-4 rounded-xl border-2 text-left transition-all ${accessLevel === AccessLevel.RESTRICTED ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' : 'border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-white dark:bg-gray-900'}`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <Shield className={`w-5 h-5 ${accessLevel === AccessLevel.RESTRICTED ? 'text-primary-600' : 'text-gray-400'}`} />
+                          <span className={`font-bold ${accessLevel === AccessLevel.RESTRICTED ? 'text-primary-900 dark:text-white' : 'text-gray-700 dark:text-gray-400'}`}>Restricted</span>
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Users must request access. You approve who can view.</p>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* RIGHT COLUMN */}
                 </div>
                 <div className="space-y-6">
 
-              {/* Self-Destruct Settings Group */}
-              <div className="bg-gray-50/80 dark:bg-[#0f1115] p-7 rounded-[2.5rem] border border-gray-100 dark:border-white/5 space-y-8 shadow-inner">
-                <div className="flex items-center justify-between">
-                   <div className="flex items-center gap-3">
-                      <div className="p-2.5 bg-primary-500 text-white rounded-2xl shadow-lg shadow-primary-500/20 dark:shadow-none">
-                        <Zap className="w-5 h-5" />
+                  {/* Self-Destruct Settings Group */}
+                  <div className="bg-gray-50/80 dark:bg-[#0f1115] p-7 rounded-[2.5rem] border border-gray-100 dark:border-white/5 space-y-8 shadow-inner">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 bg-primary-500 text-white rounded-2xl shadow-lg shadow-primary-500/20 dark:shadow-none">
+                          <Zap className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] leading-none mb-1">Destruction Protocol</h3>
+                          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Global Lifecycle Policy</p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] leading-none mb-1">Destruction Protocol</h3>
-                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Global Lifecycle Policy</p>
+                      <div className="flex items-center justify-center px-3 py-1 bg-primary-50 dark:bg-primary-500/10 rounded-full border border-primary-100 dark:border-primary-500/20 h-fit">
+                        <span className="text-[8px] font-black text-primary-600 dark:text-primary-400 uppercase tracking-widest leading-none">Active</span>
                       </div>
-                   </div>
-                   <div className="flex items-center justify-center px-3 py-1 bg-primary-50 dark:bg-primary-500/10 rounded-full border border-primary-100 dark:border-primary-500/20 h-fit">
-                      <span className="text-[8px] font-black text-primary-600 dark:text-primary-400 uppercase tracking-widest leading-none">Active</span>
-                   </div>
-                </div>
+                    </div>
 
-                {/* Expiry Selection (Custom Dropdown) */}
-                <div className="relative">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Vault Lifetime (Expiry)</label>
-                {(() => {
-                    const expiryOptions = [
-                        { value: 24, label: '24 Hours (Default)', disabled: false },
-                        { value: 48, label: '48 Hours', disabled: appUser?.plan === PlanType.FREE },
-                        { value: 72, label: '72 Hours', disabled: appUser?.plan === PlanType.FREE },
-                        { value: 'never', label: `Permanent Storage ${appUser?.plan !== PlanType.PRO ? '(PRO Feature)' : '(Never Expire)'}`, disabled: appUser?.plan !== PlanType.PRO },
-                    ];
-                    const selected = expiryOptions.find(o => o.value === expiryHours) || expiryOptions[0];
-                    const isOpen = menuOpenId === 'modal-expiry';
+                    {/* Expiry Selection (Custom Dropdown) */}
+                    <div className="relative">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Vault Lifetime (Expiry)</label>
+                      {(() => {
+                        const expiryOptions = [
+                          { value: 24, label: '24 Hours (Default)', disabled: false },
+                          { value: 48, label: '48 Hours', disabled: appUser?.plan === PlanType.FREE },
+                          { value: 72, label: '72 Hours', disabled: appUser?.plan === PlanType.FREE },
+                          { value: 'never', label: `Permanent Storage ${appUser?.plan !== PlanType.PRO ? '(PRO Feature)' : '(Never Expire)'}`, disabled: appUser?.plan !== PlanType.PRO },
+                        ];
+                        const selected = expiryOptions.find(o => o.value === expiryHours) || expiryOptions[0];
+                        const isOpen = menuOpenId === 'modal-expiry';
 
-                    return (
-                        <>
+                        return (
+                          <>
                             <button
-                                type="button"
-                                onClick={(e) => { e.stopPropagation(); setMenuOpenId(isOpen ? null : 'modal-expiry'); }}
-                                className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-all duration-200 border ${
-                                    isOpen 
-                                    ? 'bg-primary-50 dark:bg-primary-900/30 border-primary-300 dark:border-primary-800 text-primary-700 dark:text-primary-400 shadow-lg shadow-primary-100 dark:shadow-none ring-2 ring-primary-200 dark:ring-primary-900/30' 
-                                    : 'bg-white dark:bg-black border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-primary-300 dark:hover:border-primary-800 hover:shadow-md'
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setMenuOpenId(isOpen ? null : 'modal-expiry'); }}
+                              className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-all duration-200 border ${isOpen
+                                ? 'bg-primary-50 dark:bg-primary-900/30 border-primary-300 dark:border-primary-800 text-primary-700 dark:text-primary-400 shadow-lg shadow-primary-100 dark:shadow-none ring-2 ring-primary-200 dark:ring-primary-900/30'
+                                : 'bg-white dark:bg-black border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-primary-300 dark:hover:border-primary-800 hover:shadow-md'
                                 } ${appUser?.plan === PlanType.FREE ? 'cursor-not-allowed opacity-80' : 'cursor-pointer'}`}
-                                disabled={appUser?.plan === PlanType.FREE}
+                              disabled={appUser?.plan === PlanType.FREE}
                             >
-                                <Clock className={`w-5 h-5 transition-colors ${isOpen ? 'text-primary-500' : 'text-gray-400'}`} />
-                                <span className="flex-1 text-left">{selected.label}</span>
-                                <ChevronDown className={`w-4 h-4 transition-all duration-200 ${isOpen ? 'rotate-180 text-primary-500' : 'text-gray-400'}`} />
+                              <Clock className={`w-5 h-5 transition-colors ${isOpen ? 'text-primary-500' : 'text-gray-400'}`} />
+                              <span className="flex-1 text-left">{selected.label}</span>
+                              <ChevronDown className={`w-4 h-4 transition-all duration-200 ${isOpen ? 'rotate-180 text-primary-500' : 'text-gray-400'}`} />
                             </button>
 
                             {isOpen && (
-                                <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-950 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-800 z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 ring-1 ring-black/5">
-                                    <div className="p-1.5">
-                                        {expiryOptions.map((opt) => (
-                                            <button
-                                                key={opt.value}
-                                                type="button"
-                                                disabled={opt.disabled}
-                                                onClick={() => { setExpiryHours(opt.value as any); setMenuOpenId(null); }}
-                                                className={`w-full flex items-center gap-2.5 px-3 py-3 rounded-lg text-sm text-left transition-all ${
-                                                    expiryHours === opt.value 
-                                                    ? 'bg-primary-50 dark:bg-primary-900/40 text-primary-700 dark:text-primary-400 font-bold' 
-                                                    : opt.disabled ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-900'
-                                                }`}
-                                            >
-                                                {expiryHours === opt.value && <div className="w-1.5 h-1.5 rounded-full bg-primary-500" />}
-                                                <span className={expiryHours === opt.value ? 'ml-0' : 'ml-4'}>{opt.label}</span>
-                                            </button>
-                                        ))}
-                                    </div>
+                              <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-950 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-800 z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 ring-1 ring-black/5">
+                                <div className="p-1.5">
+                                  {expiryOptions.map((opt) => (
+                                    <button
+                                      key={opt.value}
+                                      type="button"
+                                      disabled={opt.disabled}
+                                      onClick={() => { setExpiryHours(opt.value as any); setMenuOpenId(null); }}
+                                      className={`w-full flex items-center gap-2.5 px-3 py-3 rounded-lg text-sm text-left transition-all ${expiryHours === opt.value
+                                        ? 'bg-primary-50 dark:bg-primary-900/40 text-primary-700 dark:text-primary-400 font-bold'
+                                        : opt.disabled ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-900'
+                                        }`}
+                                    >
+                                      {expiryHours === opt.value && <div className="w-1.5 h-1.5 rounded-full bg-primary-500" />}
+                                      <span className={expiryHours === opt.value ? 'ml-0' : 'ml-4'}>{opt.label}</span>
+                                    </button>
+                                  ))}
                                 </div>
+                              </div>
                             )}
-                        </>
-                    );
-                })()}
-                
-                {appUser?.plan !== PlanType.PRO && expiryHours !== 'never' && (
-                    <div className="mt-4 p-4 bg-primary-500/5 dark:bg-primary-500/10 border border-primary-500/20 dark:border-primary-500/30 rounded-2xl flex items-center justify-between gap-4 animate-in fade-in slide-in-from-top-1 duration-300">
-                        <div className="flex items-center gap-3">
-                           <div className="p-2 bg-primary-500 text-white rounded-xl shadow-lg shadow-primary-500/20 dark:shadow-none">
+                          </>
+                        );
+                      })()}
+
+                      {appUser?.plan !== PlanType.PRO && expiryHours !== 'never' && (
+                        <div className="mt-4 p-4 bg-primary-500/5 dark:bg-primary-500/10 border border-primary-500/20 dark:border-primary-500/30 rounded-2xl flex items-center justify-between gap-4 animate-in fade-in slide-in-from-top-1 duration-300">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-primary-500 text-white rounded-xl shadow-lg shadow-primary-500/20 dark:shadow-none">
                               <Zap className="w-4 h-4 fill-current" />
-                           </div>
-                           <div>
+                            </div>
+                            <div>
                               <p className="text-[10px] text-primary-900 dark:text-primary-100 font-black uppercase tracking-widest leading-none mb-1">Temporary Life</p>
                               <p className="text-[9px] text-primary-700/70 dark:text-primary-400/70 font-bold uppercase tracking-tight">Auto-destruct in {expiryHours}h</p>
-                           </div>
+                            </div>
+                          </div>
+                          <Link to="/pricing" onClick={(e) => e.stopPropagation()} className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-[10px] font-black rounded-xl transition-all shadow-md shadow-primary-500/20 active:scale-95 whitespace-nowrap uppercase tracking-widest">
+                            Keep Permanent
+                          </Link>
                         </div>
-                        <Link to="/pricing" onClick={(e) => e.stopPropagation()} className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-[10px] font-black rounded-xl transition-all shadow-md shadow-primary-500/20 active:scale-95 whitespace-nowrap uppercase tracking-widest">
-                           Keep Permanent
-                        </Link>
+                      )}
+
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-2 font-medium">Auto-destruction triggered once vault expires.</p>
                     </div>
-                )}
-                
-                  <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-2 font-medium">Auto-destruction triggered once vault expires.</p>
-                </div>
 
-                {/* Scan Count Limit (Custom Dropdown) */}
-                <div className="relative">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Scan Count Limit (Self-Destruct after X Scans)</label>
-                {(() => {
-                    const scanOptions = [
-                        { value: 'none', label: 'Unlimited Scans', disabled: appUser?.plan !== PlanType.PRO, proOnly: appUser?.plan !== PlanType.PRO },
-                        { value: 25, label: '25 Scans', disabled: false },
-                        { value: 45, label: '45 Scans', disabled: false },
-                        { value: 65, label: '65 Scans', disabled: appUser?.plan === PlanType.FREE, plusOnly: appUser?.plan === PlanType.FREE },
-                        { value: 85, label: '85 Scans', disabled: appUser?.plan === PlanType.FREE, plusOnly: appUser?.plan === PlanType.FREE },
-                        { value: 105, label: '105 Scans', disabled: appUser?.plan !== PlanType.PRO, proOnly: appUser?.plan !== PlanType.PRO },
-                        { value: 125, label: '125 Scans', disabled: appUser?.plan !== PlanType.PRO, proOnly: appUser?.plan !== PlanType.PRO },
-                        { value: 'custom', label: 'Custom Limit', disabled: appUser?.plan !== PlanType.PRO, proOnly: appUser?.plan !== PlanType.PRO },
-                    ];
-                    
-                    const currentValue = maxViews === null ? 'none' : maxViews;
-                    const selected = scanOptions.find(o => o.value === currentValue) || scanOptions[1];
-                    const isOpen = menuOpenId === 'modal-scans';
+                    {/* Scan Count Limit (Custom Dropdown) */}
+                    <div className="relative">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Scan Count Limit (Self-Destruct after X Scans)</label>
+                      {(() => {
+                        const scanOptions = [
+                          { value: 'none', label: 'Unlimited Scans', disabled: appUser?.plan !== PlanType.PRO, proOnly: appUser?.plan !== PlanType.PRO },
+                          { value: 25, label: '25 Scans', disabled: false },
+                          { value: 45, label: '45 Scans', disabled: false },
+                          { value: 65, label: '65 Scans', disabled: appUser?.plan === PlanType.FREE, plusOnly: appUser?.plan === PlanType.FREE },
+                          { value: 85, label: '85 Scans', disabled: appUser?.plan === PlanType.FREE, plusOnly: appUser?.plan === PlanType.FREE },
+                          { value: 105, label: '105 Scans', disabled: appUser?.plan !== PlanType.PRO, proOnly: appUser?.plan !== PlanType.PRO },
+                          { value: 125, label: '125 Scans', disabled: appUser?.plan !== PlanType.PRO, proOnly: appUser?.plan !== PlanType.PRO },
+                          { value: 'custom', label: 'Custom Limit', disabled: appUser?.plan !== PlanType.PRO, proOnly: appUser?.plan !== PlanType.PRO },
+                        ];
 
-                    return (
-                        <>
+                        const currentValue = maxViews === null ? 'none' : maxViews;
+                        const selected = scanOptions.find(o => o.value === currentValue) || scanOptions[1];
+                        const isOpen = menuOpenId === 'modal-scans';
+
+                        return (
+                          <>
                             <button
-                                type="button"
-                                onClick={(e) => { e.stopPropagation(); setMenuOpenId(isOpen ? null : 'modal-scans'); }}
-                                className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-all duration-200 border ${
-                                    isOpen 
-                                    ? 'bg-primary-50 dark:bg-primary-900/40 border-primary-300 dark:border-primary-800 text-primary-700 dark:text-primary-400 shadow-lg shadow-primary-100 dark:shadow-none ring-2 ring-primary-200 dark:ring-primary-900/30' 
-                                    : 'bg-white dark:bg-black border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-primary-300 dark:hover:border-primary-800 hover:shadow-md'
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setMenuOpenId(isOpen ? null : 'modal-scans'); }}
+                              className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium transition-all duration-200 border ${isOpen
+                                ? 'bg-primary-50 dark:bg-primary-900/40 border-primary-300 dark:border-primary-800 text-primary-700 dark:text-primary-400 shadow-lg shadow-primary-100 dark:shadow-none ring-2 ring-primary-200 dark:ring-primary-900/30'
+                                : 'bg-white dark:bg-black border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-primary-300 dark:hover:border-primary-800 hover:shadow-md'
                                 } cursor-pointer`}
                             >
-                                <Eye className={`w-5 h-5 transition-colors ${isOpen ? 'text-primary-500' : 'text-gray-400 dark:text-gray-500'}`} />
-                                <span className="flex-1 text-left">
-                                    {selected.value === 'custom' && customMaxViews ? `${customMaxViews} Scans (Custom)` : selected.label}
-                                </span>
-                                <ChevronDown className={`w-4 h-4 transition-all duration-200 ${isOpen ? 'rotate-180 text-primary-500' : 'text-gray-400'}`} />
+                              <Eye className={`w-5 h-5 transition-colors ${isOpen ? 'text-primary-500' : 'text-gray-400 dark:text-gray-500'}`} />
+                              <span className="flex-1 text-left">
+                                {selected.value === 'custom' && customMaxViews ? `${customMaxViews} Scans (Custom)` : selected.label}
+                              </span>
+                              <ChevronDown className={`w-4 h-4 transition-all duration-200 ${isOpen ? 'rotate-180 text-primary-500' : 'text-gray-400'}`} />
                             </button>
 
                             {isOpen && (
-                                <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-800 z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 ring-1 ring-black/5">
-                                    <div className="p-1.5 max-h-60 overflow-y-auto">
-                                        {scanOptions.map((opt) => (
-                                            <button
-                                                key={opt.value}
-                                                type="button"
-                                                disabled={opt.disabled}
-                                                onClick={() => { 
-                                                    setMaxViews(opt.value === 'none' ? null : (opt.value === 'custom' ? 'custom' : Number(opt.value))); 
-                                                    setMenuOpenId(null); 
-                                                }}
-                                                className={`w-full flex items-center gap-2.5 px-3 py-3 rounded-lg text-sm text-left transition-all ${
-                                                    currentValue === opt.value 
-                                                    ? 'bg-primary-50 dark:bg-primary-900/40 text-primary-700 dark:text-primary-400 font-bold' 
-                                                    : opt.disabled ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed opacity-60' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
-                                                }`}
-                                            >
-                                                {currentValue === opt.value && <div className="w-1.5 h-1.5 rounded-full bg-primary-500" />}
-                                                <span className={`${currentValue === opt.value ? 'ml-0' : 'ml-4'} flex-1`}>
-                                                    {opt.label}
-                                                </span>
-                                                {opt.proOnly && <span className="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-400">PRO</span>}
-                                                {opt.plusOnly && <span className="text-[10px] bg-primary-50 px-1.5 py-0.5 rounded text-primary-400">PLUS</span>}
-                                            </button>
-                                        ))}
-                                    </div>
+                              <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-100 dark:border-gray-800 z-[100] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150 ring-1 ring-black/5">
+                                <div className="p-1.5 max-h-60 overflow-y-auto">
+                                  {scanOptions.map((opt) => (
+                                    <button
+                                      key={opt.value}
+                                      type="button"
+                                      disabled={opt.disabled}
+                                      onClick={() => {
+                                        setMaxViews(opt.value === 'none' ? null : (opt.value === 'custom' ? 'custom' : Number(opt.value)));
+                                        setMenuOpenId(null);
+                                      }}
+                                      className={`w-full flex items-center gap-2.5 px-3 py-3 rounded-lg text-sm text-left transition-all ${currentValue === opt.value
+                                        ? 'bg-primary-50 dark:bg-primary-900/40 text-primary-700 dark:text-primary-400 font-bold'
+                                        : opt.disabled ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed opacity-60' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                                        }`}
+                                    >
+                                      {currentValue === opt.value && <div className="w-1.5 h-1.5 rounded-full bg-primary-500" />}
+                                      <span className={`${currentValue === opt.value ? 'ml-0' : 'ml-4'} flex-1`}>
+                                        {opt.label}
+                                      </span>
+                                      {opt.proOnly && <span className="text-[10px] bg-gray-100 px-1.5 py-0.5 rounded text-gray-400">PRO</span>}
+                                      {opt.plusOnly && <span className="text-[10px] bg-primary-50 px-1.5 py-0.5 rounded text-primary-400">PLUS</span>}
+                                    </button>
+                                  ))}
                                 </div>
+                              </div>
                             )}
-                        </>
-                    );
-                })()}
+                          </>
+                        );
+                      })()}
 
-                {maxViews === 'custom' && appUser?.plan === PlanType.PRO && (
-                   <div className="mt-3 relative animate-in fade-in slide-in-from-top-1 duration-200">
-                     <div className="relative">
-                       <input
-                         type="number"
-                         min="1"
-                         placeholder="Enter custom scan limit"
-                         value={customMaxViews}
-                         onChange={(e) => setCustomMaxViews(e.target.value)}
-                         className="w-full p-4 bg-gray-50 dark:bg-black/50 border border-transparent focus:bg-white dark:focus:bg-black focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 rounded-xl text-sm dark:text-white outline-none transition-all duration-200"
-                       />
-                       <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-bold uppercase tracking-wider">Scans</div>
-                     </div>
-                     <p className="mt-2 text-[10px] text-primary-600 dark:text-primary-400 font-medium italic pl-1">Vault will auto-deactivate after reaching this many views.</p>
-                   </div>
-                )}
-                
-                <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-2 font-medium">Vault wipes itself once scan limit is reached.</p>
-              </div>
+                      {maxViews === 'custom' && appUser?.plan === PlanType.PRO && (
+                        <div className="mt-3 relative animate-in fade-in slide-in-from-top-1 duration-200">
+                          <div className="relative">
+                            <input
+                              type="number"
+                              min="1"
+                              placeholder="Enter custom scan limit"
+                              value={customMaxViews}
+                              onChange={(e) => setCustomMaxViews(e.target.value)}
+                              className="w-full p-4 bg-gray-50 dark:bg-black/50 border border-transparent focus:bg-white dark:focus:bg-black focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 rounded-xl text-sm dark:text-white outline-none transition-all duration-200"
+                            />
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-bold uppercase tracking-wider">Scans</div>
                           </div>
-          </div>
-          {/* END TWO-COLUMN GRID */}
+                          <p className="mt-2 text-[10px] text-primary-600 dark:text-primary-400 font-medium italic pl-1">Vault will auto-deactivate after reaching this many views.</p>
+                        </div>
+                      )}
 
-              {/* Branded Domain Section (PRO Feature) - Moved to be standalone */}
-              <div className="bg-white/50 dark:bg-black/40 p-10 rounded-[2.5rem] border border-gray-100 dark:border-white/5 space-y-6 shadow-sm group transition-all hover:bg-white/80 dark:hover:bg-primary-900/5 relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-8 opacity-5">
-                   <Globe className="w-24 h-24 text-primary-500" />
-                </div>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-gradient-to-br from-primary-500 to-indigo-600 text-white rounded-2xl shadow-xl shadow-primary-500/20">
-                      <Globe className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] leading-none mb-1.5">Branded Domain</h3>
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Connect your custom hostname</p>
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-2 font-medium">Vault wipes itself once scan limit is reached.</p>
                     </div>
                   </div>
-                  {appUser?.plan !== PlanType.PRO && (
-                    <div className="flex items-center justify-center px-4 py-1.5 bg-primary-100 dark:bg-primary-900/30 rounded-full border border-primary-200 dark:border-primary-800 gap-2 animate-bounce h-fit">
-                      <Zap className="w-3 h-3 fill-primary-600 text-primary-600" />
-                      <span className="text-[9px] font-black text-primary-700 dark:text-primary-400 uppercase tracking-widest leading-none">PRO FEATURE</span>
-                    </div>
-                  )}
                 </div>
-                
-                <div className="relative z-10">
-                  <div className="relative group/input">
-                    <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 font-black text-xs tracking-widest">HTTPS://</div>
-                    <input
-                      type="text"
-                      disabled={appUser?.plan !== PlanType.PRO}
-                      className={`w-full pl-24 pr-6 py-5 bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-3xl focus:ring-4 focus:ring-primary-500/10 outline-none transition-all font-black text-sm dark:text-white shadow-inner ${appUser?.plan !== PlanType.PRO ? 'opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-900' : 'hover:border-primary-300 dark:hover:border-primary-700'}`}
-                      value={customDomain}
-                      onChange={(e) => setCustomDomain(e.target.value)}
-                      placeholder="files.yourbrand.com"
-                    />
-                    {customDomain && appUser?.plan === PlanType.PRO && (
-                      <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-2 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-100 dark:border-emerald-500/20">
-                         <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                         <span className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Verified</span>
+                {/* END TWO-COLUMN GRID */}
+
+                {/* Branded Domain Section (PRO Feature) - Moved to be standalone */}
+                <div className="bg-white/50 dark:bg-black/40 p-10 rounded-[2.5rem] border border-gray-100 dark:border-white/5 space-y-6 shadow-sm group transition-all hover:bg-white/80 dark:hover:bg-primary-900/5 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-8 opacity-5">
+                    <Globe className="w-24 h-24 text-primary-500" />
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-gradient-to-br from-primary-500 to-indigo-600 text-white rounded-2xl shadow-xl shadow-primary-500/20">
+                        <Globe className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] leading-none mb-1.5">Branded Domain</h3>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Connect your custom hostname</p>
+                      </div>
+                    </div>
+                    {appUser?.plan !== PlanType.PRO && (
+                      <div className="flex items-center justify-center px-4 py-1.5 bg-primary-100 dark:bg-primary-900/30 rounded-full border border-primary-200 dark:border-primary-800 gap-2 animate-bounce h-fit">
+                        <Zap className="w-3 h-3 fill-primary-600 text-primary-600" />
+                        <span className="text-[9px] font-black text-primary-700 dark:text-primary-400 uppercase tracking-widest leading-none">PRO FEATURE</span>
                       </div>
                     )}
                   </div>
-                  <div className="mt-4 flex items-center gap-2 px-2">
-                     <Share2 className="w-3 h-3 text-primary-500" />
-                     <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-tight">Access Link: <span className="text-primary-600 dark:text-primary-400">{customDomain || 'yourdomain.com'}/v/[id]</span></p>
-                  </div>
-                </div>
-              </div>
 
-              {/* Existing Files List (Edit Mode Only) */}
-              {modalMode === 'EDIT' && existingFiles.length > 0 && (
-                <div className="bg-gray-50 dark:bg-black/30 p-4 rounded-xl border border-gray-100 dark:border-gray-800">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Current Files</label>
-                  <div className="space-y-1.5 max-h-40 overflow-y-auto">
-                    {existingFiles.map(file => (
-                      <div key={file.id} className="p-3 flex items-center justify-between text-sm bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-750">
-                        <div className="flex items-center gap-2 truncate">
-                          {file.type === FileType.LINK ? <LinkIcon className="w-4 h-4 text-blue-500" /> : <FileIcon className="w-4 h-4 text-gray-400 dark:text-gray-500" />}
-                          <span className="text-gray-700 dark:text-gray-300 truncate max-w-[200px] font-medium">{file.name}</span>
+                  <div className="relative z-10">
+                    <div className="relative group/input">
+                      <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 font-black text-xs tracking-widest">HTTPS://</div>
+                      <input
+                        type="text"
+                        disabled={appUser?.plan !== PlanType.PRO}
+                        className={`w-full pl-24 pr-6 py-5 bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-3xl focus:ring-4 focus:ring-primary-500/10 outline-none transition-all font-black text-sm dark:text-white shadow-inner ${appUser?.plan !== PlanType.PRO ? 'opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-900' : 'hover:border-primary-300 dark:hover:border-primary-700'}`}
+                        value={customDomain}
+                        onChange={(e) => setCustomDomain(e.target.value)}
+                        placeholder="files.yourbrand.com"
+                      />
+                      {customDomain && appUser?.plan === PlanType.PRO && (
+                        <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-2 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-100 dark:border-emerald-500/20">
+                          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                          <span className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Verified</span>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => setSelectedFileForSettings({ type: 'EXISTING', index: file.id as any })}
-                            className="text-gray-400 hover:text-primary-600 p-1"
-                            title="File Settings"
-                          >
-                            <Settings className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleMarkFileDeleted(file.id)}
-                            className="text-gray-400 hover:text-red-500 p-1"
-                            title="Delete File"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Upload Section */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {modalMode === 'EDIT' ? 'Add More Files' : 'Upload Files'}
-                </label>
-                <div
-                  className={`border-2 border-dashed rounded-[2rem] p-10 text-center transition-all relative group cursor-pointer ${isDragging ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 scale-[1.02]' : 'border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-white/5 hover:border-primary-400'
-                    }`}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
-                    className="hidden"
-                    onChange={handleFileSelect}
-                  />
-                  <div className="pointer-events-none relative z-10">
-                    <div className="w-16 h-16 bg-primary-50 dark:bg-primary-900/40 rounded-3xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                      <UploadCloud className={`w-8 h-8 transition-colors ${isDragging ? 'text-primary-600' : 'text-primary-500'}`} />
+                      )}
                     </div>
-                    <p className="text-sm text-gray-900 dark:text-white font-black uppercase tracking-tighter">
-                      {isDragging ? 'Drop files here' : 'Drop Vault Assets'}
-                    </p>
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-bold uppercase tracking-widest">Maximum transparency and security</p>
-                  </div>
-                  {/* Decorative background element */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-[2rem]"></div>
-                </div>
-                {selectedFiles.length > 0 && (
-                  <div className="mt-4 space-y-2">
-                    {selectedFiles.map((f, i) => (
-                      <div key={i} className="flex items-center justify-between text-xs bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 p-3 rounded-xl transition-all hover:scale-[1.01]">
-                        <span className="truncate flex items-center gap-2 font-bold text-emerald-800 dark:text-emerald-400">
-                          <FileIcon className="w-4 h-4" /> {f.name}
-                          {fileSettings[i] && (
-                            <span className="text-[9px] bg-red-500 text-white px-1.5 py-0.5 rounded-full font-black uppercase tracking-tighter animate-pulse shadow-lg shadow-red-500/20">Destruct Active</span>
-                          )}
-                        </span>
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setSelectedFileForSettings({ type: 'NEW', index: i }); }}
-                            className="text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 p-2 hover:bg-white dark:hover:bg-white/10 rounded-lg transition-colors"
-                            title="File Settings"
-                          >
-                            <Settings className="w-4 h-4" />
-                          </button>
-                          <button onClick={(e) => { e.stopPropagation(); removeSelectedFile(i); }} className="text-gray-400 hover:text-red-500 p-2 hover:bg-white dark:hover:bg-white/10 rounded-lg transition-colors"><X className="w-4 h-4" /></button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Links Section */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {modalMode === 'EDIT' ? 'Add More Links' : 'Add Links (Optional)'}
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="url"
-                    className="flex-1 p-3 bg-white dark:bg-black/50 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all dark:text-white"
-                    placeholder="https://..."
-                    value={tempLink}
-                    onChange={(e) => setTempLink(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && addLink()}
-                  />
-                  <button onClick={addLink} className="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 px-4 rounded-lg font-bold text-gray-700 dark:text-gray-300 transition-colors uppercase text-[10px] tracking-widest">Add</button>
-                </div>
-                {links.length > 0 && (
-                  <div className="mt-2 space-y-1">
-                    {links.map((l, i) => (
-                      <div key={i} className="flex items-center justify-between text-xs text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/20 p-2 rounded-lg border border-blue-100 dark:border-blue-900/30">
-                        <span className="flex items-center gap-2 truncate font-medium"><LinkIcon className="w-3 h-3" /> {l}</span>
-                        <button onClick={() => removeLink(i)} className="text-gray-400 hover:text-red-500 transition-colors"><X className="w-3 h-3" /></button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* QR Customization Section */}
-              <div className="rounded-[2rem] border border-gray-100 dark:border-white/5 overflow-hidden bg-gradient-to-br from-gray-50/80 to-white dark:from-[#0d0f14] dark:to-[#0a0a0d]">
-                {/* Section Header */}
-                <div className="px-6 pt-6 pb-4 flex items-center justify-between border-b border-gray-100 dark:border-white/5">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-gradient-to-br from-violet-500 to-indigo-600 text-white rounded-2xl shadow-lg shadow-violet-500/25">
-                      <QrCode className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] leading-none mb-0.5">QR Customization</h3>
-                      <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Visual Identity Layer</p>
+                    <div className="mt-4 flex items-center gap-2 px-2">
+                      <Share2 className="w-3 h-3 text-primary-500" />
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-tight">Access Link: <span className="text-primary-600 dark:text-primary-400">{customDomain || 'yourdomain.com'}/v/[id]</span></p>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Standard Colors - Available to All */}
-                  <div>
-                    <p className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em] mb-3">Global Branding</p>
-                    <div className="flex flex-wrap gap-2">
-                      {[
-                        { color: '#000000', label: 'Classic' },
-                        { color: '#7c3aed', label: 'Primary' },
-                        { color: '#2563eb', label: 'Royal' },
-                        { color: '#059669', label: 'Emerald' },
-                        { color: '#dc2626', label: 'Crimson' },
-                        { color: '#ea580c', label: 'Orange' },
-                        { color: '#4f46e5', label: 'Indigo' },
-                        { color: '#374151', label: 'Slate' }
-                      ].map((c) => (
-                        <button
-                          key={c.color}
-                          type="button"
-                          onClick={() => setSelectedQrColor(c.color)}
-                          title={c.label}
-                          className={`w-8 h-8 rounded-xl border-2 transition-all duration-200 hover:scale-110 active:scale-95 shadow-sm focus:outline-none ${
-                            selectedQrColor === c.color ? 'ring-2 ring-primary-500 ring-offset-2 scale-110 border-white' : 'border-transparent'
-                          }`}
-                          style={{ backgroundColor: c.color }}
-                        />
+                {/* Existing Files List (Edit Mode Only) */}
+                {modalMode === 'EDIT' && existingFiles.length > 0 && (
+                  <div className="bg-gray-50 dark:bg-black/30 p-4 rounded-xl border border-gray-100 dark:border-gray-800">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Current Files</label>
+                    <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                      {existingFiles.map(file => (
+                        <div key={file.id} className="p-3 flex items-center justify-between text-sm bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-750">
+                          <div className="flex items-center gap-2 truncate">
+                            {file.type === FileType.LINK ? <LinkIcon className="w-4 h-4 text-blue-500" /> : <FileIcon className="w-4 h-4 text-gray-400 dark:text-gray-500" />}
+                            <span className="text-gray-700 dark:text-gray-300 truncate max-w-[200px] font-medium">{file.name}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => setSelectedFileForSettings({ type: 'EXISTING', index: file.id as any })}
+                              className="text-gray-400 hover:text-primary-600 p-1"
+                              title="File Settings"
+                            >
+                              <Settings className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleMarkFileDeleted(file.id)}
+                              className="text-gray-400 hover:text-red-500 p-1"
+                              title="Delete File"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
                       ))}
                     </div>
-                    <p className="text-[9px] text-gray-400 dark:text-gray-500 mt-3 font-medium">Global color theme for your vault presence.</p>
+                  </div>
+                )}
+
+                {/* Upload Section */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {modalMode === 'EDIT' ? 'Add More Files' : 'Upload Files'}
+                  </label>
+                  <div
+                    className={`border-2 border-dashed rounded-[2rem] p-10 text-center transition-all relative group cursor-pointer ${isDragging ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 scale-[1.02]' : 'border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-white/5 hover:border-primary-400'
+                      }`}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      className="hidden"
+                      onChange={handleFileSelect}
+                    />
+                    <div className="pointer-events-none relative z-10">
+                      <div className="w-16 h-16 bg-primary-50 dark:bg-primary-900/40 rounded-3xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                        <UploadCloud className={`w-8 h-8 transition-colors ${isDragging ? 'text-primary-600' : 'text-primary-500'}`} />
+                      </div>
+                      <p className="text-sm text-gray-900 dark:text-white font-black uppercase tracking-tighter">
+                        {isDragging ? 'Drop files here' : 'Drop Vault Assets'}
+                      </p>
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-bold uppercase tracking-widest">Maximum transparency and security</p>
+                    </div>
+                    {/* Decorative background element */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-[2rem]"></div>
+                  </div>
+                  {selectedFiles.length > 0 && (
+                    <div className="mt-4 space-y-2">
+                      {selectedFiles.map((f, i) => (
+                        <div key={i} className="flex items-center justify-between text-xs bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 p-3 rounded-xl transition-all hover:scale-[1.01]">
+                          <span className="truncate flex items-center gap-2 font-bold text-emerald-800 dark:text-emerald-400">
+                            <FileIcon className="w-4 h-4" /> {f.name}
+                            {fileSettings[i] && (
+                              <span className="text-[9px] bg-red-500 text-white px-1.5 py-0.5 rounded-full font-black uppercase tracking-tighter animate-pulse shadow-lg shadow-red-500/20">Destruct Active</span>
+                            )}
+                          </span>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setSelectedFileForSettings({ type: 'NEW', index: i }); }}
+                              className="text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 p-2 hover:bg-white dark:hover:bg-white/10 rounded-lg transition-colors"
+                              title="File Settings"
+                            >
+                              <Settings className="w-4 h-4" />
+                            </button>
+                            <button onClick={(e) => { e.stopPropagation(); removeSelectedFile(i); }} className="text-gray-400 hover:text-red-500 p-2 hover:bg-white dark:hover:bg-white/10 rounded-lg transition-colors"><X className="w-4 h-4" /></button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Links Section */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {modalMode === 'EDIT' ? 'Add More Links' : 'Add Links (Optional)'}
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      className="flex-1 p-3 bg-white dark:bg-black/50 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all dark:text-white"
+                      placeholder="https://..."
+                      value={tempLink}
+                      onChange={(e) => setTempLink(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && addLink()}
+                    />
+                    <button onClick={addLink} className="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 px-4 rounded-lg font-bold text-gray-700 dark:text-gray-300 transition-colors uppercase text-[10px] tracking-widest">Add</button>
+                  </div>
+                  {links.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      {links.map((l, i) => (
+                        <div key={i} className="flex items-center justify-between text-xs text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/20 p-2 rounded-lg border border-blue-100 dark:border-blue-900/30">
+                          <span className="flex items-center gap-2 truncate font-medium"><LinkIcon className="w-3 h-3" /> {l}</span>
+                          <button onClick={() => removeLink(i)} className="text-gray-400 hover:text-red-500 transition-colors"><X className="w-3 h-3" /></button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* QR Customization Section */}
+                <div className="rounded-[2rem] border border-gray-100 dark:border-white/5 overflow-hidden bg-gradient-to-br from-gray-50/80 to-white dark:from-[#0d0f14] dark:to-[#0a0a0d]">
+                  {/* Section Header */}
+                  <div className="px-6 pt-6 pb-4 flex items-center justify-between border-b border-gray-100 dark:border-white/5">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-gradient-to-br from-violet-500 to-indigo-600 text-white rounded-2xl shadow-lg shadow-violet-500/25">
+                        <QrCode className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] leading-none mb-0.5">QR Customization</h3>
+                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Visual Identity Layer</p>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Dynamic Designs - Premium */}
-                   {/* Middle Logo Upload Section - Moved up */}
-                   <div className="mt-3 p-5 bg-white dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-[2rem] flex items-center justify-between shadow-sm">
-                      <div className="flex items-center gap-4">
-                         <div className="w-12 h-12 bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 flex items-center justify-center overflow-hidden shadow-inner group/logo">
-                            {qrLogo ? (
-                               <img src={qrLogo} alt="QR Logo" className="w-full h-full object-cover transition-transform group-hover/logo:scale-110" />
-                            ) : (
-                               <Box className="w-6 h-6 text-gray-300" />
-                            )}
-                         </div>
-                         <div>
-                            <p className="text-[11px] font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] leading-none mb-1">Middle Logo</p>
-                            <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest">Everyone can customize</p>
-                         </div>
+                  <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Standard Colors - Available to All */}
+                    <div>
+                      <p className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em] mb-3">Global Branding</p>
+                      <div className="flex flex-wrap gap-2">
+                        {[
+                          { color: '#000000', label: 'Classic' },
+                          { color: '#7c3aed', label: 'Primary' },
+                          { color: '#2563eb', label: 'Royal' },
+                          { color: '#059669', label: 'Emerald' },
+                          { color: '#dc2626', label: 'Crimson' },
+                          { color: '#ea580c', label: 'Orange' },
+                          { color: '#4f46e5', label: 'Indigo' },
+                          { color: '#374151', label: 'Slate' }
+                        ].map((c) => (
+                          <button
+                            key={c.color}
+                            type="button"
+                            onClick={() => setSelectedQrColor(c.color)}
+                            title={c.label}
+                            className={`w-8 h-8 rounded-xl border-2 transition-all duration-200 hover:scale-110 active:scale-95 shadow-sm focus:outline-none ${selectedQrColor === c.color ? 'ring-2 ring-primary-500 ring-offset-2 scale-110 border-white' : 'border-transparent'
+                              }`}
+                            style={{ backgroundColor: c.color }}
+                          />
+                        ))}
                       </div>
-                      <input 
-                        type="file" 
-                        ref={qrLogoInputRef} 
-                        hidden 
-                        accept="image/*" 
+                      <p className="text-[9px] text-gray-400 dark:text-gray-500 mt-3 font-medium">Global color theme for your vault presence.</p>
+                    </div>
+
+                    {/* Dynamic Designs - Premium */}
+                    {/* Middle Logo Upload Section - Moved up */}
+                    <div className="mt-3 p-5 bg-white dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-[2rem] flex items-center justify-between shadow-sm">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 flex items-center justify-center overflow-hidden shadow-inner group/logo">
+                          {qrLogo ? (
+                            <img src={qrLogo} alt="QR Logo" className="w-full h-full object-cover transition-transform group-hover/logo:scale-110" />
+                          ) : (
+                            <Box className="w-6 h-6 text-gray-300" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-[11px] font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] leading-none mb-1">Middle Logo</p>
+                          <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest">Everyone can customize</p>
+                        </div>
+                      </div>
+                      <input
+                        type="file"
+                        ref={qrLogoInputRef}
+                        hidden
+                        accept="image/*"
                         onChange={(e) => {
-                           const file = e.target.files?.[0];
-                           if (file) {
-                              const reader = new FileReader();
-                              reader.onloadend = () => setQrLogo(reader.result as string);
-                              reader.readAsDataURL(file);
-                           }
-                        }} 
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => setQrLogo(reader.result as string);
+                            reader.readAsDataURL(file);
+                          }
+                        }}
                       />
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => qrLogoInputRef.current?.click()}
                         className="px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white border border-primary-500 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-primary-500/20"
                       >
-                         {qrLogo ? 'Swap Logo' : 'Upload'}
+                        {qrLogo ? 'Swap Logo' : 'Upload'}
                       </button>
-                   </div>
+                    </div>
                   </div>
 
                   {/* Dynamic Designs - Premium */}
@@ -2421,8 +2413,8 @@ export const Dashboard: React.FC = () => {
                     <div className="flex items-center justify-between mb-3 mt-4 sm:mt-0">
                       <p className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em]">Dynamic Designs</p>
                       <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 dark:bg-emerald-500/10 rounded-full border border-emerald-100 dark:border-emerald-500/20">
-                         <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
-                         <span className="text-[8px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">ENABLED FOR ALL</span>
+                        <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+                        <span className="text-[8px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">ENABLED FOR ALL</span>
                       </div>
                     </div>
                     <div className="grid grid-cols-3 gap-3">
@@ -2438,11 +2430,10 @@ export const Dashboard: React.FC = () => {
                           key={d.id}
                           type="button"
                           onClick={() => setSelectedQrDesign(d.id)}
-                          className={`relative p-3 rounded-2xl border-2 text-center transition-all duration-200 flex flex-col items-center gap-1 group shadow-sm ${
-                            selectedQrDesign === d.id 
-                            ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-500/10 scale-105' 
+                          className={`relative p-3 rounded-2xl border-2 text-center transition-all duration-200 flex flex-col items-center gap-1 group shadow-sm ${selectedQrDesign === d.id
+                            ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-500/10 scale-105'
                             : 'border-gray-100 dark:border-white/5 bg-white dark:bg-white/5 hover:border-violet-400 dark:hover:border-violet-500 hover:scale-105'
-                          }`}
+                            }`}
                         >
                           <span className="text-xl leading-none">{d.icon}</span>
                           <span className="text-[9px] font-black text-gray-700 dark:text-gray-300 uppercase tracking-tight">{d.label}</span>
@@ -2450,671 +2441,669 @@ export const Dashboard: React.FC = () => {
                         </button>
                       ))}
                     </div>
+                  </div>
+                </div>
+              </div>
+              <div className="border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-[#0d0f14] rounded-b-2xl">
+                {/* Upload Progress Bar - always visible in footer */}
+                {isSubmitting && (
+                  <div className="px-6 pt-6 pb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[10px] font-black text-primary-600 dark:text-primary-400 flex items-center gap-2 uppercase tracking-widest">
+                        <Loader2 className="animate-spin w-3 h-3" />
+                        {uploadProgress < 100 ? `Streaming Data (~${estimatedSeconds}s)` : 'Finalizing Hash...'}
+                      </span>
+                      <span className="text-xs font-black text-primary-700 dark:text-primary-500">{uploadProgress}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-2 overflow-hidden shadow-inner">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-primary-500 via-primary-400 to-indigo-600 transition-all duration-300 ease-out shadow-lg"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+                    <p className="text-[9px] text-gray-400 dark:text-gray-500 mt-2 font-bold uppercase tracking-tight">Security handshakes in progress. Do not disconnect.</p>
+
+                    {/* Task Checklist (Premium Redesign) */}
+                    <div className="mt-6 space-y-2.5 bg-white/50 dark:bg-black/40 backdrop-blur-md p-6 rounded-3xl border border-primary-100/50 dark:border-primary-500/10 shadow-sm relative overflow-hidden">
+                      <div className="absolute top-0 right-0 p-3 opacity-10">
+                        <ShieldCheck className="w-12 h-12 text-primary-500" />
+                      </div>
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] leading-none mb-1">Processing Protocol</span>
+                          <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Active Security Encryption</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 bg-primary-50 dark:bg-primary-500/10 px-2.5 py-1 rounded-full border border-primary-100 dark:border-primary-500/20">
+                          <div className="w-1 h-1 rounded-full bg-primary-500 animate-ping" />
+                          <span className="text-[9px] font-black text-primary-600 dark:text-primary-400 whitespace-nowrap">{Math.min(uploadTask, 3)}/3 SECURED</span>
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        {[
+                          { id: 1, label: 'Quantum Shielding', icon: Lock, desc: 'E2E Encryption active' },
+                          { id: 2, label: 'Data Sharding', icon: Share2, desc: 'Distributed storage' },
+                          { id: 3, label: 'Integrity Check', icon: ShieldCheck, desc: 'Final checksum verification' }
+                        ].map((step) => (
+                          <div key={step.id} className={`flex items-start gap-4 p-2.5 rounded-2xl transition-all duration-500 ${uploadTask >= step.id ? 'bg-primary-50/50 dark:bg-primary-500/5 border border-primary-100/50 dark:border-primary-500/10' : 'opacity-40'}`}>
+                            <div className={`mt-0.5 w-7 h-7 rounded-xl flex items-center justify-center transition-all duration-700 ${uploadTask >= step.id ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/20 dark:shadow-none rotate-0 scale-110' : 'bg-gray-100 dark:bg-gray-800 text-gray-400 -rotate-12'}`}>
+                              {uploadTask > step.id ? <Check className="w-3.5 h-3.5" /> : <step.icon className="w-3.5 h-3.5" />}
+                            </div>
+                            <div className="flex flex-col">
+                              <span className={`text-[10px] font-black uppercase tracking-tight ${uploadTask >= step.id ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>{step.label}</span>
+                              <span className="text-[8px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">{uploadTask >= step.id ? step.desc : 'Waiting for protocol...'}</span>
+                            </div>
+                            {uploadTask === step.id && (
+                              <div className="ml-auto">
+                                <Loader2 className="w-3 h-3 text-primary-500 animate-spin" />
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div className="p-6 flex items-center justify-between gap-4">
+                  <button
+                    onClick={() => setIsModalOpen(false)}
+                    disabled={isSubmitting}
+                    className="px-6 py-3 text-sm font-black text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors uppercase tracking-widest disabled:opacity-0"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSubmit}
+                    disabled={isSubmitting}
+                    className="bg-primary-600 hover:bg-primary-700 text-white px-8 py-3 rounded-xl font-black text-xs shadow-xl shadow-primary-500/20 dark:shadow-none active:scale-95 transition-all disabled:opacity-0 uppercase tracking-[0.2em] flex items-center gap-2"
+                  >
+                    {isSubmitting ? (
+                      <><Loader2 className="animate-spin w-4 h-4" /> Processing...</>
+                    ) : (
+                      modalMode === 'CREATE' ? <>Create Vault <Box className="w-3 h-3" /></> : <>Save Changes <Zap className="w-3 h-3" /></>
+                    )}
+                  </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )}
+
+          {/* Free Plan Limit Modal */}
+          {isFreeLimitModalOpen && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+                <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-white dark:bg-gray-900 rounded-t-2xl">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Vault Limit Reached</h2>
+                  <button onClick={() => setIsFreeLimitModalOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"><X className="text-gray-500 dark:text-gray-400 w-5 h-5" /></button>
+                </div>
+                <div className="p-6 text-center">
+                  <div className="bg-amber-100 text-amber-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                    <Lock className="w-8 h-8" />
+                  </div>
+                  <p className="text-gray-700 font-medium mb-2">Free subscription only can make 2 vaults</p>
+                  <p className="text-sm text-gray-500 mb-6 font-medium max-w-[240px] mx-auto">for more go for Plus/Pro plans</p>
+                  <div className="flex flex-col gap-3">
+                    <Link to="/pricing" className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-2.5 rounded-xl transition-all shadow-md active:scale-95" onClick={() => setIsFreeLimitModalOpen(false)}>
+                      Go to Plans
+                    </Link>
+                    <button onClick={() => setIsFreeLimitModalOpen(false)} className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-xl transition-all">
+                      Maybe Later
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-            <div className="border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-[#0d0f14] rounded-b-2xl">
-              {/* Upload Progress Bar - always visible in footer */}
-              {isSubmitting && (
-                <div className="px-6 pt-6 pb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-black text-primary-600 dark:text-primary-400 flex items-center gap-2 uppercase tracking-widest">
-                      <Loader2 className="animate-spin w-3 h-3" />
-                      {uploadProgress < 100 ? `Streaming Data (~${estimatedSeconds}s)` : 'Finalizing Hash...'}
-                    </span>
-                    <span className="text-xs font-black text-primary-700 dark:text-primary-500">{uploadProgress}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 dark:bg-gray-800 rounded-full h-2 overflow-hidden shadow-inner">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-primary-500 via-primary-400 to-indigo-600 transition-all duration-300 ease-out shadow-lg"
-                      style={{ width: `${uploadProgress}%` }}
-                    />
-                  </div>
-                  <p className="text-[9px] text-gray-400 dark:text-gray-500 mt-2 font-bold uppercase tracking-tight">Security handshakes in progress. Do not disconnect.</p>
+          )}
 
-                  {/* Task Checklist (Premium Redesign) */}
-                  <div className="mt-6 space-y-2.5 bg-white/50 dark:bg-black/40 backdrop-blur-md p-6 rounded-3xl border border-primary-100/50 dark:border-primary-500/10 shadow-sm relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-3 opacity-10">
-                       <ShieldCheck className="w-12 h-12 text-primary-500" />
+          {/* Access Management Modal */}
+          {isAccessModalOpen && managingVault && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+                <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-white dark:bg-gray-900 rounded-t-2xl">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Access Requests</h2>
+                  <button onClick={() => setIsAccessModalOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"><X className="text-gray-500 dark:text-gray-400 w-5 h-5" /></button>
+                </div>
+                <div className="p-6">
+                  {!managingVault.requests || managingVault.requests.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <Shield className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                      <p>No access requests yet.</p>
                     </div>
-                    <div className="flex items-center justify-between mb-4">
-                       <div className="flex flex-col">
-                          <span className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] leading-none mb-1">Processing Protocol</span>
-                          <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Active Security Encryption</span>
-                       </div>
-                       <div className="flex items-center gap-1.5 bg-primary-50 dark:bg-primary-500/10 px-2.5 py-1 rounded-full border border-primary-100 dark:border-primary-500/20">
-                          <div className="w-1 h-1 rounded-full bg-primary-500 animate-ping" />
-                          <span className="text-[9px] font-black text-primary-600 dark:text-primary-400 whitespace-nowrap">{Math.min(uploadTask, 3)}/3 SECURED</span>
-                       </div>
-                    </div>
-                    <div className="space-y-3">
-                      {[
-                        { id: 1, label: 'Quantum Shielding', icon: Lock, desc: 'E2E Encryption active' },
-                        { id: 2, label: 'Data Sharding', icon: Share2, desc: 'Distributed storage' },
-                        { id: 3, label: 'Integrity Check', icon: ShieldCheck, desc: 'Final checksum verification' }
-                      ].map((step) => (
-                        <div key={step.id} className={`flex items-start gap-4 p-2.5 rounded-2xl transition-all duration-500 ${uploadTask >= step.id ? 'bg-primary-50/50 dark:bg-primary-500/5 border border-primary-100/50 dark:border-primary-500/10' : 'opacity-40'}`}>
-                          <div className={`mt-0.5 w-7 h-7 rounded-xl flex items-center justify-center transition-all duration-700 ${uploadTask >= step.id ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/20 dark:shadow-none rotate-0 scale-110' : 'bg-gray-100 dark:bg-gray-800 text-gray-400 -rotate-12'}`}>
-                            {uploadTask > step.id ? <Check className="w-3.5 h-3.5" /> : <step.icon className="w-3.5 h-3.5" />}
+                  ) : (
+                    <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+                      {managingVault?.requests?.map((req) => (
+                        <div key={req.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
+                          <div className="overflow-hidden">
+                            <p className="font-semibold text-gray-900 truncate" title={req.email}>{req.email}</p>
+                            <p className="text-xs text-gray-500">{new Date(req.requestedAt).toLocaleDateString()}</p>
+                            <span className={`text-xs font-bold uppercase ${req.status === RequestStatus.APPROVED ? 'text-green-600' :
+                              req.status === RequestStatus.REJECTED ? 'text-red-600' : 'text-primary-600'
+                              }`}>
+                              {req.status}
+                            </span>
                           </div>
-                          <div className="flex flex-col">
-                            <span className={`text-[10px] font-black uppercase tracking-tight ${uploadTask >= step.id ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>{step.label}</span>
-                            <span className="text-[8px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">{uploadTask >= step.id ? step.desc : 'Waiting for protocol...'}</span>
-                          </div>
-                          {uploadTask === step.id && (
-                            <div className="ml-auto">
-                              <Loader2 className="w-3 h-3 text-primary-500 animate-spin" />
+                          {req.status === RequestStatus.PENDING && (
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleAccessResolution(managingVault.id, req.id, RequestStatus.APPROVED)}
+                                className="p-2 bg-green-100 text-green-700 rounded hover:bg-green-200" title="Approve">
+                                <UserCheck className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleAccessResolution(managingVault.id, req.id, RequestStatus.REJECTED)}
+                                className="p-2 bg-red-100 text-red-700 rounded hover:bg-red-200" title="Reject">
+                                <UserX className="w-4 h-4" />
+                              </button>
                             </div>
                           )}
                         </div>
                       ))}
                     </div>
-                  </div>
-                </div>
-              )}
-              <div className="p-6 flex items-center justify-between gap-4">
-                <button
-                  onClick={() => setIsModalOpen(false)}
-                  disabled={isSubmitting}
-                  className="px-6 py-3 text-sm font-black text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors uppercase tracking-widest disabled:opacity-0"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSubmit}
-                  disabled={isSubmitting}
-                  className="bg-primary-600 hover:bg-primary-700 text-white px-8 py-3 rounded-xl font-black text-xs shadow-xl shadow-primary-500/20 dark:shadow-none active:scale-95 transition-all disabled:opacity-0 uppercase tracking-[0.2em] flex items-center gap-2"
-                >
-                  {isSubmitting ? (
-                    <><Loader2 className="animate-spin w-4 h-4" /> Processing...</>
-                  ) : (
-                    modalMode === 'CREATE' ? <>Create Vault <Box className="w-3 h-3" /></> : <>Save Changes <Zap className="w-3 h-3" /></>
                   )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Free Plan Limit Modal */}
-      {isFreeLimitModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-            <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-white dark:bg-gray-900 rounded-t-2xl">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Vault Limit Reached</h2>
-              <button onClick={() => setIsFreeLimitModalOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"><X className="text-gray-500 dark:text-gray-400 w-5 h-5" /></button>
-            </div>
-            <div className="p-6 text-center">
-              <div className="bg-amber-100 text-amber-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <Lock className="w-8 h-8" />
-              </div>
-              <p className="text-gray-700 font-medium mb-2">Free subscription only can make 2 vaults</p>
-              <p className="text-sm text-gray-500 mb-6 font-medium max-w-[240px] mx-auto">for more go for Plus/Pro plans</p>
-              <div className="flex flex-col gap-3">
-                <Link to="/pricing" className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-2.5 rounded-xl transition-all shadow-md active:scale-95" onClick={() => setIsFreeLimitModalOpen(false)}>
-                  Go to Plans
-                </Link>
-                <button onClick={() => setIsFreeLimitModalOpen(false)} className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-xl transition-all">
-                  Maybe Later
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Access Management Modal */}
-      {isAccessModalOpen && managingVault && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-            <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-white dark:bg-gray-900 rounded-t-2xl">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Access Requests</h2>
-              <button onClick={() => setIsAccessModalOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"><X className="text-gray-500 dark:text-gray-400 w-5 h-5" /></button>
-            </div>
-            <div className="p-6">
-              {!managingVault.requests || managingVault.requests.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <Shield className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                  <p>No access requests yet.</p>
                 </div>
-              ) : (
-                <div className="space-y-4 max-h-[60vh] overflow-y-auto">
-                  {managingVault?.requests?.map((req) => (
-                    <div key={req.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50">
-                      <div className="overflow-hidden">
-                        <p className="font-semibold text-gray-900 truncate" title={req.email}>{req.email}</p>
-                        <p className="text-xs text-gray-500">{new Date(req.requestedAt).toLocaleDateString()}</p>
-                        <span className={`text-xs font-bold uppercase ${req.status === RequestStatus.APPROVED ? 'text-green-600' :
-                          req.status === RequestStatus.REJECTED ? 'text-red-600' : 'text-primary-600'
-                          }`}>
-                          {req.status}
-                        </span>
-                      </div>
-                      {req.status === RequestStatus.PENDING && (
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleAccessResolution(managingVault.id, req.id, RequestStatus.APPROVED)}
-                            className="p-2 bg-green-100 text-green-700 rounded hover:bg-green-200" title="Approve">
-                            <UserCheck className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleAccessResolution(managingVault.id, req.id, RequestStatus.REJECTED)}
-                            className="p-2 bg-red-100 text-red-700 rounded hover:bg-red-200" title="Reject">
-                            <UserX className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* QR Modal */}
-      {viewQrVault && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-sm w-full text-center relative shadow-2xl">
-            <button onClick={() => setViewQrVault(null)} className="absolute top-4 right-4 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"><X className="w-5 h-5" /></button>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">{viewQrVault.name}</h3>
-
-            <div className="bg-white p-4 rounded-xl border border-gray-200 inline-block shadow-inner mb-6 relative group">
-              <QRCode id="qr-code-svg" value={getQrUrl(viewQrVault)} size={200} />
-            </div>
-
-            <div className="space-y-3">
-              <button
-                onClick={downloadQrCode}
-                className="w-full py-2.5 bg-gray-900 text-white rounded-lg font-medium text-sm hover:bg-gray-800 transition-colors shadow-sm flex items-center justify-center gap-2"
-              >
-                <Download className="w-4 h-4" /> Download QR
-              </button>
-
-              <div className="flex gap-2">
-                <a
-                  href={getQrUrl(viewQrVault)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex-1 py-2 bg-primary-600 text-white rounded-lg font-medium text-sm hover:bg-primary-700 transition-colors shadow-sm"
-                >
-                  Open Link
-                </a>
-                <button
-                  onClick={() => copyToClipboard(getQrUrl(viewQrVault))}
-                  className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
-                  title="Copy Link"
-                >
-                  {copied ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5" />}
-                </button>
-              </div>
-              <div className="text-xs text-gray-400 break-all">
-                {getQrUrl(viewQrVault)}
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          )}
 
-      {/* Custom Delete Confirmation Modal */}
-      {deleteConfirmId && (() => {
-        const vaultToDelete = vaults.find(v => v.id === deleteConfirmId);
-        return (
-          <div className="fixed inset-0 bg-black/60 dark:bg-black/90 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-sm shadow-2xl animate-in zoom-in-95 duration-200 border border-red-100 dark:border-red-900/20">
-              <div className="p-6 flex flex-col items-center text-center">
-                <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mb-4">
-                  <Trash2 className="w-8 h-8 text-red-500" />
+          {/* QR Modal */}
+          {viewQrVault && (
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+              <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-sm w-full text-center relative shadow-2xl">
+                <button onClick={() => setViewQrVault(null)} className="absolute top-4 right-4 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"><X className="w-5 h-5" /></button>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">{viewQrVault.name}</h3>
+
+                <div className="bg-white p-4 rounded-xl border border-gray-200 inline-block shadow-inner mb-6 relative group">
+                  <QRCode id="qr-code-svg" value={getQrUrl(viewQrVault)} size={200} />
                 </div>
-                <h2 className="text-xl font-bold text-gray-900 mb-2">Delete Vault?</h2>
-                <p className="text-gray-500 text-sm mb-1">
-                  Are you sure you want to delete
-                </p>
-                <p className="font-semibold text-gray-900 mb-4 truncate max-w-full">&#8220;{vaultToDelete?.name}&#8221;</p>
-                <p className="text-xs text-red-500 bg-red-50 rounded-lg px-3 py-2 mb-6">
-                  This will permanently delete the QR code and all files. This action cannot be undone.
-                </p>
-                <div className="flex gap-3 w-full">
+
+                <div className="space-y-3">
                   <button
-                    onClick={() => setDeleteConfirmId(null)}
-                    disabled={isDeleting}
-                    className="flex-1 py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-xl transition-all disabled:opacity-50"
+                    onClick={downloadQrCode}
+                    className="w-full py-2.5 bg-gray-900 text-white rounded-lg font-medium text-sm hover:bg-gray-800 transition-colors shadow-sm flex items-center justify-center gap-2"
                   >
-                    Cancel
+                    <Download className="w-4 h-4" /> Download QR
                   </button>
-                  <button
-                    onClick={confirmDeleteVault}
-                    disabled={isDeleting}
-                    className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-70"
-                  >
-                    {isDeleting ? <Loader2 className="animate-spin w-4 h-4" /> : <Trash2 className="w-4 h-4" />}
-                    {isDeleting ? 'Deleting...' : 'Yes, Delete'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
-      {/* Reports History Modal */}
-      {reportVault && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in" onClick={() => setReportVault(null)}>
-          <div className="bg-white rounded-[2rem] w-full max-w-2xl p-8 shadow-2xl animate-in zoom-in-95 overflow-hidden flex flex-col max-h-[70vh]" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-8">
-              <div className="flex items-center gap-4">
-                <div className="bg-red-50 p-3 rounded-2xl text-red-500">
-                  <Shield className="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight leading-none mb-1">Reports History</h3>
-                  <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em]">{reportVault.name}</p>
-                </div>
-              </div>
-              <button onClick={() => setReportVault(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors text-gray-400"><X className="w-6 h-6" /></button>
-            </div>
 
-            <div className="flex-1 overflow-y-auto pr-2 space-y-4 no-scrollbar">
-              {loadingReports ? (
-                 <div className="flex flex-col items-center justify-center py-20 gap-4">
-                   <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
-                   <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Scanning History...</span>
-                 </div>
-              ) : vaultReports.length === 0 ? (
-                <div className="text-center py-20 bg-gray-50/50 dark:bg-black/20 rounded-3xl border-2 border-dashed border-gray-100 dark:border-white/5">
-                  <ShieldCheck className="w-12 h-12 text-emerald-400 mx-auto mb-4" />
-                  <p className="text-sm font-black text-gray-900 uppercase">Vault Clean</p>
-                  <p className="text-xs text-gray-400 font-medium mt-1">No community reports received for this vault.</p>
-                </div>
-              ) : (
-                vaultReports.map((report) => (
-                  <div key={report.id} className="p-5 bg-white border-2 border-gray-50 rounded-3xl hover:border-red-50 transition-all hover:shadow-lg hover:shadow-red-50/20 group">
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="flex flex-wrap gap-2">
-                        {report.reason_virus && <span className="bg-red-50 text-red-600 px-2 py-1 rounded-lg text-[9px] font-black uppercase ring-1 ring-red-100">Virus/Malware</span>}
-                        {report.reason_content && <span className="bg-primary-50 text-primary-600 px-2 py-1 rounded-lg text-[9px] font-black uppercase ring-1 ring-orange-100">Illegal Content</span>}
-                        {!report.reason_virus && !report.reason_content && <span className="bg-gray-50 text-gray-500 px-2 py-1 rounded-lg text-[9px] font-black uppercase ring-1 ring-gray-100">Other Violation</span>}
-                      </div>
-                      <span className="text-[10px] font-black text-gray-300 uppercase tracking-tighter">{new Date(report.created_at).toLocaleString()}</span>
-                    </div>
-                    {report.fileIds && report.fileIds.length > 0 && (
-                      <div className="mt-3 space-y-2">
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-red-50/50 rounded-xl border border-red-100/50 w-fit">
-                          <AlertTriangle className="w-3 h-3 text-red-500" />
-                          <span className="text-[10px] font-black text-red-600 uppercase tracking-tight">Reported Content:</span>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          {report.fileIds.map((fid: string) => {
-                            const file = reportVault?.files?.find((f: any) => f.id === fid);
-                            return (
-                              <div key={fid} className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-white/5 rounded-xl border border-gray-100 dark:border-white/5">
-                                <FileText className="w-3 h-3 text-gray-400" />
-                                <span className="text-[10px] font-medium text-gray-700 truncate">
-                                  {file?.name || "Unknown File"}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                    {report.custom_message && (
-                      <div className="bg-gray-50/50 dark:bg-white/5 p-4 rounded-2xl italic text-gray-600 dark:text-gray-400 text-xs font-medium border-l-4 border-l-red-100 dark:border-l-red-900/50 mt-3">
-                        "{report.custom_message}"
-                      </div>
-                    )}
+                  <div className="flex gap-2">
+                    <a
+                      href={getQrUrl(viewQrVault)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex-1 py-2 bg-primary-600 text-white rounded-lg font-medium text-sm hover:bg-primary-700 transition-colors shadow-sm"
+                    >
+                      Open Link
+                    </a>
+                    <button
+                      onClick={() => copyToClipboard(getQrUrl(viewQrVault))}
+                      className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
+                      title="Copy Link"
+                    >
+                      {copied ? <Check className="w-5 h-5 text-green-600" /> : <Copy className="w-5 h-5" />}
+                    </button>
                   </div>
-                ))
-              )}
+                  <div className="text-xs text-gray-400 break-all">
+                    {getQrUrl(viewQrVault)}
+                  </div>
+                </div>
+              </div>
             </div>
+          )}
 
-            <div className="mt-8 bg-amber-50 border border-amber-100 rounded-2xl p-5 flex items-start gap-4">
-               <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-               <div>
-                  <p className="text-[10px] font-black text-amber-800 uppercase tracking-tight mb-1">Owner Warning</p>
-                  <p className="text-[11px] text-amber-700/80 font-medium leading-relaxed">
-                    Accumulating 4 reports will result in a 10-day lock. 10 reports will trigger automatic permanent deletion for community safety.
-                  </p>
-               </div>
-            </div>
-          </div>
-        </div>
-      )}
-       {/* File-Specific Setting Modal (Self-Destruct) - Redesigned Broad Layout */}
-       {selectedFileForSettings && (
-         <div className="fixed inset-0 bg-black/60 dark:bg-black/95 backdrop-blur-xl z-[100] flex items-center justify-center p-4 animate-in fade-in duration-500">
-           <div className="bg-white dark:bg-[#0d0f14] rounded-[3rem] w-full max-w-5xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] dark:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.8)] animate-in zoom-in-95 duration-500 border border-white/20 dark:border-white/5 overflow-hidden relative">
-             <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary-600 via-primary-400 to-indigo-600 opacity-80"></div>
-            
-             <div className="p-10 md:p-12">
-               <div className="flex justify-between items-start mb-10">
-                 <div className="flex items-center gap-5">
-                    <div className="w-14 h-14 bg-primary-600 dark:bg-primary-500 rounded-[1.5rem] flex items-center justify-center shadow-2xl shadow-primary-500/20 rotate-3">
-                       <ShieldCheck className="w-7 h-7 text-white" />
+          {/* Custom Delete Confirmation Modal */}
+          {deleteConfirmId && (() => {
+            const vaultToDelete = vaults.find(v => v.id === deleteConfirmId);
+            return (
+              <div className="fixed inset-0 bg-black/60 dark:bg-black/90 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-in fade-in duration-200">
+                <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-sm shadow-2xl animate-in zoom-in-95 duration-200 border border-red-100 dark:border-red-900/20">
+                  <div className="p-6 flex flex-col items-center text-center">
+                    <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mb-4">
+                      <Trash2 className="w-8 h-8 text-red-500" />
+                    </div>
+                    <h2 className="text-xl font-bold text-gray-900 mb-2">Delete Vault?</h2>
+                    <p className="text-gray-500 text-sm mb-1">
+                      Are you sure you want to delete
+                    </p>
+                    <p className="font-semibold text-gray-900 mb-4 truncate max-w-full">&#8220;{vaultToDelete?.name}&#8221;</p>
+                    <p className="text-xs text-red-500 bg-red-50 rounded-lg px-3 py-2 mb-6">
+                      This will permanently delete the QR code and all files. This action cannot be undone.
+                    </p>
+                    <div className="flex gap-3 w-full">
+                      <button
+                        onClick={() => setDeleteConfirmId(null)}
+                        disabled={isDeleting}
+                        className="flex-1 py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold rounded-xl transition-all disabled:opacity-50"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={confirmDeleteVault}
+                        disabled={isDeleting}
+                        className="flex-1 py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 disabled:opacity-70"
+                      >
+                        {isDeleting ? <Loader2 className="animate-spin w-4 h-4" /> : <Trash2 className="w-4 h-4" />}
+                        {isDeleting ? 'Deleting...' : 'Yes, Delete'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+          {/* Reports History Modal */}
+          {reportVault && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in" onClick={() => setReportVault(null)}>
+              <div className="bg-white rounded-[2rem] w-full max-w-2xl p-8 shadow-2xl animate-in zoom-in-95 overflow-hidden flex flex-col max-h-[70vh]" onClick={(e) => e.stopPropagation()}>
+                <div className="flex justify-between items-center mb-8">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-red-50 p-3 rounded-2xl text-red-500">
+                      <Shield className="w-6 h-6" />
                     </div>
                     <div>
-                      <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tighter uppercase italic leading-none">File Destruct</h3>
-                      <p className="text-[10px] font-black text-primary-600 dark:text-primary-400 uppercase tracking-[0.2em] mt-2">Advanced Security Protocol</p>
+                      <h3 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight leading-none mb-1">Reports History</h3>
+                      <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em]">{reportVault.name}</p>
                     </div>
-                 </div>
-                 <button onClick={() => setSelectedFileForSettings(null)} className="p-3 hover:bg-gray-100 dark:hover:bg-white/5 rounded-2xl transition-all active:scale-90 text-gray-400 hover:text-gray-900 dark:hover:text-white border border-transparent hover:border-gray-200 dark:hover:border-white/10"><X className="w-6 h-6" /></button>
-               </div>
+                  </div>
+                  <button onClick={() => setReportVault(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors text-gray-400"><X className="w-6 h-6" /></button>
+                </div>
 
-               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                 {/* 1. Max Downloads */}
-                 <div className="bg-gray-50 dark:bg-black/60 p-6 rounded-[2rem] border border-gray-100 dark:border-white/5 relative group transition-all hover:bg-white dark:hover:bg-primary-900/10 hover:shadow-xl hover:shadow-primary-500/5">
-                   <div className="flex items-center justify-between mb-5">
-                     <div className="flex items-center gap-3">
-                       <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-xl">
-                          <Download className="w-4 h-4 text-primary-600 dark:text-primary-400" />
-                       </div>
-                       <span className="text-xs font-black text-gray-900 dark:text-gray-200 uppercase tracking-tight">Download Limit</span>
-                     </div>
-                     {appUser?.plan === PlanType.FREE && (
-                       <span className="text-[9px] font-black bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-300 px-2 py-0.5 rounded-full uppercase tracking-widest">Plus+</span>
-                     )}
-                   </div>
-                   <div className="relative">
-                      <input 
-                        type="number"
+                <div className="flex-1 overflow-y-auto pr-2 space-y-4 no-scrollbar">
+                  {loadingReports ? (
+                    <div className="flex flex-col items-center justify-center py-20 gap-4">
+                      <Loader2 className="w-8 h-8 text-primary-600 animate-spin" />
+                      <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Scanning History...</span>
+                    </div>
+                  ) : vaultReports.length === 0 ? (
+                    <div className="text-center py-20 bg-gray-50/50 dark:bg-black/20 rounded-3xl border-2 border-dashed border-gray-100 dark:border-white/5">
+                      <ShieldCheck className="w-12 h-12 text-emerald-400 mx-auto mb-4" />
+                      <p className="text-sm font-black text-gray-900 uppercase">Vault Clean</p>
+                      <p className="text-xs text-gray-400 font-medium mt-1">No community reports received for this vault.</p>
+                    </div>
+                  ) : (
+                    vaultReports.map((report) => (
+                      <div key={report.id} className="p-5 bg-white border-2 border-gray-50 rounded-3xl hover:border-red-50 transition-all hover:shadow-lg hover:shadow-red-50/20 group">
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="flex flex-wrap gap-2">
+                            {report.reason_virus && <span className="bg-red-50 text-red-600 px-2 py-1 rounded-lg text-[9px] font-black uppercase ring-1 ring-red-100">Virus/Malware</span>}
+                            {report.reason_content && <span className="bg-primary-50 text-primary-600 px-2 py-1 rounded-lg text-[9px] font-black uppercase ring-1 ring-orange-100">Illegal Content</span>}
+                            {!report.reason_virus && !report.reason_content && <span className="bg-gray-50 text-gray-500 px-2 py-1 rounded-lg text-[9px] font-black uppercase ring-1 ring-gray-100">Other Violation</span>}
+                          </div>
+                          <span className="text-[10px] font-black text-gray-300 uppercase tracking-tighter">{new Date(report.created_at).toLocaleString()}</span>
+                        </div>
+                        {report.fileIds && report.fileIds.length > 0 && (
+                          <div className="mt-3 space-y-2">
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-red-50/50 rounded-xl border border-red-100/50 w-fit">
+                              <AlertTriangle className="w-3 h-3 text-red-500" />
+                              <span className="text-[10px] font-black text-red-600 uppercase tracking-tight">Reported Content:</span>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              {report.fileIds.map((fid: string) => {
+                                const file = reportVault?.files?.find((f: any) => f.id === fid);
+                                return (
+                                  <div key={fid} className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-white/5 rounded-xl border border-gray-100 dark:border-white/5">
+                                    <FileText className="w-3 h-3 text-gray-400" />
+                                    <span className="text-[10px] font-medium text-gray-700 truncate">
+                                      {file?.name || "Unknown File"}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                        {report.custom_message && (
+                          <div className="bg-gray-50/50 dark:bg-white/5 p-4 rounded-2xl italic text-gray-600 dark:text-gray-400 text-xs font-medium border-l-4 border-l-red-100 dark:border-l-red-900/50 mt-3">
+                            "{report.custom_message}"
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <div className="mt-8 bg-amber-50 border border-amber-100 rounded-2xl p-5 flex items-start gap-4">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-[10px] font-black text-amber-800 uppercase tracking-tight mb-1">Owner Warning</p>
+                    <p className="text-[11px] text-amber-700/80 font-medium leading-relaxed">
+                      Accumulating 4 reports will result in a 10-day lock. 10 reports will trigger automatic permanent deletion for community safety.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          {/* File-Specific Setting Modal (Self-Destruct) - Redesigned Broad Layout */}
+          {selectedFileForSettings && (
+            <div className="fixed inset-0 bg-black/60 dark:bg-black/95 backdrop-blur-xl z-[100] flex items-center justify-center p-4 animate-in fade-in duration-500">
+              <div className="bg-white dark:bg-[#0d0f14] rounded-[3rem] w-full max-w-5xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] dark:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.8)] animate-in zoom-in-95 duration-500 border border-white/20 dark:border-white/5 overflow-hidden relative">
+                <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-primary-600 via-primary-400 to-indigo-600 opacity-80"></div>
+
+                <div className="p-10 md:p-12">
+                  <div className="flex justify-between items-start mb-10">
+                    <div className="flex items-center gap-5">
+                      <div className="w-14 h-14 bg-primary-600 dark:bg-primary-500 rounded-[1.5rem] flex items-center justify-center shadow-2xl shadow-primary-500/20 rotate-3">
+                        <ShieldCheck className="w-7 h-7 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-3xl font-black text-gray-900 dark:text-white tracking-tighter uppercase italic leading-none">File Destruct</h3>
+                        <p className="text-[10px] font-black text-primary-600 dark:text-primary-400 uppercase tracking-[0.2em] mt-2">Advanced Security Protocol</p>
+                      </div>
+                    </div>
+                    <button onClick={() => setSelectedFileForSettings(null)} className="p-3 hover:bg-gray-100 dark:hover:bg-white/5 rounded-2xl transition-all active:scale-90 text-gray-400 hover:text-gray-900 dark:hover:text-white border border-transparent hover:border-gray-200 dark:hover:border-white/10"><X className="w-6 h-6" /></button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* 1. Max Downloads */}
+                    <div className="bg-gray-50 dark:bg-black/60 p-6 rounded-[2rem] border border-gray-100 dark:border-white/5 relative group transition-all hover:bg-white dark:hover:bg-primary-900/10 hover:shadow-xl hover:shadow-primary-500/5">
+                      <div className="flex items-center justify-between mb-5">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-xl">
+                            <Download className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                          </div>
+                          <span className="text-xs font-black text-gray-900 dark:text-gray-200 uppercase tracking-tight">Download Limit</span>
+                        </div>
+                        {appUser?.plan === PlanType.FREE && (
+                          <span className="text-[9px] font-black bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-300 px-2 py-0.5 rounded-full uppercase tracking-widest">Plus+</span>
+                        )}
+                      </div>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          disabled={appUser?.plan === PlanType.FREE}
+                          placeholder="Unlimited"
+                          value={fileSettings[selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any]?.maxDownloads || ''}
+                          onChange={(e) => {
+                            const val = e.target.value === '' ? undefined : parseInt(e.target.value);
+                            const key = selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any;
+                            setFileSettings({ ...fileSettings, [key]: { ...fileSettings[key], maxDownloads: val } });
+                          }}
+                          className={`w-full bg-white dark:bg-black/40 dark:text-white border border-gray-200 dark:border-white/10 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-primary-500 transition-all font-bold text-sm ${appUser?.plan === PlanType.FREE ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        />
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest pointer-events-none">Hits</div>
+                      </div>
+                      <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-4 font-bold uppercase tracking-tight leading-relaxed">Auto-delete after reaching this many successful downloads.</p>
+                    </div>
+
+                    {/* 2. Vanishing Timer */}
+                    <div className="bg-gray-50 dark:bg-black/60 p-6 rounded-[2rem] border border-gray-100 dark:border-white/5 relative group transition-all hover:bg-white dark:hover:bg-primary-900/10 hover:shadow-xl hover:shadow-primary-500/5">
+                      <div className="flex items-center justify-between mb-5">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-xl">
+                            <Clock className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                          </div>
+                          <span className="text-xs font-black text-gray-900 dark:text-gray-200 uppercase tracking-tight">Vanishing Timer</span>
+                        </div>
+                        {appUser?.plan === PlanType.FREE && (
+                          <span className="text-[9px] font-black bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-300 px-2 py-0.5 rounded-full uppercase tracking-widest">Plus+</span>
+                        )}
+                      </div>
+                      <select
                         disabled={appUser?.plan === PlanType.FREE}
-                        placeholder="Unlimited"
-                        value={fileSettings[selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any]?.maxDownloads || ''}
+                        value={fileSettings[selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any]?.deleteAfterMinutes || ''}
                         onChange={(e) => {
                           const val = e.target.value === '' ? undefined : parseInt(e.target.value);
                           const key = selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any;
-                          setFileSettings({ ...fileSettings, [key]: { ...fileSettings[key], maxDownloads: val } });
+                          setFileSettings({ ...fileSettings, [key]: { ...fileSettings[key], deleteAfterMinutes: val } });
                         }}
-                        className={`w-full bg-white dark:bg-black/40 dark:text-white border border-gray-200 dark:border-white/10 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-primary-500 transition-all font-bold text-sm ${appUser?.plan === PlanType.FREE ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        className={`w-full bg-white dark:bg-black/60 dark:text-white border border-gray-200 dark:border-white/10 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-primary-500 transition-all font-bold text-sm appearance-none ${appUser?.plan === PlanType.FREE ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        <option className="dark:bg-gray-900" value="">Never vanish</option>
+                        <option className="dark:bg-gray-900" value="1">1 Minute after opening</option>
+                        <option className="dark:bg-gray-900" value="5">5 Minutes after opening</option>
+                        <option className="dark:bg-gray-900" value="60">1 Hour after opening</option>
+                        <option className="dark:bg-gray-900" value="1440">24 Hours after opening</option>
+                      </select>
+                      <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-4 font-bold uppercase tracking-tight leading-relaxed">Countdown begins once the visitor first previews or downloads this file.</p>
+                    </div>
+
+                    {/* 3. Hard Expiry */}
+                    <div className="bg-gray-50 dark:bg-black/60 p-6 rounded-[2rem] border border-gray-100 dark:border-white/5 relative group transition-all hover:bg-white dark:hover:bg-primary-900/10 hover:shadow-xl hover:shadow-primary-500/5">
+                      <div className="flex items-center justify-between mb-5">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-xl">
+                            <Calendar className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                          </div>
+                          <span className="text-xs font-black text-gray-900 dark:text-gray-200 uppercase tracking-tight">Hard Expiry</span>
+                        </div>
+                        {appUser?.plan === PlanType.FREE && (
+                          <span className="text-[9px] font-black bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-300 px-2 py-0.5 rounded-full uppercase tracking-widest">Plus+</span>
+                        )}
+                      </div>
+                      <input
+                        type="datetime-local"
+                        disabled={appUser?.plan === PlanType.FREE}
+                        value={fileSettings[selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any]?.expiresAt || ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const key = selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any;
+                          setFileSettings({ ...fileSettings, [key]: { ...fileSettings[key], expiresAt: val } });
+                        }}
+                        className={`w-full bg-white dark:bg-black/60 dark:text-white border border-gray-200 dark:border-white/10 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-primary-500 transition-all font-bold text-sm ${appUser?.plan === PlanType.FREE ? 'opacity-50 cursor-not-allowed' : ''}`}
                       />
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest pointer-events-none">Hits</div>
-                   </div>
-                   <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-4 font-bold uppercase tracking-tight leading-relaxed">Auto-delete after reaching this many successful downloads.</p>
-                 </div>
+                      <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-4 font-bold uppercase tracking-tight leading-relaxed">File will vanish on this specific date regardless of views.</p>
+                    </div>
+                  </div>
 
-                 {/* 2. Vanishing Timer */}
-                 <div className="bg-gray-50 dark:bg-black/60 p-6 rounded-[2rem] border border-gray-100 dark:border-white/5 relative group transition-all hover:bg-white dark:hover:bg-primary-900/10 hover:shadow-xl hover:shadow-primary-500/5">
-                   <div className="flex items-center justify-between mb-5">
-                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-xl">
-                           <Clock className="w-4 h-4 text-primary-600 dark:text-primary-400" />
-                        </div>
-                       <span className="text-xs font-black text-gray-900 dark:text-gray-200 uppercase tracking-tight">Vanishing Timer</span>
-                     </div>
-                     {appUser?.plan === PlanType.FREE && (
-                       <span className="text-[9px] font-black bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-300 px-2 py-0.5 rounded-full uppercase tracking-widest">Plus+</span>
-                     )}
-                   </div>
-                   <select
-                     disabled={appUser?.plan === PlanType.FREE}
-                     value={fileSettings[selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any]?.deleteAfterMinutes || ''}
-                     onChange={(e) => {
-                       const val = e.target.value === '' ? undefined : parseInt(e.target.value);
-                       const key = selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any;
-                       setFileSettings({ ...fileSettings, [key]: { ...fileSettings[key], deleteAfterMinutes: val } });
-                     }}
-                     className={`w-full bg-white dark:bg-black/60 dark:text-white border border-gray-200 dark:border-white/10 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-primary-500 transition-all font-bold text-sm appearance-none ${appUser?.plan === PlanType.FREE ? 'opacity-50 cursor-not-allowed' : ''}`}
-                   >
-                     <option className="dark:bg-gray-900" value="">Never vanish</option>
-                     <option className="dark:bg-gray-900" value="1">1 Minute after opening</option>
-                     <option className="dark:bg-gray-900" value="5">5 Minutes after opening</option>
-                     <option className="dark:bg-gray-900" value="60">1 Hour after opening</option>
-                     <option className="dark:bg-gray-900" value="1440">24 Hours after opening</option>
-                   </select>
-                   <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-4 font-bold uppercase tracking-tight leading-relaxed">Countdown begins once the visitor first previews or downloads this file.</p>
-                 </div>
-
-                 {/* 3. Hard Expiry */}
-                 <div className="bg-gray-50 dark:bg-black/60 p-6 rounded-[2rem] border border-gray-100 dark:border-white/5 relative group transition-all hover:bg-white dark:hover:bg-primary-900/10 hover:shadow-xl hover:shadow-primary-500/5">
-                   <div className="flex items-center justify-between mb-5">
-                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-xl">
-                           <Calendar className="w-4 h-4 text-primary-600 dark:text-primary-400" />
-                        </div>
-                       <span className="text-xs font-black text-gray-900 dark:text-gray-200 uppercase tracking-tight">Hard Expiry</span>
-                     </div>
-                     {appUser?.plan === PlanType.FREE && (
-                       <span className="text-[9px] font-black bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-300 px-2 py-0.5 rounded-full uppercase tracking-widest">Plus+</span>
-                     )}
-                   </div>
-                   <input 
-                     type="datetime-local"
-                     disabled={appUser?.plan === PlanType.FREE}
-                     value={fileSettings[selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any]?.expiresAt || ''}
-                     onChange={(e) => {
-                       const val = e.target.value;
-                       const key = selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any;
-                       setFileSettings({ ...fileSettings, [key]: { ...fileSettings[key], expiresAt: val } });
-                     }}
-                     className={`w-full bg-white dark:bg-black/60 dark:text-white border border-gray-200 dark:border-white/10 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-primary-500 transition-all font-bold text-sm ${appUser?.plan === PlanType.FREE ? 'opacity-50 cursor-not-allowed' : ''}`}
-                   />
-                   <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-4 font-bold uppercase tracking-tight leading-relaxed">File will vanish on this specific date regardless of views.</p>
-                 </div>
-               </div>
-
-               <div className="mt-12 flex gap-4 max-w-xs mx-auto md:mx-0">
-                  {appUser?.plan === PlanType.FREE ? (
-                   <Link to="/pricing" onClick={() => setSelectedFileForSettings(null)} className="w-full bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-700 hover:to-indigo-700 text-white py-4 px-8 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary-500/20 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-95">
-                     <Zap className="w-4 h-4 fill-current text-white" /> Upgrade to Plus
-                   </Link>
-                  ) : (
-                   <button onClick={() => setSelectedFileForSettings(null)} className="w-full bg-primary-600 hover:bg-primary-700 text-white py-4 px-8 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary-500/20 dark:shadow-none active:scale-95 transition-all">
-                     Apply Protocol
-                   </button>
-                  )}
-               </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Analytics Modal */}
-      {selectedAnalyticsVault && (
-        <div className="fixed inset-0 bg-black/60 dark:bg-black/90 backdrop-blur-md z-[60] flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#0a0a0b] rounded-[2.5rem] w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl border border-gray-100 dark:border-white/5 flex flex-col animate-in fade-in zoom-in-95 duration-300">
-            {/* Modal Header */}
-            <div className="p-8 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02] flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-3 mb-1">
-                   <div className="p-2 bg-primary-500 text-white rounded-xl shadow-lg shadow-primary-500/20 dark:shadow-none">
-                      <TrendingUp className="w-5 h-5" />
-                   </div>
-                   <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Vault Analytics</h2>
+                  <div className="mt-12 flex gap-4 max-w-xs mx-auto md:mx-0">
+                    {appUser?.plan === PlanType.FREE ? (
+                      <Link to="/pricing" onClick={() => setSelectedFileForSettings(null)} className="w-full bg-gradient-to-r from-primary-600 to-indigo-600 hover:from-primary-700 hover:to-indigo-700 text-white py-4 px-8 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary-500/20 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-95">
+                        <Zap className="w-4 h-4 fill-current text-white" /> Upgrade to Plus
+                      </Link>
+                    ) : (
+                      <button onClick={() => setSelectedFileForSettings(null)} className="w-full bg-primary-600 hover:bg-primary-700 text-white py-4 px-8 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary-500/20 dark:shadow-none active:scale-95 transition-all">
+                        Apply Protocol
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-11">Real-time Intelligence for <span className="text-primary-500">{selectedAnalyticsVault.name}</span></p>
               </div>
-              <button 
-                onClick={() => setSelectedAnalyticsVault(null)} 
-                className="p-3 bg-white dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-2xl transition-all border border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white group"
-              >
-                <X className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />
-              </button>
             </div>
+          )}
 
-            {/* Modal Navigation */}
-            <div className="px-8 pt-6 pb-2 border-b border-gray-100 dark:border-white/5 flex gap-8">
-               {[
-                 { id: 'overview', label: 'Overview', icon: Box },
-                 { id: 'engagement', label: 'Engagement Timeline', icon: Clock },
-                 { id: 'files', label: 'File Performance', icon: FileText }
-               ].map((tab) => (
-                 <button
-                   key={tab.id}
-                   onClick={() => setActiveAnalyticsTab(tab.id as any)}
-                   className={`pb-4 text-[10px] font-black uppercase tracking-[0.2em] relative flex items-center gap-2.5 transition-all ${
-                     activeAnalyticsTab === tab.id 
-                     ? 'text-primary-600 dark:text-primary-400' 
-                     : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
-                   }`}
-                 >
-                   <tab.icon className="w-3.5 h-3.5" />
-                   {tab.label}
-                   {activeAnalyticsTab === tab.id && (
-                     <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-500 rounded-t-full shadow-[0_-4px_12px_rgba(124,58,237,0.4)]" />
-                   )}
-                 </button>
-               ))}
-            </div>
+          {/* Analytics Modal */}
+          {selectedAnalyticsVault && (
+            <div className="fixed inset-0 bg-black/60 dark:bg-black/90 backdrop-blur-md z-[60] flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-[#0a0a0b] rounded-[2.5rem] w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl border border-gray-100 dark:border-white/5 flex flex-col animate-in fade-in zoom-in-95 duration-300">
+                {/* Modal Header */}
+                <div className="p-8 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02] flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-3 mb-1">
+                      <div className="p-2 bg-primary-500 text-white rounded-xl shadow-lg shadow-primary-500/20 dark:shadow-none">
+                        <TrendingUp className="w-5 h-5" />
+                      </div>
+                      <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Vault Analytics</h2>
+                    </div>
+                    <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-11">Real-time Intelligence for <span className="text-primary-500">{selectedAnalyticsVault.name}</span></p>
+                  </div>
+                  <button
+                    onClick={() => setSelectedAnalyticsVault(null)}
+                    className="p-3 bg-white dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-2xl transition-all border border-gray-200 dark:border-white/10 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white group"
+                  >
+                    <X className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" />
+                  </button>
+                </div>
 
-            <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-               {activeAnalyticsTab === 'overview' && (
-                 <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                       {[
-                         { label: 'Unique Viewers', value: selectedAnalyticsVault.analytics?.uniqueViewers, icon: Users, color: 'primary' },
-                         { label: 'Total Scans', value: selectedAnalyticsVault.analytics?.totalScans, icon: QrCode, color: 'blue' },
-                         { label: 'Views', value: selectedAnalyticsVault.views, icon: Eye, color: 'emerald' },
-                         { label: 'Total Downloads', value: selectedAnalyticsVault.analytics?.totalDownloads, icon: Download, color: 'amber' }
-                       ].map((stat) => (
-                         <div key={stat.label} className="p-6 bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-3xl hover:bg-white dark:hover:bg-white/[0.04] transition-all hover:shadow-xl group">
-                            <div className={`w-10 h-10 rounded-2xl mb-4 flex items-center justify-center transition-transform group-hover:scale-110 ${
-                              stat.color === 'primary' ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/20' :
+                {/* Modal Navigation */}
+                <div className="px-8 pt-6 pb-2 border-b border-gray-100 dark:border-white/5 flex gap-8">
+                  {[
+                    { id: 'overview', label: 'Overview', icon: Box },
+                    { id: 'engagement', label: 'Engagement Timeline', icon: Clock },
+                    { id: 'files', label: 'File Performance', icon: FileText }
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveAnalyticsTab(tab.id as any)}
+                      className={`pb-4 text-[10px] font-black uppercase tracking-[0.2em] relative flex items-center gap-2.5 transition-all ${activeAnalyticsTab === tab.id
+                        ? 'text-primary-600 dark:text-primary-400'
+                        : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                        }`}
+                    >
+                      <tab.icon className="w-3.5 h-3.5" />
+                      {tab.label}
+                      {activeAnalyticsTab === tab.id && (
+                        <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-500 rounded-t-full shadow-[0_-4px_12px_rgba(124,58,237,0.4)]" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                  {activeAnalyticsTab === 'overview' && (
+                    <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        {[
+                          { label: 'Unique Viewers', value: selectedAnalyticsVault.analytics?.uniqueViewers, icon: Users, color: 'primary' },
+                          { label: 'Total Scans', value: selectedAnalyticsVault.analytics?.totalScans, icon: QrCode, color: 'blue' },
+                          { label: 'Views', value: selectedAnalyticsVault.views, icon: Eye, color: 'emerald' },
+                          { label: 'Total Downloads', value: selectedAnalyticsVault.analytics?.totalDownloads, icon: Download, color: 'amber' }
+                        ].map((stat) => (
+                          <div key={stat.label} className="p-6 bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-3xl hover:bg-white dark:hover:bg-white/[0.04] transition-all hover:shadow-xl group">
+                            <div className={`w-10 h-10 rounded-2xl mb-4 flex items-center justify-center transition-transform group-hover:scale-110 ${stat.color === 'primary' ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/20' :
                               stat.color === 'blue' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' :
-                              stat.color === 'emerald' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' :
-                              'bg-primary-500 text-white shadow-lg shadow-primary-500/20'
-                            }`}>
-                               <stat.icon className="w-5 h-5" />
+                                stat.color === 'emerald' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' :
+                                  'bg-primary-500 text-white shadow-lg shadow-primary-500/20'
+                              }`}>
+                              <stat.icon className="w-5 h-5" />
                             </div>
                             <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{stat.label}</div>
                             <div className="text-2xl font-black text-gray-900 dark:text-white tabular-nums">{stat.value}</div>
-                         </div>
-                       ))}
-                    </div>
+                          </div>
+                        ))}
+                      </div>
 
-                    <div className="p-8 bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-[2rem] min-h-[400px] flex flex-col">
-                       <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] mb-8 flex items-center gap-2">
+                      <div className="p-8 bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-[2rem] min-h-[400px] flex flex-col">
+                        <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] mb-8 flex items-center gap-2">
                           <TrendingUp className="w-4 h-4 text-primary-500" /> Mixed engagement trends
-                       </h3>
-                       <div className="flex-1 w-full flex items-center justify-center">
+                        </h3>
+                        <div className="flex-1 w-full flex items-center justify-center">
                           {selectedAnalyticsVault.views === 0 ? (
-                             <div className="flex flex-col items-center">
-                                <TrendingUp className="w-16 h-16 text-gray-200 dark:text-gray-800 mb-4 opacity-50" />
-                                <span className="text-xs font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest italic">NO Data to showcase !</span>
-                             </div>
+                            <div className="flex flex-col items-center">
+                              <TrendingUp className="w-16 h-16 text-gray-200 dark:text-gray-800 mb-4 opacity-50" />
+                              <span className="text-xs font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest italic">NO Data to showcase !</span>
+                            </div>
                           ) : (
-                             <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={selectedAnalyticsVault.analytics?.timestampComparison}>
-                                   <defs>
-                                      <linearGradient id="colorEngage" x1="0" y1="0" x2="0" y2="1">
-                                         <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.3}/>
-                                         <stop offset="95%" stopColor="#7c3aed" stopOpacity={0}/>
-                                      </linearGradient>
-                                   </defs>
-                                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#88888822" />
-                                   <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 900}} />
-                                   <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 900}} />
-                                   <Tooltip 
-                                     contentStyle={{ backgroundColor: '#000', border: 'none', borderRadius: '12px', padding: '12px' }}
-                                     labelStyle={{ color: '#888', marginBottom: '4px', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase' }}
-                                     itemStyle={{ color: '#fff', fontSize: '14px', fontWeight: 900 }}
-                                   />
-                                   <Area type="monotone" dataKey="engagement" stroke="#7c3aed" strokeWidth={4} fillOpacity={1} fill="url(#colorEngage)" />
-                                </AreaChart>
-                             </ResponsiveContainer>
+                            <ResponsiveContainer width="100%" height="100%">
+                              <AreaChart data={selectedAnalyticsVault.analytics?.timestampComparison}>
+                                <defs>
+                                  <linearGradient id="colorEngage" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.3} />
+                                    <stop offset="95%" stopColor="#7c3aed" stopOpacity={0} />
+                                  </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#88888822" />
+                                <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900 }} />
+                                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900 }} />
+                                <Tooltip
+                                  contentStyle={{ backgroundColor: '#000', border: 'none', borderRadius: '12px', padding: '12px' }}
+                                  labelStyle={{ color: '#888', marginBottom: '4px', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase' }}
+                                  itemStyle={{ color: '#fff', fontSize: '14px', fontWeight: 900 }}
+                                />
+                                <Area type="monotone" dataKey="engagement" stroke="#7c3aed" strokeWidth={4} fillOpacity={1} fill="url(#colorEngage)" />
+                              </AreaChart>
+                            </ResponsiveContainer>
                           )}
-                       </div>
+                        </div>
+                      </div>
                     </div>
-                 </div>
-               )}
+                  )}
 
-               {activeAnalyticsTab === 'engagement' && selectedAnalyticsVault.views > 0 && (
-                 <div className="animate-in slide-in-from-bottom-4 duration-500">
-                    <div className="bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-[2rem] p-8">
-                       <div className="flex items-center justify-between mb-8">
+                  {activeAnalyticsTab === 'engagement' && selectedAnalyticsVault.views > 0 && (
+                    <div className="animate-in slide-in-from-bottom-4 duration-500">
+                      <div className="bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-[2rem] p-8">
+                        <div className="flex items-center justify-between mb-8">
                           <div>
-                             <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] mb-1">Peak Engagement Hours</h3>
-                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">At which time vault have more engagement</p>
+                            <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] mb-1">Peak Engagement Hours</h3>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">At which time vault have more engagement</p>
                           </div>
                           <div className="px-4 py-2 bg-primary-50 dark:bg-primary-900/30 rounded-full border border-primary-100 dark:border-primary-800">
-                             <span className="text-[9px] font-black text-primary-600 dark:text-primary-400 uppercase tracking-widest">Live Updates</span>
+                            <span className="text-[9px] font-black text-primary-600 dark:text-primary-400 uppercase tracking-widest">Live Updates</span>
                           </div>
-                       </div>
-                       <div className="h-[350px] flex items-center justify-center">{selectedAnalyticsVault.views === 0 ? <div className="flex flex-col items-center"><TrendingUp className="w-16 h-16 text-gray-200 dark:text-gray-800 mb-4 opacity-50" /><span className="text-xs font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest italic">NO Data to showcase !</span></div> : <ResponsiveContainer width="100%" height="100%">
-                             <BarChart data={selectedAnalyticsVault.analytics?.timestampComparison}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#88888822" />
-                                <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 900}} />
-                                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 900}} />
-                                <Tooltip 
-                                  cursor={{fill: '#88888811'}}
-                                  contentStyle={{ backgroundColor: '#000', border: 'none', borderRadius: '12px' }}
-                                  itemStyle={{ color: '#fff' }}
-                                />
-                                <Bar dataKey="engagement" fill="#7c3aed" radius={[8, 8, 0, 0]} barSize={40} />
-                             </BarChart>
-                          </ResponsiveContainer>
-                       }</div>
+                        </div>
+                        <div className="h-[350px] flex items-center justify-center">{selectedAnalyticsVault.views === 0 ? <div className="flex flex-col items-center"><TrendingUp className="w-16 h-16 text-gray-200 dark:text-gray-800 mb-4 opacity-50" /><span className="text-xs font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest italic">NO Data to showcase !</span></div> : <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={selectedAnalyticsVault.analytics?.timestampComparison}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#88888822" />
+                            <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900 }} />
+                            <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900 }} />
+                            <Tooltip
+                              cursor={{ fill: '#88888811' }}
+                              contentStyle={{ backgroundColor: '#000', border: 'none', borderRadius: '12px' }}
+                              itemStyle={{ color: '#fff' }}
+                            />
+                            <Bar dataKey="engagement" fill="#7c3aed" radius={[8, 8, 0, 0]} barSize={40} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                        }</div>
+                      </div>
                     </div>
-                 </div>
-               )}
+                  )}
 
-               {activeAnalyticsTab === 'files' && (
-                 <div className="animate-in slide-in-from-bottom-4 duration-500 space-y-6">
-                    <div className="bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-[2rem] p-8">
-                       <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] mb-8">File Engagement vs Downloads</h3>
-                       <div className="h-[350px] flex items-center justify-center">{selectedAnalyticsVault.views === 0 ? <div className="flex flex-col items-center"><TrendingUp className="w-16 h-16 text-gray-200 dark:text-gray-800 mb-4 opacity-50" /><span className="text-xs font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest italic">NO Data to showcase !</span></div> : <ResponsiveContainer width="100%" height="100%">
-                             <BarChart data={selectedAnalyticsVault.analytics?.fileEngagement} layout="vertical">
-                                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#88888822" />
-                                <XAxis type="number" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 900}} />
-                                <YAxis dataKey="fileName" type="category" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 900}} width={120} />
-                                <Tooltip 
-                                  contentStyle={{ backgroundColor: '#000', border: 'none', borderRadius: '12px' }}
-                                  itemStyle={{ color: '#fff' }}
-                                />
-                                <Legend wrapperStyle={{ paddingTop: '20px', textTransform: 'uppercase', fontSize: '9px', fontWeight: 900, letterSpacing: '1px' }} />
-                                <Bar dataKey="engagement" name="Engagement" fill="#7c3aed" radius={[0, 4, 4, 0]} />
-                                <Bar dataKey="downloads" name="Downloads" fill="#10b981" radius={[0, 4, 4, 0]} />
-                             </BarChart>
-                          </ResponsiveContainer>
-                       }</div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                       {selectedAnalyticsVault.views === 0 ? <div className="col-span-full py-12 flex flex-col items-center"><Box className="w-12 h-12 text-gray-200 dark:text-gray-800 mb-3" /><span className="text-[10px] font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest italic">NO Data to showcase !</span></div> : selectedAnalyticsVault.analytics?.fileEngagement.slice(0, 4).map((file, i) => (
-                         <div key={i} className="p-5 bg-white dark:bg-white/[0.01] border border-gray-100 dark:border-white/5 rounded-3xl flex items-center justify-between group">
+                  {activeAnalyticsTab === 'files' && (
+                    <div className="animate-in slide-in-from-bottom-4 duration-500 space-y-6">
+                      <div className="bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-[2rem] p-8">
+                        <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] mb-8">File Engagement vs Downloads</h3>
+                        <div className="h-[350px] flex items-center justify-center">{selectedAnalyticsVault.views === 0 ? <div className="flex flex-col items-center"><TrendingUp className="w-16 h-16 text-gray-200 dark:text-gray-800 mb-4 opacity-50" /><span className="text-xs font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest italic">NO Data to showcase !</span></div> : <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={selectedAnalyticsVault.analytics?.fileEngagement} layout="vertical">
+                            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#88888822" />
+                            <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900 }} />
+                            <YAxis dataKey="fileName" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900 }} width={120} />
+                            <Tooltip
+                              contentStyle={{ backgroundColor: '#000', border: 'none', borderRadius: '12px' }}
+                              itemStyle={{ color: '#fff' }}
+                            />
+                            <Legend wrapperStyle={{ paddingTop: '20px', textTransform: 'uppercase', fontSize: '9px', fontWeight: 900, letterSpacing: '1px' }} />
+                            <Bar dataKey="engagement" name="Engagement" fill="#7c3aed" radius={[0, 4, 4, 0]} />
+                            <Bar dataKey="downloads" name="Downloads" fill="#10b981" radius={[0, 4, 4, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                        }</div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {selectedAnalyticsVault.views === 0 ? <div className="col-span-full py-12 flex flex-col items-center"><Box className="w-12 h-12 text-gray-200 dark:text-gray-800 mb-3" /><span className="text-[10px] font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest italic">NO Data to showcase !</span></div> : selectedAnalyticsVault.analytics?.fileEngagement.slice(0, 4).map((file, i) => (
+                          <div key={i} className="p-5 bg-white dark:bg-white/[0.01] border border-gray-100 dark:border-white/5 rounded-3xl flex items-center justify-between group">
                             <div className="flex items-center gap-4">
-                               <div className="w-10 h-10 bg-gray-100 dark:bg-white/5 rounded-2xl flex items-center justify-center text-gray-500 group-hover:bg-primary-500 group-hover:text-white transition-all">
-                                  <FileIcon className="w-5 h-5" />
-                               </div>
-                               <div>
-                                  <div className="text-xs font-bold text-gray-900 dark:text-white truncate max-w-[150px]">{file.fileName}</div>
-                                  <div className="text-[9px] text-gray-400 font-black uppercase tracking-widest mt-0.5">{file.downloads} Downloads</div>
-                               </div>
+                              <div className="w-10 h-10 bg-gray-100 dark:bg-white/5 rounded-2xl flex items-center justify-center text-gray-500 group-hover:bg-primary-500 group-hover:text-white transition-all">
+                                <FileIcon className="w-5 h-5" />
+                              </div>
+                              <div>
+                                <div className="text-xs font-bold text-gray-900 dark:text-white truncate max-w-[150px]">{file.fileName}</div>
+                                <div className="text-[9px] text-gray-400 font-black uppercase tracking-widest mt-0.5">{file.downloads} Downloads</div>
+                              </div>
                             </div>
                             <div className="text-right">
-                               <div className="text-lg font-black text-primary-600 tabular-nums">{file.engagement}</div>
-                               <div className="text-[8px] text-gray-400 font-bold uppercase tracking-tight">ENGAGEMENT</div>
+                              <div className="text-lg font-black text-primary-600 tabular-nums">{file.engagement}</div>
+                              <div className="text-[8px] text-gray-400 font-bold uppercase tracking-tight">ENGAGEMENT</div>
                             </div>
-                         </div>
-                       ))}
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                 </div>
-               )}
-            </div>
-            
-            <div className="p-8 border-t border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02] flex items-center justify-between">
-               <div className="flex items-center gap-4">
-                  <div className="flex -space-x-2">
-                     {[1,2,3].map(i => (
+                  )}
+                </div>
+
+                <div className="p-8 border-t border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02] flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex -space-x-2">
+                      {[1, 2, 3].map(i => (
                         <div key={i} className="w-8 h-8 rounded-full border-2 border-white dark:border-[#0a0a0b] bg-gray-200 dark:bg-gray-800 flex items-center justify-center text-[10px] font-black">{i}</div>
-                     ))}
+                      ))}
+                    </div>
+                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Active nodes monitoring traffic</span>
                   </div>
-                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Active nodes monitoring traffic</span>
-               </div>
-               <button 
-                 onClick={() => setSelectedAnalyticsVault(null)}
-                 className="px-8 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl transition-all hover:scale-105 active:shadow-inner"
-               >
-                 Close Report
-               </button>
+                  <button
+                    onClick={() => setSelectedAnalyticsVault(null)}
+                    className="px-8 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl transition-all hover:scale-105 active:shadow-inner"
+                  >
+                    Close Report
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
-       )}
-      </div>
-    </div>
-  );
-};
+    );
+  };
 
 
 
