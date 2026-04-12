@@ -3,7 +3,7 @@ import { useParams, useLocation, Link } from 'react-router-dom';
 import { mockService } from '../services/mockService';
 import { supabase } from '../services/supabaseClient';
 import { Vault, FileType, VaultFile, AccessLevel, RequestStatus, PlanType } from '../types';
-import { Download, ExternalLink, FileText, Image as ImageIcon, Box, Loader2, ShieldCheck, AlertCircle, Eye, Link as LinkIcon, Info, X, File, Lock, Send, Clock, Zap, RefreshCw, Sun, Moon, Search, Play } from 'lucide-react';
+import { Download, ExternalLink, FileText, Image as ImageIcon, Box, Loader2, ShieldCheck, AlertCircle, Eye, Link as LinkIcon, Info, X, File, Lock, Send, Clock, Zap, RefreshCw, Sun, Moon, Search, Play, Trash2 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
 import JSZip from 'jszip';
 
@@ -396,7 +396,7 @@ export const PublicView: React.FC = () => {
         <h1 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight mb-4 leading-tight">Vault Offline</h1>
         <p className="font-black text-primary-600 dark:text-primary-400 mb-6 uppercase tracking-widest text-xs italic bg-primary-50 dark:bg-primary-900/20 py-2 rounded-xl whitespace-nowrap overflow-hidden text-ellipsis px-4 mx-auto max-w-xs">&#8220;{expiredVaultName}&#8221;</p>
         <div className="bg-red-50 dark:bg-red-500/5 text-red-800 dark:text-red-400 p-6 rounded-[1.5rem] text-[13px] mb-8 border border-red-100 dark:border-red-900/20 leading-relaxed font-black uppercase tracking-widest">
-          Vault has been deleted due to certain reasons, please connect with vault Owner
+          This vault is Blocked Due to certain reasons, please connect with owner of vault
         </div>
         <div className="space-y-4">
           <Link to="/" className="w-full bg-primary-600 hover:bg-primary-700 text-white font-black py-4 px-6 rounded-2xl shadow-xl shadow-primary-500/20 transition-all flex items-center justify-center gap-2 uppercase text-xs tracking-[0.2em] active:scale-95">
@@ -418,7 +418,7 @@ export const PublicView: React.FC = () => {
         </div>
         <h1 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight mb-4">Vault Unavailable</h1>
         <div className="bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-gray-400 p-6 rounded-[1.5rem] text-[13px] mb-8 border border-gray-100 dark:border-white/5 leading-relaxed font-black uppercase tracking-widest">
-          Vault has been deleted due to certain reasons, please connect with vault Owner
+          This vault is Blocked Due to certain reasons, please connect with owner of vault
         </div>
         <Link to="/" className="w-full bg-primary-600 hover:bg-primary-700 text-white font-black py-4 px-6 rounded-2xl shadow-xl shadow-primary-500/20 transition-all flex items-center justify-center gap-2 uppercase text-xs tracking-[0.2em] active:scale-95">
           Return to Hub

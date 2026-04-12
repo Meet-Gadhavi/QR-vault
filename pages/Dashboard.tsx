@@ -1870,8 +1870,8 @@ export const Dashboard: React.FC = () => {
       </div>
       {/* ... keeping Modals ... */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-4xl max-h-[93vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-800 custom-scrollbar"
+        <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-4xl max-h-[95vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in-95 duration-200 border border-gray-100 dark:border-gray-800 custom-scrollbar"
             style={{
               scrollbarWidth: 'thin',
               scrollbarColor: 'rgba(139,92,246,0.35) transparent'
@@ -2047,9 +2047,9 @@ export const Dashboard: React.FC = () => {
                       })()}
 
                       {appUser?.plan !== PlanType.PRO && expiryHours !== 'never' && (
-                        <div className="mt-4 p-4 bg-primary-500/5 dark:bg-primary-500/10 border border-primary-500/20 dark:border-primary-500/30 rounded-2xl flex items-center justify-between gap-4 animate-in fade-in slide-in-from-top-1 duration-300">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 bg-primary-500 text-white rounded-xl shadow-lg shadow-primary-500/20 dark:shadow-none">
+                        <div className="mt-4 p-4 bg-primary-500/5 dark:bg-primary-500/10 border border-primary-500/20 dark:border-primary-500/30 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-1 duration-300">
+                          <div className="flex items-center gap-3 w-full sm:w-auto">
+                            <div className="p-2 bg-primary-500 text-white rounded-xl shadow-lg shadow-primary-500/20 dark:shadow-none shrink-0">
                               <Zap className="w-4 h-4 fill-current" />
                             </div>
                             <div>
@@ -2057,7 +2057,7 @@ export const Dashboard: React.FC = () => {
                               <p className="text-[9px] text-primary-700/70 dark:text-primary-400/70 font-bold uppercase tracking-tight">Auto-destruct in {expiryHours}h</p>
                             </div>
                           </div>
-                          <Link to="/pricing" onClick={(e) => e.stopPropagation()} className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-[10px] font-black rounded-xl transition-all shadow-md shadow-primary-500/20 active:scale-95 whitespace-nowrap uppercase tracking-widest">
+                          <Link to="/pricing" onClick={(e) => e.stopPropagation()} className="w-full sm:w-auto px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-[10px] font-black rounded-xl transition-all shadow-md shadow-primary-500/20 active:scale-95 text-center uppercase tracking-widest">
                             Keep Permanent
                           </Link>
                         </div>
@@ -2158,170 +2158,126 @@ export const Dashboard: React.FC = () => {
                 {/* END TWO-COLUMN GRID */}
 
                 {/* Branded Domain Section (PRO Feature) - Moved to be standalone */}
-                <div className="bg-white/50 dark:bg-black/40 p-10 rounded-[2.5rem] border border-gray-100 dark:border-white/5 space-y-6 shadow-sm group transition-all hover:bg-white/80 dark:hover:bg-primary-900/5 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-8 opacity-5">
-                    <Globe className="w-24 h-24 text-primary-500" />
+                {/* Branded Domain Section (PRO Feature) */}
+                <div className="bg-white/50 dark:bg-black/40 p-6 sm:p-8 rounded-[2rem] border border-gray-100 dark:border-white/5 space-y-6 shadow-sm group transition-all hover:bg-white/80 dark:hover:bg-primary-900/5 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-6 opacity-5">
+                    <Globe className="w-16 h-16 text-primary-500" />
                   </div>
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-gradient-to-br from-primary-500 to-indigo-600 text-white rounded-2xl shadow-xl shadow-primary-500/20">
-                        <Globe className="w-6 h-6" />
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-gradient-to-br from-primary-500 to-indigo-600 text-white rounded-xl shadow-lg shadow-primary-500/20">
+                        <Globe className="w-5 h-5" />
                       </div>
                       <div>
-                        <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] leading-none mb-1.5">Branded Domain</h3>
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Connect your custom hostname</p>
+                        <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] leading-none mb-1">Branded Domain</h3>
+                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Connect custom hostname</p>
                       </div>
                     </div>
                     {appUser?.plan !== PlanType.PRO && (
-                      <div className="flex items-center justify-center px-4 py-1.5 bg-primary-100 dark:bg-primary-900/30 rounded-full border border-primary-200 dark:border-primary-800 gap-2 animate-bounce h-fit">
+                      <div className="flex items-center justify-center px-4 py-1.5 bg-primary-100 dark:bg-primary-900/30 rounded-full border border-primary-200 dark:border-primary-800 gap-2 h-fit shrink-0">
                         <Zap className="w-3 h-3 fill-primary-600 text-primary-600" />
-                        <span className="text-[9px] font-black text-primary-700 dark:text-primary-400 uppercase tracking-widest leading-none">PRO FEATURE</span>
+                        <span className="text-[9px] font-black text-primary-700 dark:text-primary-400 uppercase tracking-widest leading-none">PRO</span>
                       </div>
                     )}
                   </div>
 
                   <div className="relative z-10">
                     <div className="relative group/input">
-                      <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 font-black text-xs tracking-widest">HTTPS://</div>
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-black text-[10px] tracking-widest">HTTPS://</div>
                       <input
                         type="text"
                         disabled={appUser?.plan !== PlanType.PRO}
-                        className={`w-full pl-24 pr-6 py-5 bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-3xl focus:ring-4 focus:ring-primary-500/10 outline-none transition-all font-black text-sm dark:text-white shadow-inner ${appUser?.plan !== PlanType.PRO ? 'opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-900' : 'hover:border-primary-300 dark:hover:border-primary-700'}`}
+                        className={`w-full pl-20 pr-6 py-4 bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-2xl focus:ring-4 focus:ring-primary-500/10 outline-none transition-all font-black text-xs dark:text-white shadow-inner ${appUser?.plan !== PlanType.PRO ? 'opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-900' : 'hover:border-primary-300 dark:hover:border-primary-700'}`}
                         value={customDomain}
                         onChange={(e) => setCustomDomain(e.target.value)}
                         placeholder="files.yourbrand.com"
                       />
-                      {customDomain && appUser?.plan === PlanType.PRO && (
-                        <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-2 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-100 dark:border-emerald-500/20">
-                          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                          <span className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Verified</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Assets & Content Grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Upload Section */}
+                  <div className="space-y-4">
+                    <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">
+                      {modalMode === 'EDIT' ? 'Add More Files' : 'Vault Assets'}
+                    </label>
+                    <div
+                      className={`border-2 border-dashed rounded-[2rem] p-6 text-center transition-all relative group cursor-pointer h-[180px] flex flex-col items-center justify-center ${isDragging ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20' : 'border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-white/5 hover:border-primary-400'
+                        }`}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        multiple
+                        className="hidden"
+                        onChange={handleFileSelect}
+                      />
+                      <div className="w-12 h-12 bg-primary-50 dark:bg-primary-900/40 rounded-2xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                        <UploadCloud className={`w-6 h-6 transition-colors ${isDragging ? 'text-primary-600' : 'text-primary-500'}`} />
+                      </div>
+                      <p className="text-xs text-gray-900 dark:text-white font-black uppercase tracking-tighter">
+                        {isDragging ? 'Drop Now' : 'Upload Data'}
+                      </p>
+                      <p className="text-[8px] text-gray-500 dark:text-gray-400 mt-1 font-bold uppercase tracking-widest">Encrypted Streaming</p>
+                    </div>
+                    
+                    {selectedFiles.length > 0 && (
+                      <div className="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+                        {selectedFiles.map((f, i) => (
+                          <div key={i} className="flex items-center justify-between text-[10px] bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 p-2.5 rounded-xl">
+                            <span className="truncate flex items-center gap-2 font-bold text-emerald-800 dark:text-emerald-400">
+                              <FileIcon className="w-3.5 h-3.5" /> {f.name}
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <button onClick={(e) => { e.stopPropagation(); removeSelectedFile(i); }} className="text-gray-400 hover:text-red-500 p-1"><X className="w-3.5 h-3.5" /></button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Links Section */}
+                  <div className="space-y-4">
+                    <label className="block text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">
+                      {modalMode === 'EDIT' ? 'Add More Links' : 'Safe Links'}
+                    </label>
+                    <div className="bg-white/50 dark:bg-black/40 p-6 rounded-[2rem] border border-gray-100 dark:border-gray-800 h-[180px] flex flex-col justify-between">
+                      <div className="flex gap-2">
+                        <input
+                          type="url"
+                          className="flex-1 p-3 bg-white dark:bg-black border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none transition-all text-xs dark:text-white"
+                          placeholder="https://..."
+                          value={tempLink}
+                          onChange={(e) => setTempLink(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && addLink()}
+                        />
+                        <button onClick={addLink} className="bg-primary-600 hover:bg-primary-700 px-4 rounded-xl font-bold text-white transition-colors uppercase text-[10px] tracking-widest">Add</button>
+                      </div>
+                      
+                      {links.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center opacity-30 gap-1 mb-2">
+                           <LinkIcon className="w-6 h-6" />
+                           <span className="text-[8px] font-black uppercase tracking-widest">No Links Added</span>
+                        </div>
+                      ) : (
+                        <div className="space-y-1.5 max-h-24 overflow-y-auto pr-1">
+                          {links.map((l, i) => (
+                            <div key={i} className="flex items-center justify-between text-[10px] text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/20 p-2 rounded-lg border border-blue-100 dark:border-blue-900/30">
+                              <span className="flex items-center gap-2 truncate font-bold"><LinkIcon className="w-3 h-3" /> {l}</span>
+                              <button onClick={() => removeLink(i)} className="text-gray-400 hover:text-red-500 transition-colors"><X className="w-3 h-3" /></button>
+                            </div>
+                          ))}
                         </div>
                       )}
                     </div>
-                    <div className="mt-4 flex items-center gap-2 px-2">
-                      <Share2 className="w-3 h-3 text-primary-500" />
-                      <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-tight">Access Link: <span className="text-primary-600 dark:text-primary-400">{customDomain || 'yourdomain.com'}/v/[id]</span></p>
-                    </div>
                   </div>
-                </div>
-
-                {/* Existing Files List (Edit Mode Only) */}
-                {modalMode === 'EDIT' && existingFiles.length > 0 && (
-                  <div className="bg-gray-50 dark:bg-black/30 p-4 rounded-xl border border-gray-100 dark:border-gray-800">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Current Files</label>
-                    <div className="space-y-1.5 max-h-40 overflow-y-auto">
-                      {existingFiles.map(file => (
-                        <div key={file.id} className="p-3 flex items-center justify-between text-sm bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 dark:border-gray-700 shadow-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-750">
-                          <div className="flex items-center gap-2 truncate">
-                            {file.type === FileType.LINK ? <LinkIcon className="w-4 h-4 text-blue-500" /> : <FileIcon className="w-4 h-4 text-gray-400 dark:text-gray-500" />}
-                            <span className="text-gray-700 dark:text-gray-300 truncate max-w-[200px] font-medium">{file.name}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={() => setSelectedFileForSettings({ type: 'EXISTING', index: file.id as any })}
-                              className="text-gray-400 hover:text-primary-600 p-1"
-                              title="File Settings"
-                            >
-                              <Settings className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleMarkFileDeleted(file.id)}
-                              className="text-gray-400 hover:text-red-500 p-1"
-                              title="Delete File"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Upload Section */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    {modalMode === 'EDIT' ? 'Add More Files' : 'Upload Files'}
-                  </label>
-                  <div
-                    className={`border-2 border-dashed rounded-[2rem] p-10 text-center transition-all relative group cursor-pointer ${isDragging ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 scale-[1.02]' : 'border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-white/5 hover:border-primary-400'
-                      }`}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      multiple
-                      className="hidden"
-                      onChange={handleFileSelect}
-                    />
-                    <div className="pointer-events-none relative z-10">
-                      <div className="w-16 h-16 bg-primary-50 dark:bg-primary-900/40 rounded-3xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                        <UploadCloud className={`w-8 h-8 transition-colors ${isDragging ? 'text-primary-600' : 'text-primary-500'}`} />
-                      </div>
-                      <p className="text-sm text-gray-900 dark:text-white font-black uppercase tracking-tighter">
-                        {isDragging ? 'Drop files here' : 'Drop Vault Assets'}
-                      </p>
-                      <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1 font-bold uppercase tracking-widest">Maximum transparency and security</p>
-                    </div>
-                    {/* Decorative background element */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-[2rem]"></div>
-                  </div>
-                  {selectedFiles.length > 0 && (
-                    <div className="mt-4 space-y-2">
-                      {selectedFiles.map((f, i) => (
-                        <div key={i} className="flex items-center justify-between text-xs bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 p-3 rounded-xl transition-all hover:scale-[1.01]">
-                          <span className="truncate flex items-center gap-2 font-bold text-emerald-800 dark:text-emerald-400">
-                            <FileIcon className="w-4 h-4" /> {f.name}
-                            {fileSettings[i] && (
-                              <span className="text-[9px] bg-red-500 text-white px-1.5 py-0.5 rounded-full font-black uppercase tracking-tighter animate-pulse shadow-lg shadow-red-500/20">Destruct Active</span>
-                            )}
-                          </span>
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setSelectedFileForSettings({ type: 'NEW', index: i }); }}
-                              className="text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 p-2 hover:bg-white dark:hover:bg-white/10 rounded-lg transition-colors"
-                              title="File Settings"
-                            >
-                              <Settings className="w-4 h-4" />
-                            </button>
-                            <button onClick={(e) => { e.stopPropagation(); removeSelectedFile(i); }} className="text-gray-400 hover:text-red-500 p-2 hover:bg-white dark:hover:bg-white/10 rounded-lg transition-colors"><X className="w-4 h-4" /></button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Links Section */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    {modalMode === 'EDIT' ? 'Add More Links' : 'Add Links (Optional)'}
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="url"
-                      className="flex-1 p-3 bg-white dark:bg-black/50 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all dark:text-white"
-                      placeholder="https://..."
-                      value={tempLink}
-                      onChange={(e) => setTempLink(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && addLink()}
-                    />
-                    <button onClick={addLink} className="bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 px-4 rounded-lg font-bold text-gray-700 dark:text-gray-300 transition-colors uppercase text-[10px] tracking-widest">Add</button>
-                  </div>
-                  {links.length > 0 && (
-                    <div className="mt-2 space-y-1">
-                      {links.map((l, i) => (
-                        <div key={i} className="flex items-center justify-between text-xs text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-950/20 p-2 rounded-lg border border-blue-100 dark:border-blue-900/30">
-                          <span className="flex items-center gap-2 truncate font-medium"><LinkIcon className="w-3 h-3" /> {l}</span>
-                          <button onClick={() => removeLink(i)} className="text-gray-400 hover:text-red-500 transition-colors"><X className="w-3 h-3" /></button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
                 {/* QR Customization Section */}
@@ -2417,7 +2373,7 @@ export const Dashboard: React.FC = () => {
                         <span className="text-[8px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">ENABLED FOR ALL</span>
                       </div>
                     </div>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
                       {[
                         { id: 'standard', icon: '▤', label: 'Standard', desc: 'Classic blocks' },
                         { id: 'shape-dots', icon: '⬤', label: 'Dots', desc: 'Rounded modules' },
@@ -2430,14 +2386,14 @@ export const Dashboard: React.FC = () => {
                           key={d.id}
                           type="button"
                           onClick={() => setSelectedQrDesign(d.id)}
-                          className={`relative p-3 rounded-2xl border-2 text-center transition-all duration-200 flex flex-col items-center gap-1 group shadow-sm ${selectedQrDesign === d.id
+                          className={`relative p-2.5 rounded-2xl border-2 text-center transition-all duration-200 flex flex-col items-center gap-1 group shadow-sm ${selectedQrDesign === d.id
                             ? 'border-primary-500 bg-primary-50/50 dark:bg-primary-500/10 scale-105'
                             : 'border-gray-100 dark:border-white/5 bg-white dark:bg-white/5 hover:border-violet-400 dark:hover:border-violet-500 hover:scale-105'
                             }`}
                         >
-                          <span className="text-xl leading-none">{d.icon}</span>
-                          <span className="text-[9px] font-black text-gray-700 dark:text-gray-300 uppercase tracking-tight">{d.label}</span>
-                          <span className="text-[8px] text-gray-400 font-medium leading-tight">{d.desc}</span>
+                          <span className="text-lg leading-none">{d.icon}</span>
+                          <span className="text-[8px] font-black text-gray-700 dark:text-gray-300 uppercase tracking-tight">{d.label}</span>
+                          <span className="text-[7px] text-gray-400 font-medium leading-tight">{d.desc}</span>
                         </button>
                       ))}
                     </div>
