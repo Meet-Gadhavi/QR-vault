@@ -177,6 +177,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             <ul className="space-y-4 text-sm text-gray-500 dark:text-gray-400">
               <li><Link to="/faq" className="hover:text-primary-600 transition-colors">FAQ</Link></li>
               <li><Link to="/security" className="hover:text-primary-600 transition-colors">Security</Link></li>
+              <li><Link to="/changelog" className="hover:text-primary-600 transition-colors">Changelog</Link></li>
             </ul>
           </div>
         </div>

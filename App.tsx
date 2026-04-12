@@ -10,7 +10,7 @@ import { Payment } from './pages/Payment';
 import { Dashboard } from './pages/Dashboard';
 import { PublicView } from './pages/PublicView';
 import { Privacy, Terms, RefundPolicy } from './pages/Legal';
-import { About, Contact, FAQ, Security } from './pages/InfoPages';
+import { About, Contact, FAQ, Security, Changelog } from './pages/InfoPages';
 import { AdminDashboard } from './pages/AdminDashboard';
 
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -36,6 +36,7 @@ function App() {
               <Route path="/contact" element={<Contact />} />
               <Route path="/faq" element={<FAQ />} />
               <Route path="/security" element={<Security />} />
+              <Route path="/changelog" element={<Changelog />} />
               <Route path="/Admindashboard" element={<AdminDashboard />} />
             </Routes>
           </Layout>

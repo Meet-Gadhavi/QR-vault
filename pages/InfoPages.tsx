@@ -323,3 +323,137 @@ export const Security: React.FC = () => (
     </div>
   </InfoLayout>
 );
+
+export const Changelog: React.FC = () => (
+  <InfoLayout title="Changelog & Updates">
+    <div className="space-y-12">
+      <p className="text-lg">Follow the evolution of QR Vault as we deploy new features and security enhancements.</p>
+      
+      <div className="space-y-8 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 dark:before:via-gray-800 before:to-transparent">
+        
+        {/* Update 1.3 */}
+        <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group select-none">
+          <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white dark:border-gray-900 bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 transition-colors group-hover:bg-primary-600 group-hover:text-white">
+            <Zap className="w-5 h-5" />
+          </div>
+          <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm transition-all hover:shadow-md hover:border-primary-100 dark:hover:border-primary-900/40">
+            <div className="flex items-center justify-between mb-2">
+              <time className="font-black text-primary-600 dark:text-primary-400 text-xs uppercase tracking-widest">Update 1.3</time>
+              <span className="text-[10px] font-bold text-gray-400 uppercase">April 2026</span>
+            </div>
+            <h3 className="text-xl font-extrabold text-gray-900 dark:text-white mb-4 tracking-tight">Responsive Vault Architect</h3>
+            
+            <div className="space-y-6">
+              <div>
+                 <span className="text-[10px] font-black text-gray-400 uppercase block mb-3 tracking-[0.2em] leading-none">Key Improvements</span>
+                 <ul className="space-y-2.5">
+                   {[
+                     'Ultra-wide 65px "Identity" inputs for a premium workflow feel',
+                     'Balanced 3-column Lifecycle grid with intuitive dropdown protocols',
+                     'Optimized side-by-side Asset & Redirect management for large screens'
+                   ].map((item, i) => (
+                     <li key={i} className="flex items-start gap-2.5 text-sm text-gray-600 dark:text-gray-400">
+                       <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary-500 shrink-0" />
+                       {item}
+                     </li>
+                   ))}
+                 </ul>
+              </div>
+
+              <div className="bg-primary-500/5 dark:bg-primary-500/10 p-5 rounded-2xl border border-primary-500/20">
+                <span className="text-[10px] font-black text-primary-600 dark:text-primary-400 uppercase block mb-3 tracking-[0.2em] leading-none">How to Use</span>
+                <div className="space-y-3">
+                  <p className="text-xs text-gray-700 dark:text-gray-300 font-medium leading-relaxed">
+                    Open the **Create Vault** modal. Notice the new wide layout where every setting has its own horizontal space. The **Vault Name** is now a primary focus, and complex settings like **Scan Capacity** are neatly grouped.
+                  </p>
+                  <div className="flex items-center gap-2 text-[10px] font-bold text-primary-600 uppercase tracking-widest">
+                     <ShieldCheck className="w-3 h-3" /> Best on Desktop & Tablet
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Update 1.2 */}
+        <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group select-none">
+          <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white dark:border-gray-900 bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 transition-colors group-hover:bg-primary-600 group-hover:text-white">
+            <Shield className="w-5 h-5" />
+          </div>
+          <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm transition-all hover:shadow-md">
+            <div className="flex items-center justify-between mb-2">
+              <time className="font-black text-primary-600 dark:text-primary-400 text-xs uppercase tracking-widest">Update 1.2</time>
+              <span className="text-[10px] font-bold text-gray-400 uppercase">April 2026</span>
+            </div>
+            <h3 className="text-xl font-extrabold text-gray-900 dark:text-white mb-4 tracking-tight">Access Intelligence</h3>
+            
+            <div className="space-y-6">
+              <div>
+                 <span className="text-[10px] font-black text-gray-400 uppercase block mb-3 tracking-[0.2em] leading-none">Security Enhancements</span>
+                 <ul className="space-y-2.5">
+                   {[
+                     'New "Blocked Path" page with custom owner contact prompts',
+                     'Standardized messaging for deleted or flagged vault content',
+                     'Enhanced transparency for reporting and community compliance'
+                   ].map((item, i) => (
+                     <li key={i} className="flex items-start gap-2.5 text-sm text-gray-600 dark:text-gray-400">
+                       <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary-500 shrink-0" />
+                       {item}
+                     </li>
+                   ))}
+                 </ul>
+              </div>
+
+              <div className="bg-primary-500/5 dark:bg-primary-500/10 p-5 rounded-2xl border border-primary-500/20">
+                <span className="text-[10px] font-black text-primary-600 dark:text-primary-400 uppercase block mb-3 tracking-[0.2em] leading-none">How to Use</span>
+                <p className="text-xs leading-relaxed text-gray-700 dark:text-gray-300 font-medium">
+                  If a user tries to access a vault that has been deleted by you or blocked by our system, they will see a clear, branded status page directing them to contact the vault owner for further information.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Update 1.1 */}
+        <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group select-none">
+          <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white dark:border-gray-900 bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 transition-colors group-hover:bg-primary-600 group-hover:text-white">
+            <Lock className="w-5 h-5" />
+          </div>
+          <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm transition-all hover:shadow-md">
+            <div className="flex items-center justify-between mb-2">
+              <time className="font-black text-primary-600 dark:text-primary-400 text-xs uppercase tracking-widest">Update 1.1</time>
+              <span className="text-[10px] font-bold text-gray-400 uppercase">April 2026</span>
+            </div>
+            <h3 className="text-xl font-extrabold text-gray-900 dark:text-white mb-4 tracking-tight">Stability Shield</h3>
+            
+            <div className="space-y-6">
+              <div>
+                 <span className="text-[10px] font-black text-gray-400 uppercase block mb-3 tracking-[0.2em] leading-none">Stability Core</span>
+                 <ul className="space-y-2.5">
+                   {[
+                     'Real-time automated auditing for interface integrity',
+                     'Elimination of unterminated expression errors in primary views',
+                     'Optimized rendering for multi-asset vault streaming'
+                   ].map((item, i) => (
+                     <li key={i} className="flex items-start gap-2.5 text-sm text-gray-600 dark:text-gray-400">
+                       <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary-500 shrink-0" />
+                       {item}
+                     </li>
+                   ))}
+                 </ul>
+              </div>
+
+              <div className="bg-primary-500/5 dark:bg-primary-500/10 p-5 rounded-2xl border border-primary-500/20">
+                <span className="text-[10px] font-black text-primary-600 dark:text-primary-400 uppercase block mb-3 tracking-[0.2em] leading-none">How to Use</span>
+                <p className="text-xs leading-relaxed text-gray-700 dark:text-gray-300 font-medium">
+                  Experience a faster and more stable platform. This background update ensures that your dashboard remains active and responsive even when managing hundreds of encrypted files simultaneously.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </InfoLayout>
+);
