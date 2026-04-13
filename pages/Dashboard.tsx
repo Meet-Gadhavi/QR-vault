@@ -2,10 +2,10 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { mockService } from '../services/mockService';
 import { supabase } from '../services/supabaseClient';
-import { Vault, User, PlanType, VaultFile, FileType, PLAN_LIMITS, AccessLevel, AccessRequest, RequestStatus, Invoice , VaultType, ReceivingConfig } from '../types';
+import { Vault, User, PlanType, VaultFile, FileType, PLAN_LIMITS, AccessLevel, AccessRequest, RequestStatus, Invoice, VaultType, ReceivingConfig } from '../types';
 import { PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, Legend } from 'recharts';
 import QRCode from 'react-qr-code';
-import { UploadCloud, File as FileIcon, Link as LinkIcon, Trash2, ExternalLink, Plus, X, Loader2, Eye, HardDrive, QrCode, Copy, Check, MoreVertical, Edit2, Search, Filter, ArrowUpDown, Download, Zap, ChevronDown, Lock, Users, Shield, UserCheck, UserX, Clock, ShieldCheck, AlertTriangle, AlertCircle, RotateCcw, FileText, Shuffle, Settings, Calendar, Share2, Box, Settings2, ChevronRight, TrendingUp, ArrowUp, Globe, Grid , Inbox, Send, Info } from 'lucide-react';
+import { UploadCloud, File as FileIcon, Link as LinkIcon, Trash2, ExternalLink, Plus, X, Loader2, Eye, HardDrive, QrCode, Copy, Check, MoreVertical, Edit2, Search, Filter, ArrowUpDown, Download, Zap, ChevronDown, Lock, Users, Shield, UserCheck, UserX, Clock, ShieldCheck, AlertTriangle, AlertCircle, RotateCcw, FileText, Shuffle, Settings, Calendar, Share2, Box, Settings2, ChevronRight, TrendingUp, ArrowUp, Globe, Grid, Inbox, Send, Info } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -1947,20 +1947,26 @@ export const Dashboard: React.FC = () => {
             {/* Tab Navigation */}
             <div className="flex px-8 sm:px-10 pt-4 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 gap-6 sm:gap-8 overflow-x-auto no-scrollbar sticky top-[73px] z-10">
               {/* Vault Mode Selector */}
-              <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 mx-8 sm:mx-10 mt-6 mb-2">
+              {/* Premium Vault Mode Selector */}
+              <div className="flex bg-gray-100/80 dark:bg-[#0a0a0a] rounded-2xl border border-gray-200/50 dark:border-white/5 mx-8 sm:mx-10 mt-6 mb-2 p-1.5 relative shadow-inner">
+                {/* Animated Background Pill */}
+                <div 
+                  className={`absolute top-1.5 bottom-1.5 w-[calc(50%-0.375rem)] bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-white/10 transition-transform duration-500 ease-out pointer-events-none z-0 ${vaultType === VaultType.RECEIVING ? 'translate-x-[calc(100%+0.375rem)]' : 'translate-x-0'}`} 
+                />
+                
                 <button
                   type="button"
                   onClick={() => setVaultType(VaultType.SENDING)}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${vaultType === VaultType.SENDING ? 'bg-white dark:bg-gray-900 text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors duration-300 z-10 ${vaultType === VaultType.SENDING ? 'text-primary-600 dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
                 >
                   <Send className="w-4 h-4" /> Sharing Mode
                 </button>
                 <button
                   type="button"
                   onClick={() => setVaultType(VaultType.RECEIVING)}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${vaultType === VaultType.RECEIVING ? 'bg-white dark:bg-gray-900 text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors duration-300 z-10 ${vaultType === VaultType.RECEIVING ? 'text-primary-600 dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
                 >
-                  <Inbox className="w-4 h-4" /> Collection Mode
+                  <Inbox className="w-4 h-4" /> Collective Mode
                 </button>
               </div>
 
@@ -2083,6 +2089,7 @@ export const Dashboard: React.FC = () => {
                                    </div>
                                  </div>
                                  <div className="flex items-center gap-1">
+                                    <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedFileForSettings({ type: 'EXISTING', index: (f as any).id }); }} className="p-2.5 text-gray-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-xl transition-all"><Settings2 className="w-4 h-4" /></button>
                                     <button onClick={(e) => { e.stopPropagation(); handleMarkFileDeleted(f.id); }} className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl transition-all"><X className="w-4 h-4" /></button>
                                  </div>
                                </div>
@@ -2106,6 +2113,7 @@ export const Dashboard: React.FC = () => {
                                    </div>
                                 </div>
                                 <div className="flex items-center gap-1">
+                                    <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSelectedFileForSettings({ type: 'NEW', index: i }); }} className="p-2.5 text-gray-400 hover:text-primary-500 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded-xl transition-all"><Settings2 className="w-4 h-4" /></button>
                                     <button onClick={(e) => { e.stopPropagation(); removeSelectedFile(i); }} className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl transition-all"><X className="w-4 h-4" /></button>
                                 </div>
                               </div>
@@ -2921,22 +2929,27 @@ export const Dashboard: React.FC = () => {
                           <span className="text-[9px] font-black bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-300 px-2 py-0.5 rounded-full uppercase tracking-widest">Plus+</span>
                         )}
                       </div>
-                      <select
-                        disabled={appUser?.plan === PlanType.FREE}
-                        value={fileSettings[selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any]?.deleteAfterMinutes || ''}
-                        onChange={(e) => {
-                          const val = e.target.value === '' ? undefined : parseInt(e.target.value);
-                          const key = selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any;
-                          setFileSettings({ ...fileSettings, [key]: { ...fileSettings[key], deleteAfterMinutes: val } });
-                        }}
-                        className={`w-full bg-white dark:bg-black/60 dark:text-white border border-gray-200 dark:border-white/10 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-primary-500 transition-all font-bold text-sm appearance-none ${appUser?.plan === PlanType.FREE ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      >
-                        <option className="dark:bg-gray-900" value="">Never vanish</option>
-                        <option className="dark:bg-gray-900" value="1">1 Minute after opening</option>
-                        <option className="dark:bg-gray-900" value="5">5 Minutes after opening</option>
-                        <option className="dark:bg-gray-900" value="60">1 Hour after opening</option>
-                        <option className="dark:bg-gray-900" value="1440">24 Hours after opening</option>
-                      </select>
+                      <div className="relative">
+                        <select
+                          disabled={appUser?.plan === PlanType.FREE}
+                          value={fileSettings[selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any]?.deleteAfterMinutes || ''}
+                          onChange={(e) => {
+                            const val = e.target.value === '' ? undefined : parseInt(e.target.value);
+                            const key = selectedFileForSettings.type === 'NEW' ? selectedFileForSettings.index : selectedFileForSettings.index as any;
+                            setFileSettings({ ...fileSettings, [key]: { ...fileSettings[key], deleteAfterMinutes: val } });
+                          }}
+                          className={`w-full bg-white dark:bg-black/80 dark:text-white border border-gray-200 dark:border-white/10 rounded-2xl pl-5 pr-12 py-4 outline-none focus:ring-4 focus:ring-primary-500/20 transition-all font-bold text-sm appearance-none shadow-sm hover:border-gray-300 dark:hover:border-white/20 ${appUser?.plan === PlanType.FREE ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                        >
+                          <option className="dark:bg-gray-900 text-gray-900 dark:text-gray-100" value="">Never vanish</option>
+                          <option className="dark:bg-gray-900 text-gray-900 dark:text-gray-100" value="1">1 Minute after opening</option>
+                          <option className="dark:bg-gray-900 text-gray-900 dark:text-gray-100" value="5">5 Minutes after opening</option>
+                          <option className="dark:bg-gray-900 text-gray-900 dark:text-gray-100" value="60">1 Hour after opening</option>
+                          <option className="dark:bg-gray-900 text-gray-900 dark:text-gray-100" value="1440">24 Hours after opening</option>
+                        </select>
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-5 pointer-events-none">
+                          <ChevronDown className="w-5 h-5 text-gray-400" />
+                        </div>
+                      </div>
                       <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-4 font-bold uppercase tracking-tight leading-relaxed">Countdown begins once the visitor first previews or downloads this file.</p>
                     </div>
 

@@ -123,18 +123,21 @@ export const VaultModals: React.FC<VaultModalsProps> = ({
 
                         <div className="p-6 space-y-6">
                             {/* Vault Mode Selector */}
-                            <div className="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700">
+                            <div className="flex bg-gray-100/80 dark:bg-[#0a0a0a] rounded-2xl border border-gray-200/50 dark:border-white/5 p-1.5 relative shadow-inner">
+                                <div 
+                                    className={`absolute top-1.5 bottom-1.5 w-[calc(50%-0.375rem)] bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-white/10 transition-transform duration-500 ease-out pointer-events-none z-0 ${vaultType === VaultType.RECEIVING ? 'translate-x-[calc(100%+0.375rem)]' : 'translate-x-0'}`} 
+                                />
                                 <button
                                     type="button"
                                     onClick={() => setVaultType(VaultType.SENDING)}
-                                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${vaultType === VaultType.SENDING ? 'bg-white dark:bg-gray-900 text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-colors duration-300 z-10 ${vaultType === VaultType.SENDING ? 'text-primary-600 dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
                                 >
                                     <Send className="w-4 h-4" /> Sharing Mode
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setVaultType(VaultType.RECEIVING)}
-                                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-all ${vaultType === VaultType.RECEIVING ? 'bg-white dark:bg-gray-900 text-primary-600 shadow-sm' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-bold transition-colors duration-300 z-10 ${vaultType === VaultType.RECEIVING ? 'text-primary-600 dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
                                 >
                                     <Inbox className="w-4 h-4" /> Collection Mode
                                 </button>

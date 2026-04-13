@@ -165,16 +165,19 @@ export const ReceivingConfigBuilder: React.FC<ReceivingConfigBuilderProps> = ({ 
                                     onChange={(e) => updateField(idx, { label: e.target.value })}
                                 />
                                 <div className="flex items-center gap-3 mt-1">
-                                    <select
-                                        className="bg-transparent text-[10px] font-black uppercase text-gray-400 border-none outline-none focus:text-primary-500"
-                                        value={field.type}
-                                        onChange={(e) => updateField(idx, { type: e.target.value as any })}
-                                    >
-                                        <option value="text">Short Text</option>
-                                        <option value="email">Email</option>
-                                        <option value="tel">Phone</option>
-                                        <option value="number">Number</option>
-                                    </select>
+                                    <div className="relative ml-2 bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5 border border-gray-200 dark:border-gray-700">
+                                        <select
+                                            className="bg-transparent text-[10px] font-black uppercase text-gray-500 border-none outline-none focus:text-primary-600 dark:focus:text-primary-400 appearance-none pl-3 pr-7 py-1 cursor-pointer focus:ring-2 focus:ring-primary-500/20 rounded-md"
+                                            value={field.type}
+                                            onChange={(e) => updateField(idx, { type: e.target.value as any })}
+                                        >
+                                            <option value="text">Short Text</option>
+                                            <option value="email">Email</option>
+                                            <option value="tel">Phone</option>
+                                            <option value="number">Number</option>
+                                        </select>
+                                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none text-gray-400" />
+                                    </div>
                                     <label className="flex items-center gap-1.5 cursor-pointer">
                                         <input
                                             type="checkbox"
@@ -225,16 +228,19 @@ export const ReceivingConfigBuilder: React.FC<ReceivingConfigBuilderProps> = ({ 
                                     onChange={(e) => updateFileRequest(idx, { label: e.target.value })}
                                 />
                                 <div className="flex items-center gap-3 mt-1">
-                                    <select
-                                        className="bg-transparent text-[10px] font-black uppercase text-gray-400 border-none outline-none focus:text-emerald-500"
-                                        value={req.fileType}
-                                        onChange={(e) => updateFileRequest(idx, { fileType: e.target.value })}
-                                    >
-                                        <option value="PDF">PDF Document</option>
-                                        <option value="ZIP">ZIP Archive</option>
-                                        <option value="IMAGE">Image</option>
-                                        <option value="ANY">Any File</option>
-                                    </select>
+                                    <div className="relative ml-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-0.5 border border-emerald-100 dark:border-emerald-900/30">
+                                        <select
+                                            className="bg-transparent text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400 border-none outline-none appearance-none pl-3 pr-7 py-1 cursor-pointer rounded-md focus:ring-2 focus:ring-emerald-500/20"
+                                            value={req.fileType}
+                                            onChange={(e) => updateFileRequest(idx, { fileType: e.target.value })}
+                                        >
+                                            <option value="PDF">PDF Document</option>
+                                            <option value="ZIP">ZIP Archive</option>
+                                            <option value="IMAGE">Image</option>
+                                            <option value="ANY">Any File</option>
+                                        </select>
+                                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none text-emerald-500/50" />
+                                    </div>
                                     <label className="flex items-center gap-1.5 cursor-pointer">
                                         <input
                                             type="checkbox"
