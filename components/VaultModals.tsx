@@ -17,7 +17,8 @@ import {
     UserCheck,
     UserX,
     Send,
-    Inbox
+    Inbox,
+    Info
 } from 'lucide-react';
 import { AccessLevel, RequestStatus, Vault, VaultFile, FileType, VaultType, ReceivingConfig } from '../types';
 import { ReceivingConfigBuilder } from './Submissions/ReceivingConfigBuilder';
