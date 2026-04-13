@@ -9,7 +9,7 @@ if (typeof window !== 'undefined') {
     let mql: any = null;
     if (originalMatchMedia) {
       try {
-        mql = originalMatchMedia(query);
+        mql = originalMatchMedia.call(window, query);
       } catch (e) { }
     }
 

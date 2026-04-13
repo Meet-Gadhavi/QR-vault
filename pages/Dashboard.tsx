@@ -2,10 +2,10 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { mockService } from '../services/mockService';
 import { supabase } from '../services/supabaseClient';
-import { Vault, User, PlanType, VaultFile, FileType, PLAN_LIMITS, AccessLevel, AccessRequest, RequestStatus, Invoice } from '../types';
+import { Vault, User, PlanType, VaultFile, FileType, PLAN_LIMITS, AccessLevel, AccessRequest, RequestStatus, Invoice , VaultType, ReceivingConfig } from '../types';
 import { PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, Legend } from 'recharts';
 import QRCode from 'react-qr-code';
-import { UploadCloud, File as FileIcon, Link as LinkIcon, Trash2, ExternalLink, Plus, X, Loader2, Eye, HardDrive, QrCode, Copy, Check, MoreVertical, Edit2, Search, Filter, ArrowUpDown, Download, Zap, ChevronDown, Lock, Users, Shield, UserCheck, UserX, Clock, ShieldCheck, AlertTriangle, AlertCircle, RotateCcw, FileText, Shuffle, Settings, Calendar, Share2, Box, Settings2, ChevronRight, TrendingUp, ArrowUp, Globe, Grid } from 'lucide-react';
+import { UploadCloud, File as FileIcon, Link as LinkIcon, Trash2, ExternalLink, Plus, X, Loader2, Eye, HardDrive, QrCode, Copy, Check, MoreVertical, Edit2, Search, Filter, ArrowUpDown, Download, Zap, ChevronDown, Lock, Users, Shield, UserCheck, UserX, Clock, ShieldCheck, AlertTriangle, AlertCircle, RotateCcw, FileText, Shuffle, Settings, Calendar, Share2, Box, Settings2, ChevronRight, TrendingUp, ArrowUp, Globe, Grid , Inbox, Send, Info } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -2266,11 +2266,11 @@ export const Dashboard: React.FC = () => {
                                 ))}
                                 <button
                                   type="button"
-                                  disabled={appUser?.plan !== PlanType.PRO && appUser?.plan !== PlanType.PLUS}
+                                  disabled={appUser?.plan !== PlanType.PRO && appUser?.plan !== PlanType.STARTER}
                                   onClick={() => { setMaxViews('custom'); setMenuOpenId(null); }}
                                   className={`w-full text-left px-6 py-4 text-[10px] font-black uppercase tracking-widest transition-colors ${maxViews === 'custom' ? 'bg-primary-600 text-white' : 'hover:bg-primary-50 dark:hover:bg-white/5 text-gray-500 dark:text-gray-400 disabled:opacity-30'}`}
                                 >
-                                  Custom Limit {appUser?.plan !== PlanType.PRO && appUser?.plan !== PlanType.PLUS && ' (PLUS/PRO)'}
+                                  Custom Limit {appUser?.plan !== PlanType.PRO && appUser?.plan !== PlanType.STARTER && ' (PLUS/PRO)'}
                                 </button>
                               </div>
                             )}
