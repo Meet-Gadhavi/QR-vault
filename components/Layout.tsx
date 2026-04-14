@@ -70,7 +70,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                     </div>
                     <button 
                       onClick={handleLogout}
-                      className="text-gray-400 dark:text-gray-600 hover:text-gray-600 dark:hover:text-gray-400 transition-colors"
+                      className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-red-400 transition-colors"
                       title="Sign Out"
                     >
                       <LogOut className="w-5 h-5" />
