@@ -1112,7 +1112,7 @@ export const Dashboard: React.FC = () => {
     ? ['#ef4444', theme === 'dark' ? '#450a0a' : '#fee2e2']
     : ['#7c3aed', theme === 'dark' ? '#1e1b4b' : '#f5f3ff'];
 
-  if (isLoading) return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary-600 w-10 h-10" /></div>;
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary-600 w-10 h-10" /></div>;
   if (!isAuthenticated && !isLoading) return null; // Wait for redirect
   if (!appUser) return null; // Wait for load
 

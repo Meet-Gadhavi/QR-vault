@@ -390,7 +390,7 @@ export const PublicView: React.FC = () => {
   );
 
   if (isExpired) return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 text-center bg-gray-50 dark:bg-[#0a0a0a] relative overflow-hidden transition-colors duration-300">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 text-center bg-gray-50 dark:bg-[#0a0a0a] relative overflow-x-hidden transition-colors duration-300">
       <div className="bg-white dark:bg-gray-900 p-8 sm:p-10 rounded-3xl sm:rounded-[3rem] shadow-2xl border border-gray-100 dark:border-white/5 max-w-lg w-full relative z-10">
         <div className="w-24 h-24 bg-red-50 dark:bg-red-500/10 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-inner">
           <Trash2 className="w-12 h-12 text-red-500 animate-pulse" />
@@ -431,7 +431,7 @@ export const PublicView: React.FC = () => {
 
   if (!hasAccess) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-gray-50 relative overflow-hidden">
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-gray-50 relative overflow-x-hidden">
         <div className="bg-white p-10 rounded-3xl shadow-xl border border-gray-100 max-w-md w-full relative z-10">
           <div className="w-16 h-16 bg-gray-900 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
             <Lock className="w-8 h-8 text-white" />
@@ -481,7 +481,7 @@ export const PublicView: React.FC = () => {
 
   if (!isPasswordVerified && vault.password) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-gray-50 relative overflow-hidden">
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-gray-50 relative overflow-x-hidden">
         <div className="bg-white p-10 rounded-3xl shadow-xl border border-gray-100 max-w-md w-full relative z-10">
           <div className="w-16 h-16 bg-primary-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
             <Lock className="w-8 h-8 text-white" />
@@ -619,7 +619,7 @@ export const PublicView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#fcfcfd] dark:bg-[#050505] flex flex-col relative overflow-hidden transition-colors duration-500">
+    <div className="min-h-screen bg-[#fcfcfd] dark:bg-[#050505] flex flex-col relative overflow-x-hidden transition-colors duration-500">
 
       {/* Dynamic Background Blobs */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">

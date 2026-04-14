@@ -10,7 +10,7 @@ export const Home: React.FC = () => {
 
 
   return (
-    <div className="overflow-hidden bg-white dark:bg-[#0a0a0a] transition-colors duration-300">
+    <div className="overflow-x-hidden bg-white dark:bg-[#0a0a0a] transition-colors duration-300">
       {/* Hero Section */}
       <section className="relative pt-20 pb-32 bg-gradient-to-b from-primary-50 to-white dark:from-gray-900 dark:to-[#0a0a0a] transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
