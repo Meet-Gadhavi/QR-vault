@@ -33,7 +33,7 @@ export const Payment: React.FC = () => {
     }, [plan, navigate, isAuthenticated]);
 
 
-    const planName = plan === PlanType.STARTER ? 'Plus' : 'Pro';
+    const planName = plan === PlanType.STARTER ? 'Starter' : 'Pro';
 
     const loadRazorpayScript = () => {
         return new Promise((resolve) => {
@@ -90,39 +90,24 @@ export const Payment: React.FC = () => {
                 order_id: order.id,
                 handler: async function (response: any) {
                     try {
-                        // Verify payment with backend
                         const verifyRes = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/razorpay/verify`, {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: { 
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${(await mockService.getAuthHeader()).Authorization?.split(' ')[1]}`
+                            },
                             body: JSON.stringify({
                                 razorpay_order_id: response.razorpay_order_id,
                                 razorpay_payment_id: response.razorpay_payment_id,
                                 razorpay_signature: response.razorpay_signature,
+                                plan: plan,
+                                userId: userId
                             }),
                         });
 
                         const verifyData = await verifyRes.json();
                         if (verifyData.status === 'success') {
-                            const expiryDate = new Date();
-                            expiryDate.setMonth(expiryDate.getMonth() + 1);
-
-                            await mockService.upgradeSubscription(userId, plan, expiryDate.toISOString());
-
-                            const now = new Date();
-                            const invoiceId = `INV-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
-
-                            const invoice = {
-                                id: invoiceId,
-                                date: now.toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }),
-                                plan: planName,
-                                amount: prices[plan],
-                                email: userEmail || 'N/A',
-                                expiry: expiryDate.toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }),
-                                timestamp: now.getTime(),
-                            };
-
-                            setInvoiceData(invoice);
-                            await mockService.saveInvoice({ ...invoice, userId });
+                            setInvoiceData(verifyData.invoice);
                             setPaymentDone(true);
                         } else {
                             alert('Payment verification failed.');

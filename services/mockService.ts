@@ -159,6 +159,32 @@ const supabaseImpl = {
         };
     },
 
+    getAuthHeader: async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        return session ? { 'Authorization': `Bearer ${session.access_token}` } : {};
+    },
+
+    hashPassword: async (password: string): Promise<string> => {
+        try {
+            const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+            const authHeader = await supabaseImpl.getAuthHeader();
+            const response = await fetch(`${apiBase}/api/vault/hash-password`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    ...authHeader
+                },
+                body: JSON.stringify({ password })
+            });
+            if (!response.ok) throw new Error("Hashing failed");
+            const { hash } = await response.json();
+            return hash;
+        } catch (error) {
+            console.error("Password hashing failed:", error);
+            throw error;
+        }
+    },
+
     getVaults: async (userId: string): Promise<Vault[]> => {
         const { data, error } = await supabase.from('vaults').select(`*, files (*), requests:access_requests (*)`).eq('user_id', userId).order('created_at', { ascending: false });
         if (error) {
@@ -169,38 +195,54 @@ const supabaseImpl = {
     },
 
     getVaultById: async (id: string): Promise<Vault | null> => {
-        const { data, error } = await supabase.from('vaults').select(`*, profiles(plan), files (*), requests:access_requests (*)`).eq('id', id).single();
-        if (error || !data) return null;
+        try {
+            const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+            const response = await fetch(`${apiBase}/api/vault/${id}`);
+            if (!response.ok) return null;
+            const data = await response.json();
 
-        // --- FILTER EXPIRED/SELF-DESTRUCTED FILES ---
-        const now = new Date();
-        const activeFiles = (data.files || []).filter((f: any) => {
-            // 1. Max Downloads
-            if (f.max_downloads && (f.download_count || 0) >= f.max_downloads) return false;
-            
-            // 2. Fixed Expiry
-            if (f.expires_at && new Date(f.expires_at) < now) return false;
-            
-            // 3. Time Limit after First View
-            if (f.delete_after_minutes && f.first_viewed_at) {
-                const viewsAt = new Date(f.first_viewed_at);
-                const expiry = new Date(viewsAt.getTime() + f.delete_after_minutes * 60000);
-                if (expiry < now) return false;
+            // --- FILTER EXPIRED/SELF-DESTRUCTED FILES ---
+            const now = new Date();
+            const activeFiles = (data.files || []).filter((f: any) => {
+                if (f.max_downloads && (f.download_count || 0) >= f.max_downloads) return false;
+                if (f.expires_at && new Date(f.expires_at) < now) return false;
+                if (f.delete_after_minutes && f.first_viewed_at) {
+                    const viewsAt = new Date(f.first_viewed_at);
+                    const expiry = new Date(viewsAt.getTime() + f.delete_after_minutes * 60000);
+                    if (expiry < now) return false;
+                }
+                return true;
+            });
+
+            data.files = activeFiles;
+
+            // Increment vault view count
+            try {
+                await supabase.rpc('increment_vault_view', { vault_id: id });
+            } catch (e) {
+                console.warn("View increment failed:", e);
             }
-            
-            return true;
-        });
 
-        // Trigger cleanup for those files in background (optional, but good for storage)
-        // In a real backend, we'd have a cron job. Here we just filter them out.
-        data.files = activeFiles;
+            return mapDbVault(data);
+        } catch (error) {
+            console.error("Error fetching vault:", error);
+            return null;
+        }
+    },
 
-        // Increment vault view count via RPC if available
-        supabase.rpc('increment_vault_view', { vault_id: id }).then(({ error }: { error: any }) => {
-            if (error) console.warn("View increment failed:", error.message);
-        });
-
-        return mapDbVault(data);
+    verifyVaultPassword: async (vaultId: string, password: string): Promise<boolean> => {
+        try {
+            const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+            const response = await fetch(`${apiBase}/api/vault/verify-password`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ vaultId, password })
+            });
+            return response.ok;
+        } catch (error) {
+            console.error("Password verification failed:", error);
+            return false;
+        }
     },
 
     incrementFileDownload: async (fileId: string) => {
@@ -256,6 +298,11 @@ const supabaseImpl = {
         await supabaseImpl.ensureProfile(userId, email);
 
         // 1. Create Vault Record
+        let hashedPassword = password;
+        if (password) {
+            hashedPassword = await supabaseImpl.hashPassword(password);
+        }
+
         const { data: vault, error } = await supabase.from('vaults').insert({
             user_id: userId,
             name,
@@ -265,7 +312,7 @@ const supabaseImpl = {
             active: true,
             expires_at: expiresAt,
             max_views: maxViews,
-            password: password,
+            password: hashedPassword,
             custom_domain: customDomain,
             vault_type: vaultType,
             receiving_config: receivingConfig
@@ -318,7 +365,9 @@ const supabaseImpl = {
         if (accessLevel) updatePayload.access_level = accessLevel;
         if (expiresAt !== undefined) updatePayload.expires_at = expiresAt;
         if (maxViews !== undefined) updatePayload.max_views = maxViews;
-        if (password !== undefined) updatePayload.password = password;
+        if (password !== undefined) {
+            updatePayload.password = password ? await supabaseImpl.hashPassword(password) : null;
+        }
         if (customDomain !== undefined) updatePayload.custom_domain = customDomain;
         if (vaultType !== undefined) updatePayload.vault_type = vaultType;
         if (receivingConfig !== undefined) updatePayload.receiving_config = receivingConfig;
@@ -554,20 +603,36 @@ const supabaseImpl = {
     },
 
     sendCancellationCode: async (userId: string, email: string) => {
-        // In a real app, this would send an email with a 6-digit code
-        const code = Math.floor(100000 + Math.random() * 900000).toString();
-        console.log(`[MOCK] Cancellation code for ${email}: ${code}`);
-        // Store code in local storage or a mock map for verification
-        sessionStorage.setItem(`cancel_code_${userId}`, code);
-        return new Promise((resolve) => setTimeout(resolve, 1500));
+        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        const authHeader = await supabaseImpl.getAuthHeader();
+        
+        const response = await fetch(`${apiBase}/api/auth/send-cancellation-code`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                ...authHeader
+            },
+            body: JSON.stringify({ email })
+        });
+
+        if (!response.ok) throw new Error("Failed to send cancellation code");
+        return new Promise((resolve) => setTimeout(resolve, 1000));
     },
 
     verifyCancellationCode: async (userId: string, code: string) => {
-        const storedCode = sessionStorage.getItem(`cancel_code_${userId}`);
-        if (code === storedCode) {
-            sessionStorage.removeItem(`cancel_code_${userId}`);
-            return true;
-        }
+        const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        const authHeader = await supabaseImpl.getAuthHeader();
+
+        const response = await fetch(`${apiBase}/api/auth/verify-cancellation-code`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                ...authHeader
+            },
+            body: JSON.stringify({ code })
+        });
+
+        if (response.ok) return true;
         throw new Error("Invalid verification code. Please try again.");
     },
 

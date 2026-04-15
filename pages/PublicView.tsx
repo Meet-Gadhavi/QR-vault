@@ -59,11 +59,16 @@ export const PublicView: React.FC = () => {
   const [warningFile, setWarningFile] = useState<VaultFile | null>(null);
   const [acknowledgedFiles, setAcknowledgedFiles] = useState<Set<string>>(new Set());
 
-  const checkAccess = (v: Vault) => {
-    const storedPassword = localStorage.getItem(`qrvault_pass_${v.id}`);
-    if (v.password && storedPassword === v.password) {
-      setIsPasswordVerified(true);
-    } else if (!v.password) {
+  const checkAccess = async (v: Vault) => {
+    if (v.hasPassword) {
+      const storedPassword = localStorage.getItem(`qrvault_pass_${v.id}`);
+      if (storedPassword) {
+        const isValid = await mockService.verifyVaultPassword(v.id, storedPassword);
+        if (isValid) {
+          setIsPasswordVerified(true);
+        }
+      }
+    } else {
       setIsPasswordVerified(true);
     }
 
@@ -96,7 +101,7 @@ export const PublicView: React.FC = () => {
       const v = await mockService.getVaultById(id);
       if (v) {
         setVault(v);
-        checkAccess(v);
+        await checkAccess(v);
       } else {
         // Check if it was recently deleted
         const { data: log } = await supabase
@@ -122,9 +127,12 @@ export const PublicView: React.FC = () => {
     fetchVault();
   }, [id]);
 
-  const handleVerifyPassword = (e: React.FormEvent) => {
+  const handleVerifyPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (vault && passwordInput === vault.password) {
+    if (!vault) return;
+    
+    const isValid = await mockService.verifyVaultPassword(vault.id, passwordInput);
+    if (isValid) {
       setIsPasswordVerified(true);
       setPasswordError(false);
       localStorage.setItem(`qrvault_pass_${vault.id}`, passwordInput);
@@ -327,6 +335,15 @@ export const PublicView: React.FC = () => {
     e.preventDefault();
     if (!vault || isReporting) return;
 
+    // Rate limiting: check cooldown in localStorage
+    const lastReportTime = localStorage.getItem(`qrvault_report_cooldown_${vault.id}`);
+    const COOLDOWN_MS = 60 * 1000; // 1 minute cooldown per vault
+    if (lastReportTime && Date.now() - parseInt(lastReportTime) < COOLDOWN_MS) {
+      const remaining = Math.ceil((COOLDOWN_MS - (Date.now() - parseInt(lastReportTime))) / 1000);
+      alert(`Please wait ${remaining} seconds before reporting again.`);
+      return;
+    }
+
     if (!reportReasonVirus && !reportReasonContent && !reportMessage.trim()) {
       alert("Please provide a reason or a message.");
       return;
@@ -349,13 +366,17 @@ export const PublicView: React.FC = () => {
 
       if (logError) throw logError;
 
-      const { error: updateError } = await supabase.from('vaults')
-        .update({ report_count: (vault.reportCount || 0) + 1 })
-        .eq('id', vault.id);
-
-      if (updateError) throw updateError;
+      // Atomic increment via RPC (Issue 4)
+      const { error: rpcError } = await (supabase as any).rpc('increment_report_count', { v_id: vault.id });
+      if (rpcError) {
+        // Fallback if RPC fails/not setup yet
+        await supabase.from('vaults')
+          .update({ report_count: (vault.reportCount || 0) + 1 })
+          .eq('id', vault.id);
+      }
 
       alert("Thank you for your report. Our system will review this vault.");
+      localStorage.setItem(`qrvault_report_cooldown_${vault.id}`, Date.now().toString());
       setIsReportModalOpen(false);
       setReportReasonVirus(false);
       setReportReasonContent(false);

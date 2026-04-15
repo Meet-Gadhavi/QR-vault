@@ -9,10 +9,21 @@ interface AdminAuthProps {
 export const AdminAuth: React.FC<AdminAuthProps> = ({ onAuthenticated }) => {
   const [error, setError] = useState(false);
 
-  const handleComplete = (value: string) => {
-    if (value === '2008') {
-      onAuthenticated(value);
-    } else {
+  const handleComplete = async (value: string) => {
+    try {
+      const apiBase = import.meta.env.VITE_API_URL || '';
+      const response = await fetch(`${apiBase}/api/admin/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: value })
+      });
+
+      if (response.ok) {
+        onAuthenticated(value);
+      } else {
+        throw new Error('Invalid PIN');
+      }
+    } catch (err) {
       setError(true);
       // Reset after a delay
       setTimeout(() => {

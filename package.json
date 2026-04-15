@@ -13,8 +13,10 @@
   "dependencies": {
     "@babel/parser": "^7.29.2",
     "@supabase/supabase-js": "^2.39.0",
+    "@types/bcryptjs": "^2.4.6",
     "@types/multer": "^2.1.0",
     "acorn-jsx": "^5.3.2",
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",

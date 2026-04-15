@@ -82,6 +82,7 @@ export interface Vault {
   expiresAt?: string;
   maxViews?: number;
   password?: string;                               // NEW: Shared password for access
+  hasPassword?: boolean;                           // NEW: Flag to indicate if vault is password-protected
   reportCount?: number;                            // TOTAL flags received
   lockedUntil?: string;                            // NEW: ISO Date for temporary block
   analytics?: EngagementData;                      // NEW: Engagement analytics

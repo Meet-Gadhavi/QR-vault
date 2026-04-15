@@ -3,40 +3,24 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 
-if (typeof window !== 'undefined') {
-  const originalMatchMedia = window.matchMedia;
-  window.matchMedia = (query) => {
-    let mql: any = null;
-    if (originalMatchMedia) {
-      try {
-        mql = originalMatchMedia.call(window, query);
-      } catch (e) { }
-    }
-
-    return {
-      matches: mql ? !!mql.matches : false,
-      media: mql ? mql.media : query,
-      onchange: mql ? mql.onchange : null,
-      addListener: (listener: any) => {
-        if (mql && typeof mql.addListener === 'function') mql.addListener(listener);
-        else if (mql && typeof mql.addEventListener === 'function') mql.addEventListener('change', listener);
-      },
-      removeListener: (listener: any) => {
-        if (mql && typeof mql.removeListener === 'function') mql.removeListener(listener);
-        else if (mql && typeof mql.removeEventListener === 'function') mql.removeEventListener('change', listener);
-      },
-      addEventListener: (type: string, listener: any) => {
-        if (mql && typeof mql.addEventListener === 'function') mql.addEventListener(type, listener);
-      },
-      removeEventListener: (type: string, listener: any) => {
-        if (mql && typeof mql.removeEventListener === 'function') mql.removeEventListener(type, listener);
-      },
-      dispatchEvent: (event: Event) => {
-        if (mql && typeof mql.dispatchEvent === 'function') return mql.dispatchEvent(event);
-        return false;
-      },
-    } as any;
-  };
+if (typeof window !== 'undefined' && window.matchMedia) {
+  // Only patch if addEventListener is missing (older browsers)
+  const proto = Object.getPrototypeOf(window.matchMedia('all'));
+  if (proto && !proto.addEventListener) {
+    const originalMatchMedia = window.matchMedia;
+    window.matchMedia = (query) => {
+      const mql = originalMatchMedia.call(window, query);
+      if (!mql.addEventListener) {
+        mql.addEventListener = (type: string, listener: any) => {
+          if (type === 'change') mql.addListener(listener);
+        };
+        mql.removeEventListener = (type: string, listener: any) => {
+          if (type === 'change') mql.removeListener(listener);
+        };
+      }
+      return mql;
+    };
+  }
 }
 
 const rootElement = document.getElementById('root');

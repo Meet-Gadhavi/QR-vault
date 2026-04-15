@@ -37,7 +37,7 @@ function App() {
               <Route path="/faq" element={<FAQ />} />
               <Route path="/security" element={<Security />} />
               <Route path="/changelog" element={<Changelog />} />
-              <Route path="/Admindashboard" element={<AdminDashboard />} />
+              <Route path="/admin-portal-v2008-safe" element={<AdminDashboard />} />
             </Routes>
           </Layout>
         </NotificationProvider>
