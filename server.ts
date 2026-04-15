@@ -497,49 +497,53 @@ apiRouter.post(['/google-drive/save-vault', '/google-drive/save-vault/'], authen
       } catch (e: any) {
         console.warn('[Google Drive] Folder permission error:', e.message);
       }
-    }
 
-    // Upload vault-info.json
-    const vaultInfo = {
-      id: vault.id,
-      name: vault.name,
-      createdAt: vault.createdAt,
-      accessLevel: vault.accessLevel,
-      files: vault.files.map((f: any) => ({
-        name: f.name,
-        type: f.type,
-        url: f.url,
-        size: f.size,
-      })),
-      savedAt: new Date().toISOString(),
-    };
+      // Upload vault-info.json
+      const vaultInfo = {
+        id: vault.id,
+        name: vault.name,
+        createdAt: vault.createdAt,
+        accessLevel: vault.accessLevel,
+        files: vault.files.map((f: any) => ({
+          name: f.name,
+          type: f.type,
+          url: f.url,
+          size: f.size,
+        })),
+        savedAt: new Date().toISOString(),
+      };
 
-    // Delete existing vault-info.json if exists
-    const existingInfo = await drive.files.list({
-      q: `name = 'vault-info.json' and '${vaultFolderId}' in parents and trashed = false`,
-      fields: 'files(id)',
-    });
-    if (existingInfo.data.files) {
-      for (const f of existingInfo.data.files) {
-        await drive.files.delete({ fileId: f.id! });
+      // Delete existing vault-info.json if exists
+      const existingInfo = await drive.files.list({
+        q: `name = 'vault-info.json' and '${vaultFolderId}' in parents and trashed = false`,
+        fields: 'files(id)',
+      });
+      if (existingInfo.data.files) {
+        for (const f of existingInfo.data.files) {
+          await drive.files.delete({ fileId: f.id! });
+        }
       }
+
+      const { Readable } = await import('stream');
+
+      await drive.files.create({
+        requestBody: {
+          name: 'vault-info.json',
+          mimeType: 'application/json',
+          parents: [vaultFolderId],
+        },
+        media: {
+          mimeType: 'application/json',
+          body: Readable.from([JSON.stringify(vaultInfo, null, 2)]),
+        },
+        fields: 'id',
+      });
+      console.log('[Google Drive] vault-info.json uploaded');
+    } catch (error: any) {
+      console.error('[Google Drive] Error saving vault:', error);
+      res.status(500).json({ error: 'Failed to save vault to Google Drive', details: error.message });
+      return;
     }
-
-    const { Readable } = await import('stream');
-
-    await drive.files.create({
-      requestBody: {
-        name: 'vault-info.json',
-        mimeType: 'application/json',
-        parents: [vaultFolderId],
-      },
-      media: {
-        mimeType: 'application/json',
-        body: Readable.from([JSON.stringify(vaultInfo, null, 2)]),
-      },
-      fields: 'id',
-    });
-    console.log('[Google Drive] vault-info.json uploaded');
 
     // Upload QR code SVG if provided
     if (qrSvg) {
