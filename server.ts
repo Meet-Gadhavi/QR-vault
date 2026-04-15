@@ -485,64 +485,62 @@ apiRouter.post(['/google-drive/save-vault', '/google-drive/save-vault/'], authen
       });
       vaultFolderId = vaultFolder.data.id!;
     }
-      // Make the vault folder public (optional but helps ensure children are accessible)
-      try {
-        await drive.permissions.create({
-          fileId: vaultFolderId,
-          requestBody: {
-            role: 'reader',
-            type: 'anyone',
-          },
-        });
-      } catch (e: any) {
-        console.warn('[Google Drive] Folder permission error:', e.message);
-      }
-
-      // Upload vault-info.json
-      const vaultInfo = {
-        id: vault.id,
-        name: vault.name,
-        createdAt: vault.createdAt,
-        accessLevel: vault.accessLevel,
-        files: vault.files.map((f: any) => ({
-          name: f.name,
-          type: f.type,
-          url: f.url,
-          size: f.size,
-        })),
-        savedAt: new Date().toISOString(),
-      };
-
-      // Delete existing vault-info.json if exists
-      const existingInfo = await drive.files.list({
-        q: `name = 'vault-info.json' and '${vaultFolderId}' in parents and trashed = false`,
-        fields: 'files(id)',
-      });
-      if (existingInfo.data.files) {
-        for (const f of existingInfo.data.files) {
-          await drive.files.delete({ fileId: f.id! });
-        }
-      }
-
-      const { Readable } = await import('stream');
-
-      await drive.files.create({
+    
+    // Make the vault folder public
+    try {
+      await drive.permissions.create({
+        fileId: vaultFolderId,
         requestBody: {
-          name: 'vault-info.json',
-          mimeType: 'application/json',
-          parents: [vaultFolderId],
+          role: 'reader',
+          type: 'anyone',
         },
-        media: {
-          mimeType: 'application/json',
-          body: Readable.from([JSON.stringify(vaultInfo, null, 2)]),
-        },
-        fields: 'id',
       });
-      console.log('[Google Drive] vault-info.json uploaded');
+    } catch (e: any) {
+      console.warn('[Google Drive] Folder permission error:', e.message);
+    }
+
+    // Upload vault-info.json
+    const vaultInfo = {
+      id: vault.id,
+      name: vault.name,
+      createdAt: vault.createdAt,
+      accessLevel: vault.accessLevel,
+      files: vault.files.map((f: any) => ({
+        name: f.name,
+        type: f.type,
+        url: f.url,
+        size: f.size,
+      })),
+      savedAt: new Date().toISOString(),
+    };
+
+    // Delete existing vault-info.json if exists
+    const existingInfo = await drive.files.list({
+      q: `name = 'vault-info.json' and '${vaultFolderId}' in parents and trashed = false`,
+      fields: 'files(id)',
+    });
+    if (existingInfo.data.files) {
+      for (const f of existingInfo.data.files) {
+        await drive.files.delete({ fileId: f.id! });
+      }
+    }
+
+    await drive.files.create({
+      requestBody: {
+        name: 'vault-info.json',
+        mimeType: 'application/json',
+        parents: [vaultFolderId],
+      },
+      media: {
+        mimeType: 'application/json',
+        body: Readable.from([JSON.stringify(vaultInfo, null, 2)]),
+      },
+      fields: 'id',
+    });
+    console.log('[Google Drive] vault-info.json uploaded');
 
     // Upload QR code SVG if provided
     if (qrSvg) {
-      // Delete existing QR SVG if exists
       const existingQr = await drive.files.list({
         q: `name = 'qr-code.svg' and '${vaultFolderId}' in parents and trashed = false`,
         fields: 'files(id)',
@@ -568,41 +566,27 @@ apiRouter.post(['/google-drive/save-vault', '/google-drive/save-vault/'], authen
       console.log('[Google Drive] qr-code.svg uploaded');
     }
 
-    // Upload actual vault files from their URLs
+    // Upload actual vault files
     if (vault.files && vault.files.length > 0) {
-      console.log(`[Google Drive] Uploading ${vault.files.length} vault files...`);
-
       for (const file of vault.files) {
-        // Skip LINK type files or files already on Drive
         if (file.type === 'LINK' || !file.url || file.url.includes('drive.google.com') || file.url.includes('googleapis.com')) continue;
 
         try {
           const fileName = file.name || `file_${file.id}`;
-
-          // Check if this file already exists in the Drive folder
           const existingFile = await drive.files.list({
             q: `name = '${fileName.replace(/'/g, "\\'")}' and '${vaultFolderId}' in parents and trashed = false`,
             fields: 'files(id)',
           });
 
-          // If file exists, we still want to ensure it's public
           let fileId: string;
           if (existingFile.data.files && existingFile.data.files.length > 0) {
-            console.log(`[Google Drive] File '${fileName}' already exists, ensuring public permissions...`);
             fileId = existingFile.data.files[0].id!;
           } else {
-            // Download file from Supabase URL and upload to Drive
-            console.log(`[Google Drive] Downloading: ${fileName}`);
             const fileResponse = await fetch(file.url);
-            if (!fileResponse.ok) {
-              console.error(`[Google Drive] Failed to download ${fileName}: ${fileResponse.status}`);
-              continue;
-            }
+            if (!fileResponse.ok) continue;
 
             const fileBuffer = Buffer.from(await fileResponse.arrayBuffer());
             const mimeType = file.mimeType || fileResponse.headers.get('content-type') || 'application/octet-stream';
-
-            const { Readable: ReadableStream } = await import('stream');
 
             const uploadedFile = await drive.files.create({
               requestBody: {
@@ -612,29 +596,23 @@ apiRouter.post(['/google-drive/save-vault', '/google-drive/save-vault/'], authen
               },
               media: {
                 mimeType: mimeType,
-                body: ReadableStream.from([fileBuffer]),
+                body: Readable.from([fileBuffer]),
               },
               fields: 'id',
             });
-            console.log(`[Google Drive] Uploaded: ${fileName}`);
             fileId = uploadedFile.data.id!;
           }
 
-          // Ensure the file is public (reader/anyone)
           try {
             await drive.permissions.create({
               fileId: fileId,
-              requestBody: {
-                role: 'reader',
-                type: 'anyone',
-              },
+              requestBody: { role: 'reader', type: 'anyone' },
             });
-          } catch (e: any) {
-            console.warn(`[Google Drive] File permission error for ${fileName}:`, e.message);
+          } catch (e) {
+            // Permission error ignored for individual files
           }
-        } catch (fileErr: any) {
-          console.error(`[Google Drive] Error uploading file ${file.name}:`, fileErr.message);
-          // Continue with other files even if one fails
+        } catch (fileErr) {
+          console.error('[Google Drive] File upload error:', fileErr);
         }
       }
     }
