@@ -539,11 +539,6 @@ apiRouter.post(['/google-drive/save-vault', '/google-drive/save-vault/'], authen
         fields: 'id',
       });
       console.log('[Google Drive] vault-info.json uploaded');
-    } catch (error: any) {
-      console.error('[Google Drive] Error saving vault:', error);
-      res.status(500).json({ error: 'Failed to save vault to Google Drive', details: error.message });
-      return;
-    }
 
     // Upload QR code SVG if provided
     if (qrSvg) {
