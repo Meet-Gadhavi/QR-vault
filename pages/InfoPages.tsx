@@ -496,7 +496,7 @@ export const Changelog: React.FC = () => (
 );
 
 export const Blogs: React.FC = () => (
-  <div className="min-h-[80vh] flex items-center justify-center px-4 pb-32">
+  <div className="min-h-[80vh] flex items-center justify-center px-4 pt-20 pb-32">
     <div className="text-center space-y-8 animate-fade-in-up">
       <div className="relative inline-block">
         <div className="absolute inset-0 bg-primary-500/20 blur-3xl rounded-full animate-pulse" />
@@ -528,7 +528,7 @@ export const Blogs: React.FC = () => (
 );
 
 export const API: React.FC = () => (
-  <div className="min-h-[80vh] flex items-center justify-center px-4 pb-32">
+  <div className="min-h-[80vh] flex items-center justify-center px-4 pt-20 pb-32">
     <div className="text-center space-y-8 animate-fade-in-up">
       <div className="relative inline-block">
         <div className="absolute inset-0 bg-indigo-500/20 blur-3xl rounded-full animate-pulse" />
