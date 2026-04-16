@@ -4,6 +4,7 @@ import { Check, Clock, XCircle, X, AlertTriangle, Mail } from 'lucide-react';
 import { PlanType } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { mockService } from '../services/mockService';
+import { toast } from 'sonner';
 
 const planData = [
   {
@@ -115,7 +116,7 @@ export const Pricing: React.FC = () => {
       setCancelStep('verify');
     } catch (e) {
       console.error('Failed to send code', e);
-      alert('Failed to send verification code.');
+      toast.error('Failed to send verification code.');
     } finally {
       setSendingCode(false);
     }
@@ -203,7 +204,7 @@ export const Pricing: React.FC = () => {
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-medium">{plan.highlight}</p>
                       </div>
                       {isFree && (
-                        <div className="p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg" title="Temporary Storage">
+                        <div className="p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg" aria-label="Temporary Storage Info">
                           <XCircle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                         </div>
                       )}
@@ -297,8 +298,8 @@ export const Pricing: React.FC = () => {
       {/* Cancel Subscription Modal */}
       {showCancelModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50 dark:bg-black/80 backdrop-blur-sm" onClick={() => setShowCancelModal(false)} />
-          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-in fade-in zoom-in-95 duration-200 border border-transparent dark:border-white/10">
+          <div className="absolute inset-0 bg-black/50 dark:bg-black/80 backdrop-blur-sm" onClick={() => setShowCancelModal(false)} aria-hidden="true" />
+          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-in fade-in zoom-in-95 duration-200 border border-transparent dark:border-white/10" role="dialog" aria-modal="true">
             {cancelStep === 'confirm' ? (
               <>
                 <div className="bg-red-50 dark:bg-red-900/20 p-6 text-center">

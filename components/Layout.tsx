@@ -26,8 +26,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
       onClick={toggleTheme}
       className="p-2 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all active:scale-90"
       title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+      aria-label={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
     >
-      {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+      {theme === 'dark' ? <Sun className="w-5 h-5" aria-hidden="true" /> : <Moon className="w-5 h-5" aria-hidden="true" />}
     </button>
   );
 
@@ -71,9 +72,10 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
                     <button 
                       onClick={handleLogout}
                       className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-red-400 transition-colors"
+                      aria-label="Sign Out"
                       title="Sign Out"
                     >
-                      <LogOut className="w-5 h-5" />
+                      <LogOut className="w-5 h-5" aria-hidden="true" />
                     </button>
                   </div>
                 </>
@@ -92,8 +94,9 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               <button 
                 className="p-2 text-gray-600 dark:text-gray-400"
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
+                aria-label={isMenuOpen ? "Close menu" : "Open menu"}
               >
-                {isMenuOpen ? <X /> : <Menu />}
+                {isMenuOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
               </button>
             </div>
           </div>
@@ -151,6 +154,8 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             <ul className="space-y-4 text-sm text-gray-500 dark:text-gray-400">
               <li><Link to="/" className="hover:text-primary-600 transition-colors">Features</Link></li>
               <li><Link to="/pricing" className="hover:text-primary-600 transition-colors">Pricing</Link></li>
+              <li><Link to="/api" className="hover:text-primary-600 transition-colors">Developer API</Link></li>
+              <li><Link to="/blogs" className="hover:text-primary-600 transition-colors">Our Blog</Link></li>
               {isAuthenticated && <li><Link to="/dashboard" className="hover:text-primary-600 transition-colors">Dashboard</Link></li>}
             </ul>
           </div>

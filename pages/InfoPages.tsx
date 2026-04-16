@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mail, Clock, Shield, Lock, Globe, Zap, Users, HelpCircle, Send, User, MessageSquare, AlertCircle, ShieldCheck } from 'lucide-react';
+import { Mail, Clock, Shield, Lock, Globe, Zap, Users, HelpCircle, Send, User, MessageSquare, AlertCircle, ShieldCheck, Rocket, Construction } from 'lucide-react';
 import { mockService } from '../services/mockService';
 import { useNotification } from '../contexts/NotificationContext';
 
@@ -493,4 +493,79 @@ export const Changelog: React.FC = () => (
       </div>
     </div>
   </InfoLayout>
+);
+
+export const Blogs: React.FC = () => (
+  <div className="min-h-[80vh] flex items-center justify-center px-4">
+    <div className="text-center space-y-8 animate-fade-in-up">
+      <div className="relative inline-block">
+        <div className="absolute inset-0 bg-primary-500/20 blur-3xl rounded-full animate-pulse" />
+        <div className="relative bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-white/10 shadow-2xl">
+          <Rocket className="w-16 h-16 text-primary-600 animate-bounce" />
+        </div>
+      </div>
+      
+      <div>
+        <h1 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white mb-4 tracking-tighter">
+          The QR Vault <br/><span className="text-primary-600">Blog</span>
+        </h1>
+        <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-full text-xs font-black uppercase tracking-widest border border-amber-100 dark:border-amber-900/30">
+          <Construction className="w-3.5 h-3.5" /> Coming Very Soon
+        </div>
+      </div>
+
+      <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto leading-relaxed">
+        We're crafting high-quality articles on security, file sharing protocols, and digital workflows. Stay tuned for the first edition!
+      </p>
+
+      <div className="pt-4">
+        <a href="/" className="inline-block bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-gray-200 dark:shadow-none">
+          Back to Home
+        </a>
+      </div>
+    </div>
+  </div>
+);
+
+export const API: React.FC = () => (
+  <div className="min-h-[80vh] flex items-center justify-center px-4">
+    <div className="text-center space-y-8 animate-fade-in-up">
+      <div className="relative inline-block">
+        <div className="absolute inset-0 bg-indigo-500/20 blur-3xl rounded-full animate-pulse" />
+        <div className="relative bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-white/10 shadow-2xl">
+          <Zap className="w-16 h-16 text-indigo-500" />
+        </div>
+      </div>
+      
+      <div>
+        <h1 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white mb-4 tracking-tighter">
+          Developer <br/><span className="text-indigo-600">API Portal</span>
+        </h1>
+        <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 rounded-full text-xs font-black uppercase tracking-widest border border-primary-100 dark:border-primary-900/30">
+          <Terminal className="w-3.5 h-3.5" /> Under Construction
+        </div>
+      </div>
+
+      <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto leading-relaxed">
+        We're building a powerful REST API to help you programmatically create vaults, manage assets, and generate QR codes at scale.
+      </p>
+
+      <div className="pt-10 grid grid-cols-2 gap-4 max-w-sm mx-auto text-left">
+        <div className="bg-gray-100 dark:bg-white/5 p-4 rounded-2xl border border-gray-200 dark:border-white/5">
+           <div className="text-[10px] font-black text-gray-400 uppercase mb-2">Endpoint</div>
+           <div className="text-xs font-mono text-gray-900 dark:text-gray-300">/api/v1/vault</div>
+        </div>
+        <div className="bg-gray-100 dark:bg-white/5 p-4 rounded-2xl border border-gray-200 dark:border-white/5">
+           <div className="text-[10px] font-black text-gray-400 uppercase mb-2">Auth</div>
+           <div className="text-xs font-mono text-gray-900 dark:text-gray-300">Bearer Token</div>
+        </div>
+      </div>
+
+      <div className="pt-8">
+        <a href="/" className="inline-block bg-primary-600 text-white px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-primary-200">
+          Get Early Access
+        </a>
+      </div>
+    </div>
+  </div>
 );

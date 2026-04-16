@@ -8,6 +8,10 @@ import { useTheme } from '../contexts/ThemeContext';
 import JSZip from 'jszip';
 import { SubmissionPublicForm } from '../components/Submissions/SubmissionPublicForm';
 import { VaultType } from '../types';
+import { toast } from 'sonner';
+import { PublicViewSkeleton } from '../components/SkeletonLoaders';
+
+
 
 type Tab = 'ALL' | 'PHOTOS' | 'DOCS' | 'LINKS';
 
@@ -216,7 +220,7 @@ export const PublicView: React.FC = () => {
       document.body.removeChild(a);
     } catch (err) {
       console.error("Download error", err);
-      alert("Could not download file. Please try again.");
+      toast.error("Could not download file. Please try again.");
     } finally {
       setDownloadingFileId(null);
     }
@@ -230,7 +234,7 @@ export const PublicView: React.FC = () => {
 
     const downloadableFiles = vault.files.filter(f => f.type !== FileType.LINK);
     if (downloadableFiles.length === 0) {
-      alert('No files to download.');
+      toast.error('No files to download.');
       setIsDownloadingAll(false);
       return;
     }
@@ -290,7 +294,7 @@ export const PublicView: React.FC = () => {
     }
 
     if (successCount === 0) {
-      alert('Could not download any files. They may be private or require authentication.');
+      toast.error('Could not download any files. They may be private or require authentication.');
       setIsDownloadingAll(false);
       setDownloadProgress(null);
       setCurrentFileName(null);
@@ -316,7 +320,9 @@ export const PublicView: React.FC = () => {
       document.body.removeChild(a);
 
       if (skippedFiles.length > 0) {
-        setTimeout(() => alert(`${skippedFiles.length} file(s) could not be included:\n• ${skippedFiles.join('\n• ')}`), 500);
+        setTimeout(() => toast.warning(`${skippedFiles.length} file(s) could not be included`, {
+          description: skippedFiles.join(', ')
+        }), 500);
       }
 
       setTimeout(() => {
@@ -325,7 +331,7 @@ export const PublicView: React.FC = () => {
       }, 1500);
     } catch (zipErr: any) {
       console.error('[Bulk] ZIP generation failed:', zipErr);
-      alert('Failed to create ZIP. ' + zipErr.message);
+      toast.error('Failed to create ZIP. ' + zipErr.message);
       setIsDownloadingAll(false);
       setDownloadProgress(null);
     }
@@ -340,12 +346,14 @@ export const PublicView: React.FC = () => {
     const COOLDOWN_MS = 60 * 1000; // 1 minute cooldown per vault
     if (lastReportTime && Date.now() - parseInt(lastReportTime) < COOLDOWN_MS) {
       const remaining = Math.ceil((COOLDOWN_MS - (Date.now() - parseInt(lastReportTime))) / 1000);
-      alert(`Please wait ${remaining} seconds before reporting again.`);
+      toast.warning(`Rate Limited`, {
+        description: `Please wait ${remaining} seconds before reporting again.`
+      });
       return;
     }
 
     if (!reportReasonVirus && !reportReasonContent && !reportMessage.trim()) {
-      alert("Please provide a reason or a message.");
+      toast.error("Please provide a reason or a message.");
       return;
     }
 
@@ -375,7 +383,9 @@ export const PublicView: React.FC = () => {
           .eq('id', vault.id);
       }
 
-      alert("Thank you for your report. Our system will review this vault.");
+      toast.success("Thank you for your report", {
+        description: "Our system will review this vault."
+      });
       localStorage.setItem(`qrvault_report_cooldown_${vault.id}`, Date.now().toString());
       setIsReportModalOpen(false);
       setReportReasonVirus(false);
@@ -384,13 +394,13 @@ export const PublicView: React.FC = () => {
       setReportFileIds([]);
     } catch (err: any) {
       console.error("Report error:", err.message);
-      alert("Failed to send report.");
+      toast.error("Failed to send report");
     } finally {
       setIsReporting(false);
     }
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary-600 w-8 h-8" /></div>;
+  if (loading) return <PublicViewSkeleton />;
 
   const isLocked = vault && vault.lockedUntil && new Date(vault.lockedUntil) > new Date();
 
@@ -666,10 +676,11 @@ export const PublicView: React.FC = () => {
               <button
                 onClick={toggleTheme}
                 className="group/theme flex items-center bg-gray-100/50 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 px-4 py-2.5 rounded-xl transition-all active:scale-95 border border-white/20 dark:border-white/5 shadow-sm overflow-hidden"
+                aria-label={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
                 title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
               >
-                {theme === 'dark' ? <Sun className="w-5 h-5 flex-shrink-0" /> : <Moon className="w-5 h-5 flex-shrink-0" />}
-                <span className="max-w-0 opacity-0 group-hover/theme:max-w-[4rem] group-hover/theme:opacity-100 group-hover/theme:ml-2 transition-all duration-300 pointer-events-none text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
+                {theme === 'dark' ? <Sun className="w-5 h-5 flex-shrink-0" aria-hidden="true" /> : <Moon className="w-5 h-5 flex-shrink-0" aria-hidden="true" />}
+                <span className="max-w-0 opacity-0 group-hover/theme:max-w-[4rem] group-hover/theme:opacity-100 group-hover/theme:ml-2 transition-all duration-300 pointer-events-none text-xs font-black uppercase tracking-widest whitespace-nowrap">
                   {theme === 'dark' ? 'Light' : 'Dark'}
                 </span>
               </button>
@@ -679,10 +690,11 @@ export const PublicView: React.FC = () => {
                 onClick={fetchVault}
                 disabled={isRefreshing}
                 className="group/refresh flex items-center bg-gray-100/50 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 px-4 py-2.5 rounded-xl transition-all active:scale-95 border border-white/20 dark:border-white/5 shadow-sm disabled:opacity-50 overflow-hidden"
+                aria-label="Refresh vault content"
                 title="Refresh Vault Content"
               >
-                <RefreshCw className={`w-5 h-5 flex-shrink-0 ${isRefreshing ? 'animate-spin' : ''}`} />
-                <span className="max-w-0 opacity-0 group-hover/refresh:max-w-[4rem] group-hover/refresh:opacity-100 group-hover/refresh:ml-2 transition-all duration-300 pointer-events-none text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
+                <RefreshCw className={`w-5 h-5 flex-shrink-0 ${isRefreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
+                <span className="max-w-0 opacity-0 group-hover/refresh:max-w-[4rem] group-hover/refresh:opacity-100 group-hover/refresh:ml-2 transition-all duration-300 pointer-events-none text-xs font-black uppercase tracking-widest whitespace-nowrap">
                   Refresh
                 </span>
               </button>
@@ -690,21 +702,23 @@ export const PublicView: React.FC = () => {
               <button
                 onClick={() => setIsReportModalOpen(true)}
                 className="group/report flex items-center bg-red-50 dark:bg-red-500/10 text-red-400 dark:text-red-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 px-4 py-2.5 rounded-xl transition-all active:scale-95 shadow-sm border border-red-100 dark:border-red-500/20 overflow-hidden"
+                aria-label="Report this vault"
                 title="Report Vault"
               >
-                <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                <span className="max-w-0 opacity-0 group-hover/report:max-w-[4rem] group-hover/report:opacity-100 group-hover/report:ml-2 transition-all duration-300 pointer-events-none text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
+                <AlertCircle className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
+                <span className="max-w-0 opacity-0 group-hover/report:max-w-[4rem] group-hover/report:opacity-100 group-hover/report:ml-2 transition-all duration-300 pointer-events-none text-xs font-black uppercase tracking-widest whitespace-nowrap">
                   Report
                 </span>
               </button>
 
               {vault.files.some(f => f.type !== FileType.LINK) && (
                 <button
-                  className="bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-4 sm:px-5 py-2.5 rounded-xl text-[10px] sm:text-xs font-black shadow-xl hover:bg-gray-800 dark:hover:bg-gray-100 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-70 border border-transparent"
+                  className="bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-4 sm:px-5 py-2.5 rounded-xl text-xs font-black shadow-xl hover:bg-gray-800 dark:hover:bg-gray-100 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-70 border border-transparent"
                   onClick={handleBulkDownload}
                   disabled={isDownloadingAll}
+                  aria-label="Download all files as ZIP"
                 >
-                  {isDownloadingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  {isDownloadingAll ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" /> : <Download className="w-4 h-4" aria-hidden="true" />}
                   <span className="hidden sm:inline">
                     {isDownloadingAll 
                       ? (downloadProgress 
@@ -745,6 +759,7 @@ export const PublicView: React.FC = () => {
               <input
                 type="text"
                 placeholder="Search files..."
+                aria-label="Search files"
                 className="w-full pl-9 pr-4 py-2.5 bg-gray-100/50 dark:bg-white/5 border border-transparent hover:bg-white dark:hover:bg-white/10 hover:border-gray-200 dark:hover:border-white/10 focus:bg-white dark:focus:bg-white/10 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 rounded-xl text-xs font-medium dark:text-white outline-none transition-all duration-200"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -821,16 +836,18 @@ export const PublicView: React.FC = () => {
                     <div className="flex gap-3">
                       <button
                         onClick={() => handleOpenPreview(file)}
-                        className="flex-1 flex items-center justify-center gap-2 py-4 bg-gray-900 dark:bg-white text-white dark:text-black rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-800 dark:hover:bg-gray-100 transition-all active:scale-95 disabled:opacity-50"
+                        className="flex-1 flex items-center justify-center gap-2 py-4 bg-gray-900 dark:bg-white text-white dark:text-black rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-gray-800 dark:hover:bg-gray-100 transition-all active:scale-95 disabled:opacity-50"
+                        aria-label={file.type === FileType.IMAGE || file.type === FileType.VIDEO || file.type === FileType.PDF ? `Preview ${file.name}` : `Download ${file.name}`}
                       >
                         {file.type === FileType.IMAGE || file.type === FileType.VIDEO || file.type === FileType.PDF ? 'PREVIEW' : 'DOWNLOAD'}
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); setInfoFile(file); }}
                         className="px-5 py-4 bg-gray-50 dark:bg-white/5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/10 rounded-2xl transition-all active:scale-95 flex items-center justify-center border border-gray-100 dark:border-white/5"
+                        aria-label={`View details for ${file.name}`}
                         title="File Details"
                       >
-                        <Info className="w-4 h-4" />
+                        <Info className="w-4 h-4" aria-hidden="true" />
                       </button>
                     </div>
                   )}
@@ -864,7 +881,7 @@ export const PublicView: React.FC = () => {
                   <p className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">Community Moderation System</p>
                 </div>
               </div>
-              <button onClick={() => setIsReportModalOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all text-gray-400"><X className="w-6 h-6" /></button>
+              <button onClick={() => setIsReportModalOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all text-gray-400" aria-label="Close report modal"><X className="w-6 h-6" aria-hidden="true" /></button>
             </div>
 
             <form onSubmit={handleReportSubmit} className="flex-1 flex flex-col md:flex-row gap-10 overflow-hidden">
@@ -941,8 +958,8 @@ export const PublicView: React.FC = () => {
       )}
 
       {previewFile && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/90 backdrop-blur-3xl p-6 animate-in fade-in" onClick={() => setPreviewFile(null)}>
-          <button className="absolute top-8 right-8 text-white/50 hover:text-white transition-colors p-2" onClick={() => setPreviewFile(null)}><X className="w-10 h-10" /></button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 dark:bg-black/90 backdrop-blur-3xl p-6 animate-in fade-in" onClick={() => setPreviewFile(null)} role="dialog" aria-modal="true">
+          <button className="absolute top-8 right-8 text-white/50 hover:text-white transition-colors p-2" onClick={() => setPreviewFile(null)} aria-label="Close preview"><X className="w-10 h-10" aria-hidden="true" /></button>
           <img src={previewFile.url} alt={previewFile.name} className="max-w-full max-h-full object-contain rounded-3xl shadow-2xl border border-white/10 animate-in zoom-in-95" onClick={(e) => e.stopPropagation()} />
         </div>
       )}

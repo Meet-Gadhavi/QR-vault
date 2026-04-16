@@ -4,6 +4,7 @@ import { PlanType } from '../types';
 import { mockService } from '../services/mockService';
 import { useAuth } from '../contexts/AuthContext';
 import { CheckCircle2, Loader2, ShieldCheck, CreditCard, Download, ArrowLeft } from 'lucide-react';
+import { toast } from 'sonner';
 
 export const Payment: React.FC = () => {
     const { search } = useLocation();
@@ -60,7 +61,7 @@ export const Payment: React.FC = () => {
         try {
             const isLoaded = await loadRazorpayScript();
             if (!isLoaded) {
-                alert('Razorpay SDK failed to load. Please check your internet connection.');
+                toast.error('Razorpay SDK failed to load. Please check your internet connection.');
                 setLoading(false);
                 return;
             }
@@ -109,12 +110,13 @@ export const Payment: React.FC = () => {
                         if (verifyData.status === 'success') {
                             setInvoiceData(verifyData.invoice);
                             setPaymentDone(true);
+                            toast.success('Payment verified successfully!');
                         } else {
-                            alert('Payment verification failed.');
+                            toast.error('Payment verification failed.');
                         }
                     } catch (verifyError: any) {
                         console.error('Verify error:', verifyError);
-                        alert('Payment verification error.');
+                        toast.error('Payment verification error.');
                     }
                 },
                 prefill: {
@@ -128,12 +130,12 @@ export const Payment: React.FC = () => {
             const rzp = new (window as any).Razorpay(options);
             rzp.on('payment.failed', function (response: any) {
                 console.error(response.error);
-                alert(`Payment failed: ${response.error.description}`);
+                toast.error(`Payment failed: ${response.error.description}`);
             });
             rzp.open();
         } catch (err: any) {
             console.error('Payment error:', err);
-            alert(`Something went wrong preparing payment: ${err.message || 'Please try again.'}`);
+            toast.error(`Something went wrong: ${err.message || 'Please try again.'}`);
         } finally {
             setLoading(false);
         }
@@ -246,7 +248,7 @@ export const Payment: React.FC = () => {
                 <div className="max-w-md w-full bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-white/10 overflow-hidden text-center">
                     <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-8">
                         <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <CheckCircle2 className="w-10 h-10 text-white" />
+                            <CheckCircle2 className="w-10 h-10 text-white" aria-hidden="true" />
                         </div>
                         <h2 className="text-2xl font-bold text-white">Payment Successful!</h2>
                         <p className="text-green-100 mt-2">Thank you for upgrading to {planName}</p>
@@ -301,8 +303,9 @@ export const Payment: React.FC = () => {
                     <button
                         onClick={() => navigate(-1)}
                         className="flex items-center gap-1 text-primary-200 hover:text-white text-sm font-medium mb-4 transition-colors"
+                        aria-label="Go back"
                     >
-                        <ArrowLeft className="w-4 h-4" />
+                        <ArrowLeft className="w-4 h-4" aria-hidden="true" />
                         Back
                     </button>
                     <h2 className="text-2xl font-bold text-white">Complete Your Purchase</h2>

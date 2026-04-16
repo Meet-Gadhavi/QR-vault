@@ -10,14 +10,18 @@ import { Payment } from './pages/Payment';
 import { Dashboard } from './pages/Dashboard';
 import { PublicView } from './pages/PublicView';
 import { Privacy, Terms, RefundPolicy } from './pages/Legal';
-import { About, Contact, FAQ, Security, Changelog } from './pages/InfoPages';
+import { About, Contact, FAQ, Security, Changelog, Blogs, API } from './pages/InfoPages';
 import { AdminDashboard } from './pages/AdminDashboard';
 
 import { ThemeProvider } from './contexts/ThemeContext';
+import { Toaster } from 'sonner';
+
 
 function App() {
   return (
     <ThemeProvider>
+      <Toaster position="bottom-right" richColors />
+
       <AuthProvider>
         <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <NotificationProvider>
@@ -37,6 +41,8 @@ function App() {
               <Route path="/faq" element={<FAQ />} />
               <Route path="/security" element={<Security />} />
               <Route path="/changelog" element={<Changelog />} />
+              <Route path="/blogs" element={<Blogs />} />
+              <Route path="/api" element={<API />} />
               <Route path="/admin-portal-v2008-safe" element={<AdminDashboard />} />
             </Routes>
           </Layout>

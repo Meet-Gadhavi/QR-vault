@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import QRCode from 'react-qr-code';
 import {
@@ -108,6 +108,19 @@ export const VaultModals: React.FC<VaultModalsProps> = ({
     receivingConfig,
     setReceivingConfig,
 }) => {
+    // Scroll Lock Logic
+    useEffect(() => {
+        const isAnyModalOpen = isModalOpen || isAccessModalOpen || !!viewQrVault || isLimitModalOpen;
+        if (isAnyModalOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isModalOpen, isAccessModalOpen, viewQrVault, isLimitModalOpen]);
+
     return (
         <>
             {/* Create / Edit Vault Modal */}
@@ -118,7 +131,7 @@ export const VaultModals: React.FC<VaultModalsProps> = ({
                             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                                 {modalMode === 'CREATE' ? 'Create New Vault' : 'Edit Vault'}
                             </h2>
-                            <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded-full transition-colors"><X className="text-gray-500 dark:text-gray-400 w-5 h-5" /></button>
+                            <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded-full transition-colors" aria-label="Close modal"><X className="text-gray-500 dark:text-gray-400 w-5 h-5" aria-hidden="true" /></button>
                         </div>
 
                         <div className="p-6 space-y-6">
@@ -210,13 +223,14 @@ export const VaultModals: React.FC<VaultModalsProps> = ({
                                                     {file.type === FileType.LINK ? <LinkIcon className="w-4 h-4 text-blue-500 dark:text-blue-400" /> : <FileIcon className="w-4 h-4 text-gray-500 dark:text-gray-400" />}
                                                     <span className="text-gray-700 dark:text-gray-200 truncate max-w-[200px]">{file.name}</span>
                                                 </div>
-                                                <button
-                                                    onClick={() => handleMarkFileDeleted(file.id)}
-                                                    className="text-gray-400 hover:text-red-500 p-1"
-                                                    title="Delete File"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
+                                                    <button
+                                                        onClick={() => handleMarkFileDeleted(file.id)}
+                                                        className="text-gray-400 hover:text-red-500 p-1"
+                                                        aria-label={`Delete ${file.name}`}
+                                                        title="Delete File"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" aria-hidden="true" />
+                                                    </button>
                                             </div>
                                         ))}
                                     </div>
@@ -256,7 +270,7 @@ export const VaultModals: React.FC<VaultModalsProps> = ({
                                         {selectedFiles.map((f, i) => (
                                             <div key={i} className="flex items-center justify-between text-sm bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/40 p-2 rounded-lg">
                                                 <span className="truncate flex items-center gap-2"><FileIcon className="w-4 h-4 text-blue-500 dark:text-blue-400" /> <span className="dark:text-blue-100">{f.name}</span></span>
-                                                <button onClick={() => removeSelectedFile(i)} className="text-gray-400 hover:text-red-500"><X className="w-4 h-4" /></button>
+                                                <button onClick={() => removeSelectedFile(i)} className="text-gray-400 hover:text-red-500" aria-label={`Remove ${f.name}`}><X className="w-4 h-4" aria-hidden="true" /></button>
                                             </div>
                                         ))}
                                     </div>
@@ -284,7 +298,7 @@ export const VaultModals: React.FC<VaultModalsProps> = ({
                                         {links.map((l, i) => (
                                             <div key={i} className="flex items-center justify-between text-sm text-blue-600 dark:text-blue-400 bg-gray-50 dark:bg-gray-800 p-2 rounded border border-gray-100 dark:border-gray-700">
                                                 <span className="flex items-center gap-2 truncate"><LinkIcon className="w-3 h-3" /> {l}</span>
-                                                <button onClick={() => removeLink(i)} className="text-gray-400 hover:text-red-500"><X className="w-3 h-3" /></button>
+                                                <button onClick={() => removeLink(i)} className="text-gray-400 hover:text-red-500" aria-label={`Remove link ${l}`}><X className="w-3 h-3" aria-hidden="true" /></button>
                                             </div>
                                         ))}
                                     </div>
@@ -320,7 +334,7 @@ export const VaultModals: React.FC<VaultModalsProps> = ({
                     <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-sm shadow-2xl animate-in fade-in zoom-in-95 duration-200 border border-transparent dark:border-white/10">
                         <div className="p-6 border-b border-gray-100 dark:border-white/10 flex justify-between items-center bg-white dark:bg-gray-900 rounded-t-2xl">
                             <h2 className="text-xl font-bold text-gray-900 dark:text-white">Vault Limit Reached</h2>
-                            <button onClick={() => setIsLimitModalOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded-full transition-colors"><X className="text-gray-500 dark:text-gray-400 w-5 h-5" /></button>
+                            <button onClick={() => setIsLimitModalOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded-full transition-colors" aria-label="Close limit modal"><X className="text-gray-500 dark:text-gray-400 w-5 h-5" aria-hidden="true" /></button>
                         </div>
                         <div className="p-6 text-center">
                             <div className="bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-500 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 border border-amber-200 dark:border-amber-500/20">
@@ -347,7 +361,7 @@ export const VaultModals: React.FC<VaultModalsProps> = ({
                     <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-md shadow-2xl animate-in fade-in zoom-in-95 duration-200 border border-transparent dark:border-white/10">
                         <div className="p-6 border-b border-gray-100 dark:border-white/10 flex justify-between items-center bg-white dark:bg-gray-900 rounded-t-2xl">
                             <h2 className="text-xl font-bold text-gray-900 dark:text-white">Access Requests</h2>
-                            <button onClick={() => setIsAccessModalOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded-full transition-colors"><X className="text-gray-500 dark:text-gray-400 w-5 h-5" /></button>
+                            <button onClick={() => setIsAccessModalOpen(false)} className="p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded-full transition-colors" aria-label="Close access requests"><X className="text-gray-500 dark:text-gray-400 w-5 h-5" aria-hidden="true" /></button>
                         </div>
                         <div className="p-6">
                             {!managingVault.requests || managingVault.requests.length === 0 ? (
@@ -372,13 +386,17 @@ export const VaultModals: React.FC<VaultModalsProps> = ({
                                                 <div className="flex gap-2">
                                                     <button
                                                         onClick={() => handleAccessResolution(managingVault.id, req.id, RequestStatus.APPROVED)}
-                                                        className="p-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors" title="Approve">
-                                                        <UserCheck className="w-4 h-4" />
+                                                        className="p-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
+                                                        aria-label="Approve request"
+                                                        title="Approve">
+                                                        <UserCheck className="w-4 h-4" aria-hidden="true" />
                                                     </button>
                                                     <button
                                                         onClick={() => handleAccessResolution(managingVault.id, req.id, RequestStatus.REJECTED)}
-                                                        className="p-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors" title="Reject">
-                                                        <UserX className="w-4 h-4" />
+                                                        className="p-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+                                                        aria-label="Reject request"
+                                                        title="Reject">
+                                                        <UserX className="w-4 h-4" aria-hidden="true" />
                                                     </button>
                                                 </div>
                                             )}
@@ -395,7 +413,7 @@ export const VaultModals: React.FC<VaultModalsProps> = ({
             {viewQrVault && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
                     <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 max-w-sm w-full text-center relative shadow-2xl border border-transparent dark:border-white/10">
-                        <button onClick={() => setViewQrVault(null)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-white p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"><X className="w-5 h-5"/></button>
+                        <button onClick={() => setViewQrVault(null)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-white p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 transition-colors" aria-label="Close QR modal"><X className="w-5 h-5" aria-hidden="true" /></button>
                         <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 uppercase tracking-tight">{viewQrVault.name}</h3>
 
                         <div className="bg-white p-4 rounded-xl border border-gray-200 inline-block shadow-inner mb-6 relative group">
@@ -422,12 +440,13 @@ export const VaultModals: React.FC<VaultModalsProps> = ({
                                 <button
                                     onClick={() => copyToClipboard(getQrUrl(viewQrVault))}
                                     className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors border border-transparent dark:border-gray-700 font-bold"
+                                    aria-label="Copy vault link"
                                     title="Copy Link"
                                 >
-                                    {copied ? <Check className="w-5 h-5 text-green-600 dark:text-green-400" /> : <Copy className="w-5 h-5" />}
+                                    {copied ? <Check className="w-5 h-5 text-green-600 dark:text-green-400" aria-hidden="true" /> : <Copy className="w-5 h-5" aria-hidden="true" />}
                                 </button>
                             </div>
-                            <div className="text-[11px] text-gray-400 dark:text-gray-500 break-all font-medium mt-4">
+                            <div className="text-xs text-gray-400 dark:text-gray-500 break-all font-medium mt-4">
                                 {getQrUrl(viewQrVault)}
                             </div>
                         </div>

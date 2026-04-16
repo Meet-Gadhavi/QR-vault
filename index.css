@@ -20,7 +20,19 @@
   --color-primary-700: #6d28d9;
   --color-primary-800: #5b21b6;
   --color-primary-900: #4c1d95;
+
+  /* Standardized Radii */
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+  --radius-4xl: 2.5rem;
+  --radius-5xl: 3rem;
+
+  /* Standardized Spacing */
+  --spacing-p-card: 1.5rem;
+  --spacing-p-modal: 2rem;
 }
+
 
 @layer base {
   body {
