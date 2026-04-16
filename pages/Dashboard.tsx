@@ -280,6 +280,9 @@ export const Dashboard: React.FC = () => {
         setGoogleTokens(tokens);
         localStorage.setItem('google_drive_tokens', JSON.stringify(tokens));
         fetchGoogleDriveFiles(tokens);
+        fetchDriveStorageUsage(tokens);
+        toast.success("Google Drive Connected");
+        openCreateModal();
       }
     };
     window.addEventListener('message', handleMessage);
@@ -540,6 +543,13 @@ export const Dashboard: React.FC = () => {
 
       const xhr = new XMLHttpRequest();
       xhr.open('POST', `${apiBase}/api/google-drive/upload-file`, true);
+      
+      // Add Supabase JWT for backend authentication
+      mockService.getAuthHeader().then(header => {
+        if (header.Authorization) {
+          xhr.setRequestHeader('Authorization', header.Authorization);
+        }
+      });
 
       xhr.upload.onprogress = (e) => {
         if (e.lengthComputable && onProgress) {
@@ -623,7 +633,10 @@ export const Dashboard: React.FC = () => {
         // 1. Ensure QRVM folder
         const ensureRes = await fetch(`${apiBase}/api/google-drive/ensure-folder`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            ...(await mockService.getAuthHeader())
+          },
           body: JSON.stringify({ tokens: googleTokens }),
         });
         const folderData = await ensureRes.json();
@@ -632,7 +645,10 @@ export const Dashboard: React.FC = () => {
         // 2. Create/Find Vault folder
         const saveRes = await fetch(`${apiBase}/api/google-drive/save-vault`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            ...(await mockService.getAuthHeader())
+          },
           body: JSON.stringify({
             tokens: googleTokens,
             folderId: folderData.folderId,
@@ -780,7 +796,10 @@ export const Dashboard: React.FC = () => {
       // 1. Get Folder ID
       const ensureRes = await fetch(`${apiBase}/api/google-drive/ensure-folder`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(await mockService.getAuthHeader())
+        },
         body: JSON.stringify({ tokens: googleTokens }),
       });
       const folderData = await ensureRes.json();
@@ -789,7 +808,10 @@ export const Dashboard: React.FC = () => {
       // 2. Search and list files
       const listRes = await fetch(`${apiBase}/api/google-drive/list-vault-files`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(await mockService.getAuthHeader())
+        },
         body: JSON.stringify({
           tokens: googleTokens,
           folderId: folderData.folderId,
@@ -846,7 +868,10 @@ export const Dashboard: React.FC = () => {
         // First, get the QRVM folder ID
         const ensureRes = await fetch(`${apiBase}/api/google-drive/ensure-folder`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            ...(await mockService.getAuthHeader())
+          },
           body: JSON.stringify({ tokens: googleTokens }),
         });
         const folderData = await ensureRes.json();
@@ -854,7 +879,10 @@ export const Dashboard: React.FC = () => {
         if (ensureRes.ok && folderData.folderId) {
           await fetch(`${apiBase}/api/google-drive/delete-vault`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+            'Content-Type': 'application/json',
+            ...(await mockService.getAuthHeader())
+          },
             body: JSON.stringify({
               tokens: googleTokens,
               folderId: folderData.folderId,
@@ -1017,7 +1045,10 @@ export const Dashboard: React.FC = () => {
       const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000';
       const response = await fetch(`${apiBase}/api/google-drive/list`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(await mockService.getAuthHeader())
+        },
         body: JSON.stringify({ tokens }),
       });
 
@@ -1049,7 +1080,10 @@ export const Dashboard: React.FC = () => {
       const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000';
       const res = await fetch(`${apiBase}/api/google-drive/storage-usage`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(await mockService.getAuthHeader())
+        },
         body: JSON.stringify({ tokens }),
       });
       if (res.ok) {
@@ -1072,7 +1106,10 @@ export const Dashboard: React.FC = () => {
       console.log('[Drive Sync] Ensuring QRVM folder...');
       const folderRes = await fetch(`${apiBase}/api/google-drive/ensure-folder`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(await mockService.getAuthHeader())
+        },
         body: JSON.stringify({ tokens: googleTokens }),
       });
       const folderData = await folderRes.json();
