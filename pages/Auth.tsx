@@ -57,12 +57,7 @@ export const Auth: React.FC = () => {
       <div className="flex-1 flex flex-col justify-center items-center py-12 px-4 sm:px-6 lg:flex-none lg:px-20 xl:px-24 bg-white dark:bg-[#0a0a0a] z-10 w-full lg:w-1/2">
         <div className="w-full max-w-sm">
           <div className="mb-10 text-center lg:text-left">
-            <Link to="/" className="inline-flex items-center gap-2 mb-8">
-                <div className="bg-primary-600 p-1.5 rounded-lg">
-                  <QrCode className="w-6 h-6 text-white" />
-                </div>
-                <span className="text-xl font-bold text-gray-900 tracking-tight">QR Vault</span>
-            </Link>
+
             <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
               {isLogin ? 'Welcome back' : 'Create an account'}
             </h2>
