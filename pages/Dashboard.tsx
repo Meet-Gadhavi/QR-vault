@@ -1607,17 +1607,8 @@ export const Dashboard: React.FC = () => {
                   </button>
                 </div>
               </div>
-                    )}
-                  </button>
-                ))}
-              </div>
-              <div className="absolute right-0 top-4 bottom-4 w-12 bg-gradient-to-l from-white dark:from-gray-900 to-transparent pointer-events-none z-20" />
-              <div className="absolute right-3 top-[calc(50%+4px)] -translate-y-1/2 p-1.5 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-full shadow-lg border border-gray-100 dark:border-white/10 text-gray-400 z-30 opacity-0 group-hover/tabs:opacity-100 transition-all duration-300 pointer-events-none">
-                <ChevronRight className="w-3.5 h-3.5" />
-              </div>
             </div>
 
-            {/* Content Body */}
             <div className="p-6 sm:p-10 space-y-12">
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                 
