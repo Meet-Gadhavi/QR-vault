@@ -533,7 +533,12 @@ export const Dashboard: React.FC = () => {
     if (updatedVault) setManagingVault(updatedVault);
   };
 
-  const uploadFileToDrive = (file: File, folderId: string, onProgress?: (loaded: number) => void) => {
+  const uploadFileToDrive = async (file: File, folderId: string, onProgress?: (loaded: number) => void) => {
+    const authHeader = await mockService.getAuthHeader();
+    if (!authHeader.Authorization) {
+      throw new Error('Authorization header is required');
+    }
+
     return new Promise<any>((resolve, reject) => {
       const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000';
       const formData = new FormData();
@@ -544,12 +549,8 @@ export const Dashboard: React.FC = () => {
       const xhr = new XMLHttpRequest();
       xhr.open('POST', `${apiBase}/api/google-drive/upload-file`, true);
       
-      // Add Supabase JWT for backend authentication
-      mockService.getAuthHeader().then(header => {
-        if (header.Authorization) {
-          xhr.setRequestHeader('Authorization', header.Authorization);
-        }
-      });
+      // Add Supabase JWT for backend authentication - already awaited above
+      xhr.setRequestHeader('Authorization', authHeader.Authorization);
 
       xhr.upload.onprogress = (e) => {
         if (e.lengthComputable && onProgress) {
@@ -1536,68 +1537,76 @@ export const Dashboard: React.FC = () => {
               scrollbarColor: 'rgba(139,92,246,0.35) transparent'
             }}
           >
-            {/* Header */}
-            <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center sticky top-0 bg-white dark:bg-gray-900 z-10">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                {modalMode === 'CREATE' ? 'Create New Vault' : 'Edit Vault'}
-              </h2>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"
-              >
-                <X className="text-gray-500 dark:text-gray-400 w-5 h-5" />
-              </button>
-            </div>
+            {/* Consolidated Sticky Header Group */}
+            <div className="sticky top-0 bg-white dark:bg-gray-900 z-30 border-b border-gray-100 dark:border-gray-800 shadow-sm">
+              <div className="p-6 flex justify-between items-center">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                  {modalMode === 'CREATE' ? 'Create New Vault' : 'Edit Vault'}
+                </h2>
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"
+                >
+                  <X className="text-gray-500 dark:text-gray-400 w-5 h-5" />
+                </button>
+              </div>
 
-            {/* Tab Navigation */}
-            {/* Vault Mode Selector - Fixed Horizontal Layout */}
-            <div className="px-8 sm:px-10 mt-6 mb-2">
-              <div className="flex bg-gray-100/80 dark:bg-[#0a0a0a] rounded-2xl border border-gray-200/50 dark:border-white/5 p-1.5 relative shadow-inner max-w-md">
-                {/* Animated Background Pill */}
-                <div 
-                  className={`absolute top-1.5 bottom-1.5 w-[calc(50%-0.375rem)] bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-white/10 transition-transform duration-500 ease-out pointer-events-none z-0 ${vaultType === VaultType.RECEIVING ? 'translate-x-[calc(100%+0.375rem)]' : 'translate-x-0'}`} 
-                />
-                
-                <button
-                  type="button"
-                  onClick={() => setVaultType(VaultType.SENDING)}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-colors duration-300 z-10 whitespace-nowrap ${vaultType === VaultType.SENDING ? 'text-primary-600 dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
-                >
-                  <Send className="w-4 h-4" /> Sharing Mode
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setVaultType(VaultType.RECEIVING)}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-colors duration-300 z-10 whitespace-nowrap ${vaultType === VaultType.RECEIVING ? 'text-primary-600 dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
-                >
-                  <Inbox className="w-4 h-4" /> Collective Mode
-                </button>
+              {/* Tab Navigation */}
+              <div className="relative group/tabs">
+                <div className="flex px-8 sm:px-10 gap-6 sm:gap-8 overflow-x-auto no-scrollbar scroll-smooth">
+                  {[
+                    { id: 'identity', label: 'Identity', icon: Globe },
+                    { id: 'content', label: 'Content', icon: Grid },
+                    { id: 'lifecycle', label: 'Lifecycle', icon: Clock },
+                    { id: 'security', label: 'Security', icon: Shield },
+                    { id: 'design', label: 'Design', icon: Settings2 }
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveModalTab(tab.id as any)}
+                      className={`pb-4 text-xs font-black uppercase tracking-[0.2em] relative flex items-center gap-2.5 transition-all whitespace-nowrap ${
+                        activeModalTab === tab.id
+                          ? 'text-primary-600 dark:text-primary-400'
+                          : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                      }`}
+                    >
+                      <tab.icon className="w-3.5 h-3.5" />
+                      {tab.label}
+                      {activeModalTab === tab.id && (
+                        <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-500 rounded-t-full shadow-[0_-4px_12px_rgba(124,58,237,0.4)]" />
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
-            {/* Tab Navigation - with Blur & Arrow indications */}
-            <div className="relative group/tabs sticky top-[73px] z-10 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
-              <div className="flex px-8 sm:px-10 pt-4 gap-6 sm:gap-8 overflow-x-auto no-scrollbar scroll-smooth">
-                {[
-                  { id: 'identity', label: 'Identity', icon: Globe },
-                  { id: 'content', label: 'Content', icon: Grid },
-                  { id: 'lifecycle', label: 'Lifecycle', icon: Clock },
-                  { id: 'security', label: 'Security', icon: Shield },
-                  { id: 'design', label: 'Design', icon: Settings2 }
-                ].map((tab) => (
+            {/* Content Body */}
+            <div className="p-0">
+              {/* Vault Mode Selector - Fixed Horizontal Layout */}
+              <div className="px-8 sm:px-10 mt-8 mb-2">
+                <div className="flex bg-gray-100/80 dark:bg-[#0a0a0a] rounded-2xl border border-gray-200/50 dark:border-white/5 p-1.5 relative shadow-inner max-w-md">
+                  {/* Animated Background Pill */}
+                  <div 
+                    className={`absolute top-1.5 bottom-1.5 w-[calc(50%-0.375rem)] bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-white/10 transition-transform duration-500 ease-out pointer-events-none z-0 ${vaultType === VaultType.RECEIVING ? 'translate-x-[calc(100%+0.375rem)]' : 'translate-x-0'}`} 
+                  />
+                  
                   <button
-                    key={tab.id}
-                    onClick={() => setActiveModalTab(tab.id as any)}
-                    className={`pb-4 text-xs font-black uppercase tracking-[0.2em] relative flex items-center gap-2.5 transition-all whitespace-nowrap ${
-                      activeModalTab === tab.id
-                        ? 'text-primary-600 dark:text-primary-400'
-                        : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
-                    }`}
+                    type="button"
+                    onClick={() => setVaultType(VaultType.SENDING)}
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-colors duration-300 z-10 whitespace-nowrap ${vaultType === VaultType.SENDING ? 'text-primary-600 dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
                   >
-                    <tab.icon className="w-3.5 h-3.5" />
-                    {tab.label}
-                    {activeModalTab === tab.id && (
-                      <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-500 rounded-t-full shadow-[0_-4px_12px_rgba(124,58,237,0.4)]" />
+                    <Send className="w-4 h-4" /> Sharing Mode
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setVaultType(VaultType.RECEIVING)}
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-colors duration-300 z-10 whitespace-nowrap ${vaultType === VaultType.RECEIVING ? 'text-primary-600 dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                  >
+                    <Inbox className="w-4 h-4" /> Collective Mode
+                  </button>
+                </div>
+              </div>
                     )}
                   </button>
                 ))}

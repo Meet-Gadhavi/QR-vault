@@ -137,7 +137,7 @@ export const VaultCard: React.FC<VaultCardProps> = ({
             </div>
 
             {/* Engagement Indicator Box - Compact Dynamic Graph */}
-            <div className={`w-full mt-4 rounded-[1.5rem] border relative transition-all duration-500 group/engage hover:scale-[1.01] shadow-sm overflow-hidden ${
+            <div className={`w-full mt-4 rounded-[1.5rem] border relative transition-all duration-500 group/engage hover:scale-[1.01] shadow-sm overflow-hidden min-w-0 ${
               vault.views > 80
                 ? 'bg-emerald-500/[0.02] border-emerald-500/10 text-emerald-500'
                 : vault.views > 30
