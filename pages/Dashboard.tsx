@@ -1122,7 +1122,10 @@ export const Dashboard: React.FC = () => {
       console.log('[Drive Sync] Saving vault data...');
       const saveRes = await fetch(`${apiBase}/api/google-drive/save-vault`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(await mockService.getAuthHeader())
+        },
         body: JSON.stringify({
           tokens: googleTokens,
           folderId: folderData.folderId,
@@ -1547,10 +1550,9 @@ export const Dashboard: React.FC = () => {
             </div>
 
             {/* Tab Navigation */}
-            <div className="flex px-8 sm:px-10 pt-4 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 gap-6 sm:gap-8 overflow-x-auto no-scrollbar sticky top-[73px] z-10">
-              {/* Vault Mode Selector */}
-              {/* Premium Vault Mode Selector */}
-              <div className="flex bg-gray-100/80 dark:bg-[#0a0a0a] rounded-2xl border border-gray-200/50 dark:border-white/5 mx-8 sm:mx-10 mt-6 mb-2 p-1.5 relative shadow-inner">
+            {/* Vault Mode Selector - Fixed Horizontal Layout */}
+            <div className="px-8 sm:px-10 mt-6 mb-2">
+              <div className="flex bg-gray-100/80 dark:bg-[#0a0a0a] rounded-2xl border border-gray-200/50 dark:border-white/5 p-1.5 relative shadow-inner max-w-md">
                 {/* Animated Background Pill */}
                 <div 
                   className={`absolute top-1.5 bottom-1.5 w-[calc(50%-0.375rem)] bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-white/10 transition-transform duration-500 ease-out pointer-events-none z-0 ${vaultType === VaultType.RECEIVING ? 'translate-x-[calc(100%+0.375rem)]' : 'translate-x-0'}`} 
@@ -1559,42 +1561,51 @@ export const Dashboard: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setVaultType(VaultType.SENDING)}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-colors duration-300 z-10 ${vaultType === VaultType.SENDING ? 'text-primary-600 dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-colors duration-300 z-10 whitespace-nowrap ${vaultType === VaultType.SENDING ? 'text-primary-600 dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
                 >
                   <Send className="w-4 h-4" /> Sharing Mode
                 </button>
                 <button
                   type="button"
                   onClick={() => setVaultType(VaultType.RECEIVING)}
-                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-colors duration-300 z-10 ${vaultType === VaultType.RECEIVING ? 'text-primary-600 dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                  className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-colors duration-300 z-10 whitespace-nowrap ${vaultType === VaultType.RECEIVING ? 'text-primary-600 dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
                 >
                   <Inbox className="w-4 h-4" /> Collective Mode
                 </button>
               </div>
+            </div>
 
-              {[
-                { id: 'identity', label: 'Identity', icon: Globe },
-                { id: 'content', label: 'Content', icon: Grid },
-                { id: 'lifecycle', label: 'Lifecycle', icon: Clock },
-                { id: 'security', label: 'Security', icon: Shield },
-                { id: 'design', label: 'Design', icon: Settings2 }
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveModalTab(tab.id as any)}
-                  className={`pb-4 text-xs font-black uppercase tracking-[0.2em] relative flex items-center gap-2.5 transition-all whitespace-nowrap ${
-                    activeModalTab === tab.id
-                      ? 'text-primary-600 dark:text-primary-400'
-                      : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
-                  }`}
-                >
-                  <tab.icon className="w-3.5 h-3.5" />
-                  {tab.label}
-                  {activeModalTab === tab.id && (
-                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-500 rounded-t-full shadow-[0_-4px_12px_rgba(124,58,237,0.4)]" />
-                  )}
-                </button>
-              ))}
+            {/* Tab Navigation - with Blur & Arrow indications */}
+            <div className="relative group/tabs sticky top-[73px] z-10 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
+              <div className="flex px-8 sm:px-10 pt-4 gap-6 sm:gap-8 overflow-x-auto no-scrollbar scroll-smooth">
+                {[
+                  { id: 'identity', label: 'Identity', icon: Globe },
+                  { id: 'content', label: 'Content', icon: Grid },
+                  { id: 'lifecycle', label: 'Lifecycle', icon: Clock },
+                  { id: 'security', label: 'Security', icon: Shield },
+                  { id: 'design', label: 'Design', icon: Settings2 }
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveModalTab(tab.id as any)}
+                    className={`pb-4 text-xs font-black uppercase tracking-[0.2em] relative flex items-center gap-2.5 transition-all whitespace-nowrap ${
+                      activeModalTab === tab.id
+                        ? 'text-primary-600 dark:text-primary-400'
+                        : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+                    }`}
+                  >
+                    <tab.icon className="w-3.5 h-3.5" />
+                    {tab.label}
+                    {activeModalTab === tab.id && (
+                      <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-500 rounded-t-full shadow-[0_-4px_12px_rgba(124,58,237,0.4)]" />
+                    )}
+                  </button>
+                ))}
+              </div>
+              <div className="absolute right-0 top-4 bottom-4 w-12 bg-gradient-to-l from-white dark:from-gray-900 to-transparent pointer-events-none z-20" />
+              <div className="absolute right-3 top-[calc(50%+4px)] -translate-y-1/2 p-1.5 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-full shadow-lg border border-gray-100 dark:border-white/10 text-gray-400 z-30 opacity-0 group-hover/tabs:opacity-100 transition-all duration-300 pointer-events-none">
+                <ChevronRight className="w-3.5 h-3.5" />
+              </div>
             </div>
 
             {/* Content Body */}

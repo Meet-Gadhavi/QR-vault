@@ -4,7 +4,7 @@ import { mockService } from '../services/mockService';
 import { useNotification } from '../contexts/NotificationContext';
 
 const InfoLayout: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-  <div className="max-w-4xl mx-auto px-4 py-16 dark:bg-[#0a0a0a] transition-colors duration-300">
+  <div className="max-w-4xl mx-auto px-4 pt-16 pb-32 dark:bg-[#0a0a0a] transition-colors duration-300">
     <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8 border-b dark:border-white/10 pb-4">{title}</h1>
     <div className="text-gray-600 dark:text-gray-400 space-y-8">
       {children}
@@ -496,7 +496,7 @@ export const Changelog: React.FC = () => (
 );
 
 export const Blogs: React.FC = () => (
-  <div className="min-h-[80vh] flex items-center justify-center px-4">
+  <div className="min-h-[80vh] flex items-center justify-center px-4 pb-32">
     <div className="text-center space-y-8 animate-fade-in-up">
       <div className="relative inline-block">
         <div className="absolute inset-0 bg-primary-500/20 blur-3xl rounded-full animate-pulse" />
@@ -528,7 +528,7 @@ export const Blogs: React.FC = () => (
 );
 
 export const API: React.FC = () => (
-  <div className="min-h-[80vh] flex items-center justify-center px-4">
+  <div className="min-h-[80vh] flex items-center justify-center px-4 pb-32">
     <div className="text-center space-y-8 animate-fade-in-up">
       <div className="relative inline-block">
         <div className="absolute inset-0 bg-indigo-500/20 blur-3xl rounded-full animate-pulse" />
