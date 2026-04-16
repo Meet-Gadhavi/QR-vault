@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mail, Clock, Shield, Lock, Globe, Zap, Users, HelpCircle, Send, User, MessageSquare, AlertCircle, ShieldCheck, Rocket, Construction } from 'lucide-react';
+import { Mail, Clock, Shield, Lock, Globe, Zap, Users, HelpCircle, Send, User, MessageSquare, AlertCircle, ShieldCheck, Rocket, Construction, Terminal } from 'lucide-react';
 import { mockService } from '../services/mockService';
 import { useNotification } from '../contexts/NotificationContext';
 
