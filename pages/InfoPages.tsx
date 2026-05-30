@@ -28,25 +28,25 @@ export const About: React.FC = () => (
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
         <div className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-white/10 text-center">
-          <div className="w-12 h-12 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-full flex items-center justify-center mx-auto mb-4">
             <Zap className="w-6 h-6" />
           </div>
-          <h3 className="font-bold text-gray-900 mb-2">Fast</h3>
-          <p className="text-sm">Instant QR generation and high-speed downloads.</p>
+          <h3 className="font-bold text-gray-900 dark:text-white mb-2">Fast</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Instant QR generation and high-speed downloads.</p>
         </div>
         <div className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-white/10 text-center">
-          <div className="w-12 h-12 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-full flex items-center justify-center mx-auto mb-4">
             <Shield className="w-6 h-6" />
           </div>
-          <h3 className="font-bold text-gray-900 mb-2">Secure</h3>
-          <p className="text-sm">Enterprise-grade encryption for all your files.</p>
+          <h3 className="font-bold text-gray-900 dark:text-white mb-2">Secure</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Enterprise-grade encryption for all your files.</p>
         </div>
         <div className="p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-white/10 text-center">
-          <div className="w-12 h-12 bg-primary-100 text-primary-600 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-full flex items-center justify-center mx-auto mb-4">
             <Globe className="w-6 h-6" />
           </div>
-          <h3 className="font-bold text-gray-900 mb-2">Accessible</h3>
-          <p className="text-sm">Scan and download from any device, anywhere.</p>
+          <h3 className="font-bold text-gray-900 dark:text-white mb-2">Accessible</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Scan and download from any device, anywhere.</p>
         </div>
       </div>
     </div>
@@ -81,6 +81,8 @@ export const Contact: React.FC = () => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const inputClass = "w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:border-primary-500 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary-500/20 rounded-xl px-4 py-3 outline-none transition-all placeholder-gray-400 dark:placeholder-gray-600";
+
   return (
     <div className="min-h-screen bg-gray-50/50 dark:bg-[#0a0a0a] py-16 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
       <div className="max-w-7xl mx-auto">
@@ -103,17 +105,17 @@ export const Contact: React.FC = () => {
                   <Mail className="w-6 h-6" />
                 </div>
                 <h3 className="font-bold text-gray-900 dark:text-white mb-1">Email Us</h3>
-                <p className="text-sm text-gray-500 mb-2">For general inquiries</p>
-                <a href="mailto:support@qrvault.app" className="text-primary-600 font-semibold hover:underline">support@qrvault.app</a>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">For general inquiries</p>
+                <a href="mailto:support@qrvault.app" className="text-primary-600 dark:text-primary-400 font-semibold hover:underline">support@qrvault.app</a>
               </div>
 
-              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                <div className="w-12 h-12 bg-primary-50 text-primary-600 rounded-xl flex items-center justify-center mb-4">
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 hover:shadow-md transition-all">
+                <div className="w-12 h-12 bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-xl flex items-center justify-center mb-4">
                   <Clock className="w-6 h-6" />
                 </div>
-                <h3 className="font-bold text-gray-900 mb-1">Response Time</h3>
-                <p className="text-sm text-gray-500 mb-2">Fast support</p>
-                <p className="text-primary-600 font-semibold">Within 24 hours</p>
+                <h3 className="font-bold text-gray-900 dark:text-white mb-1">Response Time</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Fast support</p>
+                <p className="text-primary-600 dark:text-primary-400 font-semibold">Within 24 hours</p>
               </div>
             </div>
 
@@ -154,7 +156,7 @@ export const Contact: React.FC = () => {
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 focus:border-primary-500 dark:text-white focus:ring-2 focus:ring-primary-500/20 rounded-xl px-4 py-3 outline-none transition-all placeholder-gray-400 dark:placeholder-gray-600"
+                    className={inputClass}
                     placeholder="Enter your name"
                   />
                 </div>
@@ -168,7 +170,7 @@ export const Contact: React.FC = () => {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full bg-gray-50 border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 rounded-xl px-4 py-3 outline-none transition-all"
+                    className={inputClass}
                     placeholder="name@company.com"
                   />
                 </div>
@@ -184,7 +186,7 @@ export const Contact: React.FC = () => {
                   name="subject"
                   value={formData.subject}
                   onChange={handleChange}
-                  className="w-full bg-gray-50 border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 rounded-xl px-4 py-3 outline-none transition-all"
+                  className={inputClass}
                   placeholder="Need 100GB enterprise storage"
                 />
               </div>
@@ -199,7 +201,7 @@ export const Contact: React.FC = () => {
                   value={formData.message}
                   onChange={handleChange}
                   rows={5}
-                  className="w-full bg-gray-50 border border-gray-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 rounded-xl px-4 py-3 outline-none transition-all resize-none"
+                  className={inputClass + " resize-none"}
                   placeholder="Tell us about your needs..."
                 />
               </div>
@@ -207,7 +209,7 @@ export const Contact: React.FC = () => {
               <button
                 disabled={loading}
                 type="submit"
-                className="w-full bg-primary-600 hover:bg-primary-700 disabled:bg-gray-400 text-white font-bold py-4 rounded-xl shadow-lg shadow-primary-200 transition-all flex items-center justify-center gap-2 group"
+                className="w-full bg-primary-600 hover:bg-primary-700 disabled:bg-gray-400 text-white font-bold py-4 rounded-xl shadow-lg shadow-primary-200 transition-all flex items-center justify-center gap-2 group cursor-pointer"
               >
                 {loading ? (
                   <>
@@ -240,36 +242,36 @@ export const Contact: React.FC = () => {
 export const FAQ: React.FC = () => (
   <InfoLayout title="Frequently Asked Questions">
     <div className="space-y-6">
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
-          <HelpCircle className="w-5 h-5 text-primary-600" />
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-white/10">
+        <h3 className="font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+          <HelpCircle className="w-5 h-5 text-primary-600 dark:text-primary-400" />
           How does QR file sharing work?
         </h3>
-        <p className="text-gray-600 ml-7">Users upload a file or link and generate a QR code. Anyone scanning the QR code can access a preview and download the content.</p>
+        <p className="text-gray-600 dark:text-gray-400 ml-7">Users upload a file or link and generate a QR code. Anyone scanning the QR code can access a preview and download the content.</p>
       </div>
 
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
-          <HelpCircle className="w-5 h-5 text-primary-600" />
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-white/10">
+        <h3 className="font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+          <HelpCircle className="w-5 h-5 text-primary-600 dark:text-primary-400" />
           How long are files stored?
         </h3>
-        <p className="text-gray-600 ml-7">Files remain stored until the user deletes them or the storage limit is exceeded.</p>
+        <p className="text-gray-600 dark:text-gray-400 ml-7">Files remain stored until the user deletes them or the storage limit is exceeded.</p>
       </div>
 
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
-          <HelpCircle className="w-5 h-5 text-primary-600" />
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-white/10">
+        <h3 className="font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+          <HelpCircle className="w-5 h-5 text-primary-600 dark:text-primary-400" />
           Is my data secure?
         </h3>
-        <p className="text-gray-600 ml-7">Yes. QR Vault uses secure cloud infrastructure and authentication systems to protect user data.</p>
+        <p className="text-gray-600 dark:text-gray-400 ml-7">Yes. QR Vault uses secure cloud infrastructure and authentication systems to protect user data.</p>
       </div>
 
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
-          <HelpCircle className="w-5 h-5 text-primary-600" />
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-white/10">
+        <h3 className="font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+          <HelpCircle className="w-5 h-5 text-primary-600 dark:text-primary-400" />
           What happens if my storage becomes full?
         </h3>
-        <div className="text-gray-600 ml-7">
+        <div className="text-gray-600 dark:text-gray-400 ml-7">
           <p>Users can:</p>
           <ul className="list-disc ml-5 mt-2">
             <li>Delete existing files</li>
@@ -289,34 +291,34 @@ export const Security: React.FC = () => (
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-white/10">
-          <div className="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6">
+          <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mb-6">
             <Lock className="w-6 h-6" />
           </div>
-          <h3 className="text-xl font-bold text-gray-900 mb-3">Secure Storage</h3>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Secure Storage</h3>
           <p>Files are stored using modern cloud infrastructure powered by Supabase, ensuring high availability and durability.</p>
         </div>
 
         <div className="p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-white/10">
-          <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-6">
+          <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center mb-6">
             <Shield className="w-6 h-6" />
           </div>
-          <h3 className="text-xl font-bold text-gray-900 mb-3">Encrypted Connections</h3>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Encrypted Connections</h3>
           <p>All data transfers between your device and our servers occur over secure encrypted (HTTPS) connections.</p>
         </div>
 
         <div className="p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-white/10">
-          <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center mb-6">
+          <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full flex items-center justify-center mb-6">
             <Zap className="w-6 h-6" />
           </div>
-          <h3 className="text-xl font-bold text-gray-900 mb-3">Secure QR Links</h3>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Secure QR Links</h3>
           <p>QR codes generate unique, obfuscated links that allow users to preview and download files safely without exposing internal paths.</p>
         </div>
 
         <div className="p-8 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-white/10">
-          <div className="w-12 h-12 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mb-6">
+          <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-full flex items-center justify-center mb-6">
             <Globe className="w-6 h-6" />
           </div>
-          <h3 className="text-xl font-bold text-gray-900 mb-3">External Storage</h3>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">External Storage</h3>
           <p>Users may optionally connect services such as Google Drive for additional storage capacity, leveraging Google's world-class security.</p>
         </div>
       </div>

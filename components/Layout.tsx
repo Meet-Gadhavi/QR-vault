@@ -152,37 +152,37 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
           <div>
             <h4 className="font-bold text-gray-900 dark:text-white mb-6 text-sm uppercase tracking-wider">Product</h4>
             <ul className="space-y-4 text-sm text-gray-500 dark:text-gray-400">
-              <li><Link to="/" className="hover:text-primary-600 transition-colors">Features</Link></li>
-              <li><Link to="/pricing" className="hover:text-primary-600 transition-colors">Pricing</Link></li>
-              <li><Link to="/api" className="hover:text-primary-600 transition-colors">Developer API</Link></li>
-              <li><Link to="/blogs" className="hover:text-primary-600 transition-colors">Our Blog</Link></li>
-              {isAuthenticated && <li><Link to="/dashboard" className="hover:text-primary-600 transition-colors">Dashboard</Link></li>}
+              <li><Link to="/" className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Features</Link></li>
+              <li><Link to="/pricing" className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Pricing</Link></li>
+              <li><Link to="/api" className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Developer API</Link></li>
+              <li><Link to="/blogs" className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Our Blog</Link></li>
+              {isAuthenticated && <li><Link to="/dashboard" className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Dashboard</Link></li>}
             </ul>
           </div>
 
           <div>
             <h4 className="font-bold text-gray-900 dark:text-white mb-6 text-sm uppercase tracking-wider">Company</h4>
             <ul className="space-y-4 text-sm text-gray-500 dark:text-gray-400">
-              <li><Link to="/about" className="hover:text-primary-600 transition-colors">About Us</Link></li>
-              <li><Link to="/contact" className="hover:text-primary-600 transition-colors">Contact</Link></li>
+              <li><Link to="/about" className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">About Us</Link></li>
+              <li><Link to="/contact" className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Contact</Link></li>
             </ul>
           </div>
 
           <div>
             <h4 className="font-bold text-gray-900 dark:text-white mb-6 text-sm uppercase tracking-wider">Legal</h4>
             <ul className="space-y-4 text-sm text-gray-500 dark:text-gray-400">
-              <li><Link to="/privacy" className="hover:text-primary-600 transition-colors">Privacy Policy</Link></li>
-              <li><Link to="/terms" className="hover:text-primary-600 transition-colors">Terms & Conditions</Link></li>
-              <li><Link to="/refund" className="hover:text-primary-600 transition-colors">Refund Policy</Link></li>
+              <li><Link to="/privacy" className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Privacy Policy</Link></li>
+              <li><Link to="/terms" className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Terms & Conditions</Link></li>
+              <li><Link to="/refund" className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Refund Policy</Link></li>
             </ul>
           </div>
 
           <div>
             <h4 className="font-bold text-gray-900 dark:text-white mb-6 text-sm uppercase tracking-wider">Resources</h4>
             <ul className="space-y-4 text-sm text-gray-500 dark:text-gray-400">
-              <li><Link to="/faq" className="hover:text-primary-600 transition-colors">FAQ</Link></li>
-              <li><Link to="/security" className="hover:text-primary-600 transition-colors">Security</Link></li>
-              <li><Link to="/changelog" className="hover:text-primary-600 transition-colors">Changelog</Link></li>
+              <li><Link to="/faq" className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">FAQ</Link></li>
+              <li><Link to="/security" className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Security</Link></li>
+              <li><Link to="/changelog" className="hover:text-primary-600 dark:hover:text-primary-400 transition-colors">Changelog</Link></li>
             </ul>
           </div>
         </div>

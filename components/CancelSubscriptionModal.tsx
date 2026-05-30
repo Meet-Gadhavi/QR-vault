@@ -27,22 +27,57 @@ export const CancelSubscriptionModal: React.FC<CancelSubscriptionModalProps> = (
   const modalRef = useRef<any>(null);
 
   useEffect(() => {
-    if (modalRef.current) {
-      modalRef.current.open = isOpen;
+    const modalEl = modalRef.current;
+    if (!modalEl) return;
+
+    if (!modalEl.id) {
+      modalEl.id = 'cancel-subscription-modal';
+    }
+
+    if (isOpen) {
+      modalEl.setAttribute('open', '');
+      try {
+        modalEl.open = true;
+      } catch (e) {}
+
+      const shopify = (window as any).shopify;
+      if (shopify?.modal?.show) {
+        try {
+          shopify.modal.show(modalEl.id);
+        } catch (e) {
+          console.warn('shopify.modal.show failed:', e);
+        }
+      }
+    } else {
+      modalEl.removeAttribute('open');
+      try {
+        modalEl.open = false;
+      } catch (e) {}
+
+      const shopify = (window as any).shopify;
+      if (shopify?.modal?.hide) {
+        try {
+          shopify.modal.hide(modalEl.id);
+        } catch (e) {
+          console.warn('shopify.modal.hide failed:', e);
+        }
+      }
     }
   }, [isOpen]);
 
   useEffect(() => {
     const modalEl = modalRef.current;
     if (!modalEl) return;
-    const handleCloseEvent = () => {
-      handleClose();
+    const handleCloseEvent = (e: Event) => {
+      if (e.target === modalEl) {
+        handleClose();
+      }
     };
     modalEl.addEventListener('close', handleCloseEvent);
     return () => {
       modalEl.removeEventListener('close', handleCloseEvent);
     };
-  }, [isOpen]);
+  }, [onClose]);
 
   const handleClose = () => {
     setCancelStep('confirm');
@@ -86,7 +121,7 @@ export const CancelSubscriptionModal: React.FC<CancelSubscriptionModalProps> = (
   };
 
   return (
-    <s-modal ref={modalRef} heading="Cancel Subscription" accessibilityLabel="Cancel Subscription dialog">
+    <s-modal ref={modalRef} open={isOpen ? true : undefined} heading="Cancel Subscription" accessibilityLabel="Cancel Subscription dialog">
       <div className="text-slate-900 dark:text-white bg-white dark:bg-[#1a1a1a] w-full">
         {cancelStep === 'confirm' ? (
           <>
