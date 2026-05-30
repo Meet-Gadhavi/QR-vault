@@ -177,7 +177,7 @@ export const VaultModals: React.FC<VaultModalsProps> = ({
     return (
         <>
             {/* Create / Edit Vault Modal */}
-            <s-modal ref={createEditModalRef} heading={modalMode === 'CREATE' ? 'Create New Vault' : 'Edit Vault'}>
+            <s-modal ref={createEditModalRef} heading={modalMode === 'CREATE' ? 'Create New Vault' : 'Edit Vault'} accessibilityLabel="Create or Edit Vault dialog">
                 <div className="p-6 space-y-6 text-gray-900 dark:text-white max-w-2xl w-full">
                     {/* Vault Mode Selector */}
                     <div className="flex bg-gray-100/80 dark:bg-[#0a0a0a] rounded-2xl border border-gray-200/50 dark:border-white/5 p-1.5 relative shadow-inner">
@@ -368,7 +368,7 @@ export const VaultModals: React.FC<VaultModalsProps> = ({
             </s-modal>
 
             {/* Free Plan Limit Modal */}
-            <s-modal ref={limitModalRef} heading="Vault Limit Reached">
+            <s-modal ref={limitModalRef} heading="Vault Limit Reached" accessibilityLabel="Vault limit reached notice">
                 <div className="p-6 text-center text-gray-900 dark:text-white max-w-sm w-full">
                     <div className="bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-500 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 border border-amber-200 dark:border-amber-500/20">
                         <Lock className="w-8 h-8" />
@@ -389,7 +389,7 @@ export const VaultModals: React.FC<VaultModalsProps> = ({
             </s-modal>
 
             {/* Access Management Modal */}
-            <s-modal ref={accessModalRef} heading="Access Requests">
+            <s-modal ref={accessModalRef} heading="Access Requests" accessibilityLabel="Access Requests management dialog">
                 <div className="p-6 text-gray-900 dark:text-white max-w-md w-full">
                     {!managingVault?.requests || managingVault.requests.length === 0 ? (
                         <div className="text-center py-8 text-gray-500 dark:text-gray-400">
@@ -435,7 +435,7 @@ export const VaultModals: React.FC<VaultModalsProps> = ({
             </s-modal>
 
             {/* QR Modal */}
-            <s-modal ref={qrModalRef} heading={viewQrVault?.name || 'QR Code'}>
+            <s-modal ref={qrModalRef} heading={viewQrVault?.name || 'QR Code'} accessibilityLabel="QR Code display dialog">
                 {viewQrVault && (
                     <div className="p-6 text-center text-gray-900 dark:text-white max-w-sm w-full">
                         <div className="bg-white p-4 rounded-xl border border-gray-200 inline-block shadow-inner mb-6 relative group">

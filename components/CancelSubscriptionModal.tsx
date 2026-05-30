@@ -86,7 +86,7 @@ export const CancelSubscriptionModal: React.FC<CancelSubscriptionModalProps> = (
   };
 
   return (
-    <s-modal ref={modalRef} heading="Cancel Subscription">
+    <s-modal ref={modalRef} heading="Cancel Subscription" accessibilityLabel="Cancel Subscription dialog">
       <div className="text-slate-900 dark:text-white bg-white dark:bg-[#1a1a1a] w-full">
         {cancelStep === 'confirm' ? (
           <>

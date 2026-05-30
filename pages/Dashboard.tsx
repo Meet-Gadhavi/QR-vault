@@ -2702,7 +2702,7 @@ export const Dashboard: React.FC = () => {
                             <span className="text-xs font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest italic">NO Data to showcase !</span>
                           </div>
                         ) : (
-                          <ResponsiveContainer width="100%" height="100%">
+                          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                             <AreaChart data={selectedAnalyticsVault.analytics?.timestampComparison}>
                               <defs>
                                 <linearGradient id="colorEngage" x1="0" y1="0" x2="0" y2="1">
@@ -2746,7 +2746,7 @@ export const Dashboard: React.FC = () => {
                             <span className="text-xs font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest italic">NO Data to showcase !</span>
                           </div>
                         ) : (
-                          <ResponsiveContainer width="100%" height="100%">
+                          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                             <BarChart data={selectedAnalyticsVault.analytics?.timestampComparison}>
                               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#88888822" />
                               <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900 }} />
@@ -2776,7 +2776,7 @@ export const Dashboard: React.FC = () => {
                             <span className="text-xs font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest italic">NO Data to showcase !</span>
                           </div>
                         ) : (
-                          <ResponsiveContainer width="100%" height="100%">
+                          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                             <BarChart data={selectedAnalyticsVault.analytics?.fileEngagement} layout="vertical">
                               <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#88888822" />
                               <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900 }} />

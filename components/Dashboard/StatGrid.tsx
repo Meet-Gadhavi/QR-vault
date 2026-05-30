@@ -151,7 +151,7 @@ export const StatGrid: React.FC<StatGridProps> = ({
           </div>
           <div className="flex items-center h-32">
             <div className="relative flex-1 w-full h-full min-w-0">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <PieChart>
                   <Pie
                     data={data}

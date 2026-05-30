@@ -69,7 +69,7 @@ export const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({
           </div>
 
           <div className="h-[400px] min-h-[400px] w-full min-w-0">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
               <AreaChart data={(() => {
                 const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
                 return days.map(day => {

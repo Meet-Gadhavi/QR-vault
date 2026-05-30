@@ -299,7 +299,7 @@ export const AdminDashboard: React.FC = () => {
                   </div>
                 </div>
                 <div className="h-[300px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                     <AreaChart
                       data={(revenuePeriod === '1M' ? stats.revenue.last1Month : 
                              revenuePeriod === '3M' ? stats.revenue.last3Months : 
