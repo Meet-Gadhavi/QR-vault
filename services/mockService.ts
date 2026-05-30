@@ -159,7 +159,7 @@ const supabaseImpl = {
         };
     },
 
-    getAuthHeader: async () => {
+    getAuthHeader: async (): Promise<Record<string, string>> => {
         const { data: { session } } = await supabase.auth.getSession();
         return session ? { 'Authorization': `Bearer ${session.access_token}` } : {};
     },
@@ -268,7 +268,7 @@ const supabaseImpl = {
         // Note: This requires the user's Google tokens. In a real app, 
         // we'd retrieve them from the session or a secure store.
         // For this implementation, we'll look for them in localStorage as a fallback.
-        const tokens = JSON.parse(localStorage.getItem('qrvault_google_tokens') || 'null');
+        const tokens = JSON.parse(localStorage.getItem('google_drive_tokens') || 'null');
         
         if (!tokens) {
             console.warn("Cannot delete from Drive: No tokens found for background destruct.");
@@ -606,17 +606,24 @@ const supabaseImpl = {
         const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000';
         const authHeader = await supabaseImpl.getAuthHeader();
         
+        // Retrieve Google tokens to send verification mail
+        const googleTokensStr = localStorage.getItem('google_drive_tokens');
+        const googleTokens = googleTokensStr ? JSON.parse(googleTokensStr) : null;
+        
         const response = await fetch(`${apiBase}/api/auth/send-cancellation-code`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
                 ...authHeader
             },
-            body: JSON.stringify({ email })
+            body: JSON.stringify({ email, tokens: googleTokens })
         });
 
-        if (!response.ok) throw new Error("Failed to send cancellation code");
-        return new Promise((resolve) => setTimeout(resolve, 1000));
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({ error: "Failed to send cancellation code" }));
+            throw new Error(errData.error || "Failed to send cancellation code");
+        }
+        return true;
     },
 
     verifyCancellationCode: async (userId: string, code: string) => {

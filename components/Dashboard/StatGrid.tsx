@@ -20,6 +20,7 @@ interface StatGridProps {
   downloadInvoice: (inv: Invoice) => void;
   formatBytes: (bytes: number) => string;
   colors: string[];
+  onCancelClick: () => void;
 }
 
 const GoogleDriveImg = ({ className }: { className?: string }) => (
@@ -38,7 +39,8 @@ export const StatGrid: React.FC<StatGridProps> = ({
   invoices,
   downloadInvoice,
   formatBytes,
-  colors
+  colors,
+  onCancelClick
 }) => {
   const data = [
     { name: 'Used', value: storageUsedDisplay },
@@ -75,6 +77,14 @@ export const StatGrid: React.FC<StatGridProps> = ({
                 <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-white/5 px-3 py-1.5 rounded-2xl border border-gray-100 dark:border-white/5" title="Time remaining on plan">
                   <Clock className="w-3.5 h-3.5" aria-hidden="true" /> {timeLeft}
                 </div>
+              )}
+              {isPaidPlan && (
+                <button
+                  onClick={onCancelClick}
+                  className="flex items-center gap-2 text-xs font-semibold text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 bg-red-50 dark:bg-red-950/20 hover:bg-red-100 px-3 py-1.5 rounded-2xl border border-red-100 dark:border-red-900/20 cursor-pointer transition-colors"
+                >
+                  Cancel Subscription
+                </button>
               )}
               {googleTokens && (
                 <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-1.5 rounded-2xl border border-emerald-100 dark:border-emerald-500/20">

@@ -19,6 +19,7 @@ import { StatGrid } from '../components/Dashboard/StatGrid';
 import { VaultCard } from '../components/Dashboard/VaultCard';
 import { AnalyticsPanel } from '../components/Dashboard/AnalyticsPanel';
 import { DashboardSkeleton } from '../components/SkeletonLoaders';
+import { CancelSubscriptionModal } from '../components/CancelSubscriptionModal';
 
 type SortOption = 'date-newest' | 'date-oldest' | 'name-asc' | 'name-desc' | 'size-desc' | 'size-asc';
 type FilterTime = 'all' | '10-days' | '30-days';
@@ -165,6 +166,7 @@ export const Dashboard: React.FC = () => {
   // Manage Access Modal
   const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
   const [managingVault, setManagingVault] = useState<Vault | null>(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   // Form State
   const [vaultName, setVaultName] = useState('');
@@ -175,7 +177,7 @@ export const Dashboard: React.FC = () => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [links, setLinks] = useState<string[]>([]);
   const [tempLink, setTempLink] = useState('');
-  const [expiryHours, setExpiryHours] = useState<number | 'never'>(24);
+  const [expiryHours, setExpiryHours] = useState<number | 'never' | 'custom'>(24);
   const [maxViews, setMaxViews] = useState<number | 'custom' | null>(null);
   const [customMaxViews, setCustomMaxViews] = useState<string>('');
 
@@ -1199,6 +1201,15 @@ export const Dashboard: React.FC = () => {
           downloadInvoice={downloadInvoice}
           formatBytes={formatBytes}
           colors={COLORS}
+          onCancelClick={() => setShowCancelModal(true)}
+        />
+
+        <CancelSubscriptionModal
+          isOpen={showCancelModal}
+          onClose={() => setShowCancelModal(false)}
+          userId={appUser.id}
+          userEmail={appUser.email}
+          onCancelSuccess={() => loadData(appUser.id)}
         />
 
         {/* Google Drive Folders Section (if connected) */}
@@ -1790,7 +1801,7 @@ export const Dashboard: React.FC = () => {
                         <span className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest">Vault Lifetime</span>
                       </div>
                       {(() => {
-                        const expiryOptions = [
+                        const expiryOptions: { value: number | 'never'; label: string; disabled: boolean }[] = [
                           { value: 24, label: '24 Hours', disabled: false },
                           { value: 48, label: '48 Hours', disabled: appUser?.plan === PlanType.FREE },
                           { value: 72, label: '72 Hours', disabled: appUser?.plan === PlanType.FREE },

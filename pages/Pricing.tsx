@@ -5,6 +5,7 @@ import { PlanType } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { mockService } from '../services/mockService';
 import { toast } from 'sonner';
+import { CancelSubscriptionModal } from '../components/CancelSubscriptionModal';
 
 const planData = [
   {
@@ -68,12 +69,7 @@ export const Pricing: React.FC = () => {
   const { isAuthenticated, userId, userEmail } = useAuth();
   const [userPlan, setUserPlan] = React.useState<PlanType | null>(null);
   const [planExpiry, setPlanExpiry] = React.useState<string | null>(null);
-  const [cancelling, setCancelling] = React.useState(false);
   const [showCancelModal, setShowCancelModal] = React.useState(false);
-  const [cancelStep, setCancelStep] = React.useState<'confirm' | 'verify'>('confirm');
-  const [verificationCode, setVerificationCode] = React.useState('');
-  const [verificationError, setVerificationError] = React.useState('');
-  const [sendingCode, setSendingCode] = React.useState(false);
 
   React.useEffect(() => {
     const loadUserPlan = async () => {
@@ -102,42 +98,7 @@ export const Pricing: React.FC = () => {
   };
 
   const handleCancel = () => {
-    setCancelStep('confirm');
-    setVerificationCode('');
-    setVerificationError('');
     setShowCancelModal(true);
-  };
-
-  const requestCancelCode = async () => {
-    if (!userId || !userEmail) return;
-    setSendingCode(true);
-    try {
-      await (mockService as any).sendCancellationCode(userId, userEmail);
-      setCancelStep('verify');
-    } catch (e) {
-      console.error('Failed to send code', e);
-      toast.error('Failed to send verification code.');
-    } finally {
-      setSendingCode(false);
-    }
-  };
-
-  const confirmCancel = async () => {
-    if (!userId || !verificationCode) return;
-    setCancelling(true);
-    setVerificationError('');
-    try {
-      await (mockService as any).verifyCancellationCode(userId, verificationCode);
-      await mockService.cancelSubscription(userId);
-      setUserPlan(PlanType.FREE);
-      setPlanExpiry(null);
-      setShowCancelModal(false);
-    } catch (e: any) {
-      console.error('Failed to cancel', e);
-      setVerificationError(e.message || 'Invalid code. Please try again.');
-    } finally {
-      setCancelling(false);
-    }
   };
 
   const getButtonState = (planId: PlanType) => {
@@ -250,13 +211,12 @@ export const Pricing: React.FC = () => {
                               {formatExpiry(planExpiry)}
                             </div>
                           </div>
-                          <button
+                           <button
                             onClick={handleCancel}
-                            disabled={cancelling}
                             className="w-full py-3 text-red-500 hover:text-red-700 dark:hover:text-red-400 font-bold text-sm transition-all hover:tracking-wide flex items-center justify-center gap-2"
                           >
                             <XCircle className="w-4 h-4" />
-                            {cancelling ? 'Cancelling...' : 'Cancel Subscription'}
+                            Cancel Subscription
                           </button>
                         </div>
                       ) : state.isCurrentPlan ? (
@@ -295,96 +255,16 @@ export const Pricing: React.FC = () => {
         </div>
       </div>
 
-      {/* Cancel Subscription Modal */}
-      {showCancelModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50 dark:bg-black/80 backdrop-blur-sm" onClick={() => setShowCancelModal(false)} aria-hidden="true" />
-          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-in fade-in zoom-in-95 duration-200 border border-transparent dark:border-white/10" role="dialog" aria-modal="true">
-            {cancelStep === 'confirm' ? (
-              <>
-                <div className="bg-red-50 dark:bg-red-900/20 p-6 text-center">
-                  <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <AlertTriangle className="w-8 h-8 text-red-500" />
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">Cancel Subscription?</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                    You will receive a <strong>verification code</strong> via email to confirm this action.
-                  </p>
-                </div>
-                <div className="p-6 flex flex-col gap-3">
-                  <button
-                    onClick={requestCancelCode}
-                    disabled={sendingCode}
-                    className="w-full py-4 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-red-200/50 flex items-center justify-center gap-2"
-                  >
-                    {sendingCode ? (
-                      <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Sending Code...</>
-                    ) : (
-                      <>Get Verification Code</>
-                    )}
-                  </button>
-                  <button
-                    onClick={() => setShowCancelModal(false)}
-                    className="w-full py-3 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 font-semibold transition-colors"
-                  >
-                    Keep My Subscription
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="bg-primary-50 dark:bg-primary-900/20 p-6 text-center">
-                  <div className="w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Mail className="w-8 h-8 text-primary-600 dark:text-primary-400" />
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">Enter Verification Code</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                    We've sent a code to <strong>{userEmail}</strong>. 
-                  </p>
-                </div>
-                <div className="p-6 space-y-4">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">6-Digit Code</label>
-                    <input
-                      type="text"
-                      maxLength={6}
-                      value={verificationCode}
-                      onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
-                      className={`w-full bg-gray-50 dark:bg-gray-800 border-2 ${verificationError ? 'border-red-500' : 'border-gray-100 dark:border-gray-700 focus:border-primary-500'} rounded-xl px-4 py-3 text-center text-2xl font-bold tracking-widest focus:outline-none transition-all dark:text-white`}
-                      placeholder="000000"
-                    />
-                    {verificationError && (
-                      <p className="text-red-500 text-xs mt-2 font-medium">{verificationError}</p>
-                    )}
-                  </div>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => setCancelStep('confirm')}
-                      className="flex-1 py-3 px-4 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-bold rounded-xl transition-colors"
-                    >
-                      Back
-                    </button>
-                    <button
-                      onClick={confirmCancel}
-                      disabled={cancelling || verificationCode.length < 6}
-                      className="flex-1 py-3 px-4 bg-red-500 hover:bg-red-600 disabled:bg-gray-200 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2"
-                    >
-                      {cancelling ? (
-                        <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Verifying...</>
-                      ) : (
-                        'Confirm Cancel'
-                      )}
-                    </button>
-                  </div>
-                  <p className="text-center text-xs text-gray-400">
-                    Didn't receive a code? <button onClick={requestCancelCode} className="text-primary-600 font-bold hover:underline">Resend</button>
-                  </p>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
+      <CancelSubscriptionModal
+        isOpen={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        userId={userId || ''}
+        userEmail={userEmail || ''}
+        onCancelSuccess={() => {
+          setUserPlan(PlanType.FREE);
+          setPlanExpiry(null);
+        }}
+      />
     </>
   );
 };

@@ -5,9 +5,9 @@
 
 
 @theme {
-  --font-sans: "Montserrat", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Argent CF", "Cambria", serif;
-  --font-body: "Cambria", serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-display: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
   
   --color-primary-50: #f5f3ff;
@@ -21,32 +21,32 @@
   --color-primary-800: #5b21b6;
   --color-primary-900: #4c1d95;
 
-  /* Standardized Radii */
-  --radius-xl: 1rem;
-  --radius-2xl: 1.5rem;
-  --radius-3xl: 2rem;
-  --radius-4xl: 2.5rem;
-  --radius-5xl: 3rem;
+  /* Standardized Radii (Polaris clean borders) */
+  --radius-xl: 0.5rem;
+  --radius-2xl: 0.75rem;
+  --radius-3xl: 1rem;
+  --radius-4xl: 1.25rem;
+  --radius-5xl: 1.5rem;
 
   /* Standardized Spacing */
-  --spacing-p-card: 1.5rem;
-  --spacing-p-modal: 2rem;
+  --spacing-p-card: 1.25rem;
+  --spacing-p-modal: 1.5rem;
 }
 
 
 @layer base {
   body {
     @apply bg-white dark:bg-[#0a0a0a] text-slate-900 dark:text-slate-100 antialiased transition-colors duration-300;
-    font-family: var(--font-body), "Cambria", serif;
+    font-family: var(--font-body), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
 
   h1, h2, h3, h4, h5, h6, .font-display {
-    font-family: var(--font-display), "Argent CF", "Cambria", serif !important;
+    font-family: var(--font-display), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
   }
 
-  /* Montserrat for all interface elements to ensure consistency across tabs and modals */
+  /* Inter/system font for all interface elements to ensure consistency across tabs and modals */
   button, nav, input, select, textarea, label, span, p, div, .font-sans {
-    font-family: var(--font-sans), "Montserrat", sans-serif;
+    font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
 
   /* Maintain Mono for specific data/code elements */

@@ -208,6 +208,7 @@ apiRouter.get('/google/auth', (req: Request, res: Response) => {
         'https://www.googleapis.com/auth/drive.file',
         'https://www.googleapis.com/auth/userinfo.email',
         'https://www.googleapis.com/auth/userinfo.profile',
+        'https://www.googleapis.com/auth/gmail.send',
       ],
       prompt: 'consent'
     });
@@ -773,7 +774,7 @@ apiRouter.get('/health', (req, res) => {
 // Authentication & Cancellation Routes (Issue 17)
 apiRouter.post('/auth/send-cancellation-code', authenticateUser, async (req: any, res: Response) => {
   try {
-    const { email } = req.body;
+    const { email, tokens } = req.body;
     if (!email) return res.status(400).json({ error: 'Email is required' });
     
     const code = Math.floor(100000 + Math.random() * 900000).toString();
@@ -781,11 +782,62 @@ apiRouter.post('/auth/send-cancellation-code', authenticateUser, async (req: any
     
     CANCELLATION_CODES.set(req.user.id, { code, expires });
     
-    console.log(`[Auth] Cancellation code generated for ${email} (User: ${req.user.id})`);
-    // In a real app, send actual email here
+    console.log(`[Auth] Cancellation code generated for ${email} (User: ${req.user.id}): ${code}`);
+    
+    if (tokens) {
+      const oauth2Client = getOAuth2Client();
+      oauth2Client.setCredentials(typeof tokens === 'string' ? JSON.parse(tokens) : tokens);
+      const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+      
+      const emailBodyContent = `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 24px; color: #202223; max-width: 500px; margin: 20px auto; border: 1px solid #e1e3e5; border-radius: 8px; background-color: #ffffff;">
+          <div style="text-align: center; margin-bottom: 24px;">
+            <span style="font-size: 24px; font-weight: 800; color: #7c3aed;">QR Vault</span>
+            <p style="font-size: 12px; color: #6d7175; margin-top: 4px;">Secure File Storage & Sharing</p>
+          </div>
+          <h2 style="font-size: 20px; font-weight: 600; color: #202223; margin-bottom: 16px; text-align: center;">Verify Cancellation</h2>
+          <p style="font-size: 14px; line-height: 1.5; color: #6d7175;">You requested to cancel your subscription on QR Vault. Please use the following 6-digit verification code to confirm this action:</p>
+          <div style="background-color: #f6f6f7; border-radius: 8px; padding: 16px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 6px; margin: 24px 0; color: #202223; border: 1px solid #e1e3e5;">
+            ${code}
+          </div>
+          <p style="color: #8c9196; font-size: 12px; line-height: 1.4; text-align: center;">This code is valid for 10 minutes. If you did not request this cancellation, please ignore this email or secure your account.</p>
+          <hr style="border: 0; border-top: 1px solid #e1e3e5; margin: 24px 0;" />
+          <p style="color: #8c9196; font-size: 11px; text-align: center; margin: 0;">© ${new Date().getFullYear()} QR Vault. All rights reserved.</p>
+        </div>
+      `;
+      
+      const makeBody = (to: string, from: string, subject: string, message: string) => {
+        const str = [
+          `To: ${to}`,
+          `From: ${from}`,
+          `Subject: ${subject}`,
+          `Content-Type: text/html; charset=utf-8`,
+          `MIME-Version: 1.0`,
+          ``,
+          message
+        ].join('\n');
+        return Buffer.from(str)
+          .toString('base64')
+          .replace(/\+/g, '-')
+          .replace(/\//g, '_')
+          .replace(/=+$/, '');
+      };
+      
+      await gmail.users.messages.send({
+        userId: 'me',
+        requestBody: {
+          raw: makeBody(email, 'me', 'QR Vault Subscription Cancellation Code', emailBodyContent)
+        }
+      });
+      console.log(`[Auth] Cancellation email sent to ${email} via Gmail API.`);
+    } else {
+      console.warn(`[Auth] No Google tokens provided for cancellation code email. Code is: ${code}`);
+      throw new Error("Cloud connection is required to send verification emails. Please connect your Google Drive first.");
+    }
     
     res.json({ status: 'success', message: 'Verification code sent' });
   } catch (error: any) {
+    console.error('[Auth] send-cancellation-code error:', error);
     res.status(500).json({ error: error.message });
   }
 });

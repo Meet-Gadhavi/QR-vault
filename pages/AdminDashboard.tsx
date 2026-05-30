@@ -56,6 +56,7 @@ interface Log {
 
 
 export const AdminDashboard: React.FC = () => {
+  const { theme } = useTheme();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
   const [activeTab, setActiveTab] = useState<'home' | 'users' | 'transactions' | 'logs'>('home');
