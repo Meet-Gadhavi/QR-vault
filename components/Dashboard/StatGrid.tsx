@@ -78,14 +78,6 @@ export const StatGrid: React.FC<StatGridProps> = ({
                   <Clock className="w-3.5 h-3.5" aria-hidden="true" /> {timeLeft}
                 </div>
               )}
-              {isPaidPlan && (
-                <button
-                  onClick={onCancelClick}
-                  className="flex items-center gap-2 text-xs font-semibold text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 bg-red-50 dark:bg-red-950/20 hover:bg-red-100 px-3 py-1.5 rounded-2xl border border-red-100 dark:border-red-900/20 cursor-pointer transition-colors"
-                >
-                  Cancel Subscription
-                </button>
-              )}
               {googleTokens && (
                 <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-1.5 rounded-2xl border border-emerald-100 dark:border-emerald-500/20">
                   <GoogleDriveImg className="w-3.5 h-3.5" />
@@ -158,27 +150,29 @@ export const StatGrid: React.FC<StatGridProps> = ({
             {isPaidPlan && googleTokens ? 'Drive Storage' : 'Storage Usage'}
           </div>
           <div className="flex items-center h-32">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={data}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={30}
-                  outerRadius={45}
-                  fill="#8884d8"
-                  paddingAngle={5}
-                  dataKey="value"
-                  startAngle={90}
-                  endAngle={-270}
-                >
-                  {data.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="text-right">
+            <div className="relative flex-1 w-full h-full min-w-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={data}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={30}
+                    outerRadius={45}
+                    fill="#8884d8"
+                    paddingAngle={5}
+                    dataKey="value"
+                    startAngle={90}
+                    endAngle={-270}
+                  >
+                    {data.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="text-right ml-4">
               <div className={`text-2xl font-bold ${isOverLimit ? 'text-red-600' : 'text-gray-900 dark:text-white'}`}>
                 {formatBytes(storageUsedDisplay)}
               </div>

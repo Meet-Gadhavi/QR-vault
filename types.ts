@@ -158,3 +158,23 @@ export const PLAN_LIMITS = {
   [PlanType.STARTER]: 10 * 1024 * 1024 * 1024, // 10GB
   [PlanType.PRO]: 20 * 1024 * 1024 * 1024, // 20GB
 };
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      's-modal': any;
+      's-button': any;
+      's-box': any;
+      's-text-field': any;
+      's-select': any;
+      's-checkbox': any;
+      's-divider': any;
+      's-spinner': any;
+      's-drop-zone': any;
+      's-banner': any;
+      's-heading': any;
+      's-paragraph': any;
+      's-text': any;
+    }
+  }
+}

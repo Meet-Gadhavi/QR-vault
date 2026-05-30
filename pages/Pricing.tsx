@@ -203,25 +203,28 @@ export const Pricing: React.FC = () => {
                     </ul>
 
                     <div className="mt-auto">
-                      {state.isCurrentPlan && state.showExpiry && planExpiry ? (
+                      {state.isCurrentPlan ? (
                         <div className="space-y-3">
-                          <div className="w-full py-4 px-6 bg-green-50 dark:bg-green-900/10 border border-green-100 dark:border-green-800 rounded-2xl text-center">
-                            <div className="flex items-center justify-center gap-2 text-green-700 dark:text-green-400 font-bold text-sm">
-                              <Clock className="w-4 h-4" />
-                              {formatExpiry(planExpiry)}
+                          {planExpiry && (
+                            <div className="w-full py-4 px-6 bg-green-50 dark:bg-green-900/10 border border-green-100 dark:border-green-800 rounded-2xl text-center">
+                              <div className="flex items-center justify-center gap-2 text-green-700 dark:text-green-400 font-bold text-sm">
+                                <Clock className="w-4 h-4" />
+                                {formatExpiry(planExpiry)}
+                              </div>
                             </div>
+                          )}
+                          <div className="w-full py-4 bg-green-500 text-white rounded-2xl text-center font-bold shadow-lg shadow-green-200 dark:shadow-green-900/20 cursor-default">
+                            Your Active Plan
                           </div>
-                           <button
-                            onClick={handleCancel}
-                            className="w-full py-3 text-red-500 hover:text-red-700 dark:hover:text-red-400 font-bold text-sm transition-all hover:tracking-wide flex items-center justify-center gap-2"
-                          >
-                            <XCircle className="w-4 h-4" />
-                            Cancel Subscription
-                          </button>
-                        </div>
-                      ) : state.isCurrentPlan ? (
-                        <div className="w-full py-4 bg-green-500 text-white rounded-2xl text-center font-bold shadow-lg shadow-green-200 dark:shadow-green-900/20 cursor-default">
-                          Your Active Plan
+                          {(plan.id === PlanType.STARTER || plan.id === PlanType.PRO) && (
+                            <button
+                              onClick={handleCancel}
+                              className="w-full py-3 text-red-500 hover:text-red-700 dark:hover:text-red-400 font-bold text-sm transition-all hover:tracking-wide flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                              <XCircle className="w-4 h-4" />
+                              Cancel Subscription
+                            </button>
+                          )}
                         </div>
                       ) : state.needsCancel ? (
                         <div className="w-full py-4 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-2xl text-center text-xs font-bold leading-relaxed px-4">

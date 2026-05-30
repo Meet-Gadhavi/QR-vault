@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { AlertTriangle, Mail, X, Check } from 'lucide-react';
 import { mockService } from '../services/mockService';
 import { toast } from 'sonner';
@@ -24,8 +24,25 @@ export const CancelSubscriptionModal: React.FC<CancelSubscriptionModalProps> = (
   const [verificationError, setVerificationError] = useState('');
   const [sendingCode, setSendingCode] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const modalRef = useRef<any>(null);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (modalRef.current) {
+      modalRef.current.open = isOpen;
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    const modalEl = modalRef.current;
+    if (!modalEl) return;
+    const handleCloseEvent = () => {
+      handleClose();
+    };
+    modalEl.addEventListener('close', handleCloseEvent);
+    return () => {
+      modalEl.removeEventListener('close', handleCloseEvent);
+    };
+  }, [isOpen]);
 
   const handleClose = () => {
     setCancelStep('confirm');
@@ -69,33 +86,8 @@ export const CancelSubscriptionModal: React.FC<CancelSubscriptionModalProps> = (
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      {/* Overlay */}
-      <div 
-        className="absolute inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm transition-opacity duration-300" 
-        onClick={handleClose} 
-      />
-
-      {/* Modal Card */}
-      <div 
-        className="relative bg-white dark:bg-[#1a1a1a] rounded-xl shadow-xl max-w-md w-full overflow-hidden border border-gray-200 dark:border-gray-800 transition-all duration-300 transform scale-100" 
-        role="dialog" 
-        aria-modal="true"
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
-          <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-            Cancel Subscription
-          </h3>
-          <button 
-            onClick={handleClose}
-            className="p-1 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-            aria-label="Close"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
+    <s-modal ref={modalRef} heading="Cancel Subscription">
+      <div className="text-slate-900 dark:text-white bg-white dark:bg-[#1a1a1a] w-full">
         {cancelStep === 'confirm' ? (
           <>
             {/* Warning Banner */}
@@ -118,26 +110,20 @@ export const CancelSubscriptionModal: React.FC<CancelSubscriptionModalProps> = (
               </p>
 
               <div className="flex items-center gap-3 pt-2">
-                <button
+                <s-button
                   onClick={requestCancelCode}
-                  disabled={sendingCode}
-                  className="flex-1 inline-flex items-center justify-center px-4 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-gray-100 dark:disabled:bg-gray-800 text-white font-medium text-sm rounded-lg shadow-sm hover:shadow transition-all duration-200 gap-2 cursor-pointer"
+                  disabled={sendingCode ? true : undefined}
+                  variant="primary"
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium"
                 >
-                  {sendingCode ? (
-                    <>
-                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Sending Code...
-                    </>
-                  ) : (
-                    <>Get Verification Code</>
-                  )}
-                </button>
-                <button
+                  {sendingCode ? 'Sending Code...' : 'Get Verification Code'}
+                </s-button>
+                <s-button
                   onClick={handleClose}
-                  className="flex-1 inline-flex items-center justify-center px-4 py-2.5 bg-white dark:bg-[#1a1a1a] hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 font-medium text-sm rounded-lg shadow-sm hover:shadow transition-all duration-200 cursor-pointer"
+                  className="flex-1 font-medium"
                 >
                   Keep My Subscription
-                </button>
+                </s-button>
               </div>
             </div>
           </>
@@ -184,30 +170,24 @@ export const CancelSubscriptionModal: React.FC<CancelSubscriptionModalProps> = (
               </div>
 
               <div className="flex gap-3">
-                <button
+                <s-button
                   onClick={() => {
                     setCancelStep('confirm');
                     setVerificationCode('');
                     setVerificationError('');
                   }}
-                  className="flex-1 inline-flex items-center justify-center px-4 py-2.5 bg-white dark:bg-[#1a1a1a] hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 font-medium text-sm rounded-lg shadow-sm hover:shadow transition-all duration-200 cursor-pointer"
+                  className="flex-1 font-medium"
                 >
                   Back
-                </button>
-                <button
+                </s-button>
+                <s-button
                   onClick={confirmCancel}
-                  disabled={cancelling || verificationCode.length < 6}
-                  className="flex-1 inline-flex items-center justify-center px-4 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed text-white font-medium text-sm rounded-lg shadow-sm hover:shadow transition-all duration-200 gap-2 cursor-pointer"
+                  disabled={(cancelling || verificationCode.length < 6) ? true : undefined}
+                  variant="primary"
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium"
                 >
-                  {cancelling ? (
-                    <>
-                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Cancelling...
-                    </>
-                  ) : (
-                    'Confirm Cancel'
-                  )}
-                </button>
+                  {cancelling ? 'Cancelling...' : 'Confirm Cancel'}
+                </s-button>
               </div>
 
               <p className="text-center text-xs text-gray-400">
@@ -223,6 +203,6 @@ export const CancelSubscriptionModal: React.FC<CancelSubscriptionModalProps> = (
           </>
         )}
       </div>
-    </div>
+    </s-modal>
   );
 };

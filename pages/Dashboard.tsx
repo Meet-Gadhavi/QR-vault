@@ -2695,9 +2695,9 @@ export const Dashboard: React.FC = () => {
                       <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] mb-8 flex items-center gap-2">
                         <TrendingUp className="w-4 h-4 text-primary-500" /> Mixed engagement trends
                       </h3>
-                      <div className="flex-1 w-full flex items-center justify-center">
+                      <div className="flex-1 w-full min-h-[350px] relative">
                         {selectedAnalyticsVault.views === 0 ? (
-                          <div className="flex flex-col items-center">
+                          <div className="absolute inset-0 flex flex-col items-center justify-center">
                             <TrendingUp className="w-16 h-16 text-gray-200 dark:text-gray-800 mb-4 opacity-50" />
                             <span className="text-xs font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest italic">NO Data to showcase !</span>
                           </div>
@@ -2739,20 +2739,28 @@ export const Dashboard: React.FC = () => {
                           <span className="text-xs font-black text-primary-600 dark:text-primary-400 uppercase tracking-widest">Live Updates</span>
                         </div>
                       </div>
-                      <div className="h-[350px] flex items-center justify-center">{selectedAnalyticsVault.views === 0 ? <div className="flex flex-col items-center"><TrendingUp className="w-16 h-16 text-gray-200 dark:text-gray-800 mb-4 opacity-50" /><span className="text-xs font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest italic">NO Data to showcase !</span></div> : <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={selectedAnalyticsVault.analytics?.timestampComparison}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#88888822" />
-                          <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900 }} />
-                          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900 }} />
-                          <Tooltip
-                            cursor={{ fill: '#88888811' }}
-                            contentStyle={{ backgroundColor: '#000', border: 'none', borderRadius: '12px' }}
-                            itemStyle={{ color: '#fff' }}
-                          />
-                          <Bar dataKey="engagement" fill="#7c3aed" radius={[8, 8, 0, 0]} barSize={40} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                      }</div>
+                      <div className="h-[350px] w-full relative min-w-0">
+                        {selectedAnalyticsVault.views === 0 ? (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center">
+                            <TrendingUp className="w-16 h-16 text-gray-200 dark:text-gray-800 mb-4 opacity-50" />
+                            <span className="text-xs font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest italic">NO Data to showcase !</span>
+                          </div>
+                        ) : (
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={selectedAnalyticsVault.analytics?.timestampComparison}>
+                              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#88888822" />
+                              <XAxis dataKey="time" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900 }} />
+                              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900 }} />
+                              <Tooltip
+                                cursor={{ fill: '#88888811' }}
+                                contentStyle={{ backgroundColor: '#000', border: 'none', borderRadius: '12px' }}
+                                itemStyle={{ color: '#fff' }}
+                              />
+                              <Bar dataKey="engagement" fill="#7c3aed" radius={[8, 8, 0, 0]} barSize={40} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -2761,21 +2769,29 @@ export const Dashboard: React.FC = () => {
                   <div className="animate-in slide-in-from-bottom-4 duration-500 space-y-6">
                     <div className="bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 rounded-[2rem] p-8">
                       <h3 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-[0.2em] mb-8">File Engagement vs Downloads</h3>
-                      <div className="h-[350px] flex items-center justify-center">{selectedAnalyticsVault.views === 0 ? <div className="flex flex-col items-center"><TrendingUp className="w-16 h-16 text-gray-200 dark:text-gray-800 mb-4 opacity-50" /><span className="text-xs font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest italic">NO Data to showcase !</span></div> : <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={selectedAnalyticsVault.analytics?.fileEngagement} layout="vertical">
-                          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#88888822" />
-                          <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900 }} />
-                          <YAxis dataKey="fileName" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900 }} width={120} />
-                          <Tooltip
-                            contentStyle={{ backgroundColor: '#000', border: 'none', borderRadius: '12px' }}
-                            itemStyle={{ color: '#fff' }}
-                          />
-                          <Legend wrapperStyle={{ paddingTop: '20px', textTransform: 'uppercase', fontSize: '9px', fontWeight: 900, letterSpacing: '1px' }} />
-                          <Bar dataKey="engagement" name="Engagement" fill="#7c3aed" radius={[0, 4, 4, 0]} />
-                          <Bar dataKey="downloads" name="Downloads" fill="#10b981" radius={[0, 4, 4, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                      }</div>
+                      <div className="h-[350px] w-full relative min-w-0">
+                        {selectedAnalyticsVault.views === 0 ? (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center">
+                            <TrendingUp className="w-16 h-16 text-gray-200 dark:text-gray-800 mb-4 opacity-50" />
+                            <span className="text-xs font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest italic">NO Data to showcase !</span>
+                          </div>
+                        ) : (
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={selectedAnalyticsVault.analytics?.fileEngagement} layout="vertical">
+                              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#88888822" />
+                              <XAxis type="number" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900 }} />
+                              <YAxis dataKey="fileName" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900 }} width={120} />
+                              <Tooltip
+                                contentStyle={{ backgroundColor: '#000', border: 'none', borderRadius: '12px' }}
+                                itemStyle={{ color: '#fff' }}
+                              />
+                              <Legend wrapperStyle={{ paddingTop: '20px', textTransform: 'uppercase', fontSize: '9px', fontWeight: 900, letterSpacing: '1px' }} />
+                              <Bar dataKey="engagement" name="Engagement" fill="#7c3aed" radius={[0, 4, 4, 0]} />
+                              <Bar dataKey="downloads" name="Downloads" fill="#10b981" radius={[0, 4, 4, 0]} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        )}
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

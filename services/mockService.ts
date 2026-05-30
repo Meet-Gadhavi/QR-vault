@@ -303,7 +303,7 @@ const supabaseImpl = {
             hashedPassword = await supabaseImpl.hashPassword(password);
         }
 
-        const { data: vault, error } = await supabase.from('vaults').insert({
+        const insertData: any = {
             user_id: userId,
             name,
             access_level: accessLevel,
@@ -316,9 +316,24 @@ const supabaseImpl = {
             custom_domain: customDomain,
             vault_type: vaultType,
             receiving_config: receivingConfig
-        }).select().single();
+        };
 
-        if (error) throw new Error(`Failed to create vault: ${error.message}`);
+        let { data: vault, error } = await supabase.from('vaults').insert(insertData).select().single();
+
+        if (error) {
+            if (error.code === '42703' || error.message?.includes('receiving_config') || error.message?.includes('vault_type')) {
+                console.warn("[Supabase Fallback] Schema cache lacks receiving_config/vault_type columns. Retrying vault creation without them...");
+                delete insertData.vault_type;
+                delete insertData.receiving_config;
+                const retry = await supabase.from('vaults').insert(insertData).select().single();
+                if (retry.error) {
+                    throw new Error(`Failed to create vault: ${retry.error.message}`);
+                }
+                vault = retry.data;
+            } else {
+                throw new Error(`Failed to create vault: ${error.message}`);
+            }
+        }
 
         // 2. Upload Files to Storage
         for (const file of files) {
@@ -372,8 +387,20 @@ const supabaseImpl = {
         if (vaultType !== undefined) updatePayload.vault_type = vaultType;
         if (receivingConfig !== undefined) updatePayload.receiving_config = receivingConfig;
 
-        const { error } = await supabase.from('vaults').update({ ...updatePayload, report_count: 0 }).eq('id', id);
-        if (error) throw new Error(`Update failed: ${error.message}`);
+        let { error } = await supabase.from('vaults').update({ ...updatePayload, report_count: 0 }).eq('id', id);
+        if (error) {
+            if (error.code === '42703' || error.message?.includes('receiving_config') || error.message?.includes('vault_type')) {
+                console.warn("[Supabase Fallback] Schema cache lacks columns. Retrying update without vault_type and receiving_config...");
+                delete updatePayload.vault_type;
+                delete updatePayload.receiving_config;
+                const retry = await supabase.from('vaults').update({ ...updatePayload, report_count: 0 }).eq('id', id);
+                if (retry.error) {
+                    throw new Error(`Update failed: ${retry.error.message}`);
+                }
+            } else {
+                throw new Error(`Update failed: ${error.message}`);
+            }
+        }
 
         // Reset Reputation: Delete all reports for this vault upon update
         await supabase.from('reports').delete().eq('vault_id', id);

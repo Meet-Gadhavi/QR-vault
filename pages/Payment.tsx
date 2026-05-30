@@ -67,9 +67,13 @@ export const Payment: React.FC = () => {
             }
 
             // Call backend to create order
+            const authHeader = await mockService.getAuthHeader();
             const orderResponse = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/razorpay/create-order`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    ...authHeader
+                },
                 body: JSON.stringify({
                     amount: prices[plan],
                     currency: 'INR',

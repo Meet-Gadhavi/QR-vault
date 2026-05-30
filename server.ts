@@ -838,7 +838,11 @@ apiRouter.post('/auth/send-cancellation-code', authenticateUser, async (req: any
     res.json({ status: 'success', message: 'Verification code sent' });
   } catch (error: any) {
     console.error('[Auth] send-cancellation-code error:', error);
-    res.status(500).json({ error: error.message });
+    let errorMsg = error.message || 'Failed to send cancellation code';
+    if (errorMsg.includes('insufficient authentication scopes') || errorMsg.includes('scopes') || errorMsg.includes('scope')) {
+      errorMsg = 'Your connected Google account needs email sending permissions. Please disconnect and reconnect Google Drive on the dashboard to authorize this permission.';
+    }
+    res.status(500).json({ error: errorMsg });
   }
 });
 
