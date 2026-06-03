@@ -77,7 +77,7 @@ class MazewayClient {
       'Content-Type': 'application/json'
     };
 
-    const run = async () => {
+    const run = async (): Promise<any> => {
       try {
         if (action === 'SELECT') {
           const res = await (globalThis as any).fetch(`${apiBase}/tables/${table}/rows`, {

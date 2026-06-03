@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { QrCode, Menu, X, User, LogOut, Moon, Sun } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { VaultyCursor } from './VaultyCursor';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
@@ -33,11 +34,17 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   );
 
   if (isPublicPage || isAdminDashboard) {
-    return <main className="min-h-screen bg-gray-50 dark:bg-[#0a0a0a] transition-colors duration-300">{children}</main>;
+    return (
+      <main className="min-h-screen bg-gray-50 dark:bg-[#0a0a0a] transition-colors duration-300">
+        <VaultyCursor />
+        {children}
+      </main>
+    );
   }
 
   return (
     <div className="min-h-screen flex flex-col font-sans bg-white dark:bg-[#0a0a0a] transition-colors duration-300">
+      <VaultyCursor />
       <header className="bg-white/80 dark:bg-[#0a0a0a]/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 sticky top-0 z-50 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
