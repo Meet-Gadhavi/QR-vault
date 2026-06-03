@@ -15,8 +15,7 @@ const planData = [
     period: '/forever',
     features: [
       '1 GB Secure Storage',
-      'Max 50MB File Upload',
-      '25 Scans per Vault',
+      'Unlimited QR Scans',
       'Auto-delete after 24 hours',
       'Community Support'
     ],
@@ -33,11 +32,11 @@ const planData = [
     period: '/month',
     features: [
       '10 GB Secure Storage',
-      'Max 500MB File Upload',
-      'Up to 65 Scans per Vault',
-      'Expiration Rules (24h/48h/72h)',
+      'Expiration Rules (Auto-expire)',
       'Unlimited QR Vaults',
-      'Detailed Scan Analytics'
+      'Priority Speed & Performance',
+      'Detailed Scan Analytics',
+      'Ad-Free Experience'
     ],
     highlight: 'Best for personal projects & small files.',
     cta: 'Upgrade to Plus',
@@ -53,11 +52,11 @@ const planData = [
     period: '/month',
     features: [
       '20 GB Secure Storage',
-      'Max 1GB File Upload',
-      'Unlimited QR Scans & Vaults',
       'Permanent Storage (Optional Expiry)',
       'Password Protected Vaults',
-      'Custom Branding & Logo'
+      'Fastest Global Delivery',
+      'Custom Branding & Logo',
+      '24/7 Premium Support'
     ],
     highlight: 'Maximum storage for professionals.',
     cta: 'Go Pro Now',

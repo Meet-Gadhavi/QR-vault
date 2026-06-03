@@ -38,7 +38,470 @@ if (!supabaseKey) {
   process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Real client for Auth only
+const realSupabase = createClient(supabaseUrl, supabaseKey);
+
+const MAZEWAY_API_HOST = 'https://mazeway-db.onrender.com/api/v1';
+const MAZEWAY_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJncm91cCI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDUwNDc0MX0.mazeway_db_service_role_VqW8ha4NGIQiJo7MYI0i8uwrwJoNyYWDVHjLUQ86pLd7l9BVNCJ10DufE9mxw4Lo';
+
+// Custom client to redirect all DB queries to Mazeway DB
+class MazewayClient {
+  private apiKey: string;
+  private apiBase = MAZEWAY_API_HOST;
+
+  // Delegate auth to real Supabase
+  auth = realSupabase.auth;
+
+  constructor(apiKey: string) {
+    this.apiKey = apiKey;
+  }
+
+  from(table: string) {
+    const apiKey = this.apiKey;
+    const apiBase = this.apiBase;
+
+    let action: 'SELECT' | 'INSERT' | 'UPDATE' | 'DELETE' | 'UPSERT' = 'SELECT';
+    let actionPayload: any = null;
+    let selectFields = '*';
+    let filterEqs: { col: string; val: any }[] = [];
+    let filterIns: { col: string; list: any[] }[] = [];
+    let filterLts: { col: string; val: any }[] = [];
+    let filterGts: { col: string; val: any }[] = [];
+    let orderCol: string | null = null;
+    let orderAsc = true;
+    let isSingle = false;
+    let selectOptions: any = {};
+
+    const requestHeaders = {
+      'apikey': apiKey,
+      'Content-Type': 'application/json'
+    };
+
+    const run = async () => {
+      try {
+        if (action === 'SELECT') {
+          const res = await (globalThis as any).fetch(`${apiBase}/tables/${table}/rows`, {
+            headers: requestHeaders
+          });
+          if (!res.ok) {
+            const text = await res.text();
+            throw new Error(`Select failed: ${text}`);
+          }
+          let rows = await res.json();
+
+          // Perform in-memory filtering
+          for (const eq of filterEqs) {
+            rows = rows.filter((r: any) => {
+              const rowVal = r[eq.col];
+              if (typeof rowVal === 'boolean') return rowVal === (eq.val === 'true' || eq.val === true);
+              if (typeof rowVal === 'number') return Number(rowVal) === Number(eq.val);
+              return String(rowVal) === String(eq.val);
+            });
+          }
+
+          for (const fIn of filterIns) {
+            const listSet = new Set(fIn.list.map(String));
+            rows = rows.filter((r: any) => listSet.has(String(r[fIn.col])));
+          }
+
+          for (const lt of filterLts) {
+            rows = rows.filter((r: any) => {
+              const val = r[lt.col];
+              if (!val) return false;
+              return new Date(val) < new Date(lt.val);
+            });
+          }
+
+          for (const gt of filterGts) {
+            rows = rows.filter((r: any) => {
+              const val = r[gt.col];
+              if (!val) return false;
+              return new Date(val) > new Date(gt.val);
+            });
+          }
+
+          // Perform in-memory joins
+          const normalizedSelect = selectFields.replace(/\s+/g, '');
+          if (table === 'vaults') {
+            if (normalizedSelect.includes('profiles')) {
+              const profRes = await (globalThis as any).fetch(`${apiBase}/tables/profiles/rows`, { headers: requestHeaders });
+              const profiles = profRes.ok ? await profRes.json() : [];
+              rows = rows.map((vault: any) => {
+                const matchingProfile = profiles.find((p: any) => p.id === vault.user_id);
+                return {
+                  ...vault,
+                  profiles: matchingProfile || null
+                };
+              });
+            }
+
+            if (normalizedSelect.includes('files')) {
+              const filesRes = await (globalThis as any).fetch(`${apiBase}/tables/files/rows`, { headers: requestHeaders });
+              const files = filesRes.ok ? await filesRes.json() : [];
+              rows = rows.map((vault: any) => {
+                const vFiles = files.filter((f: any) => f.vault_id === vault.id);
+                return {
+                  ...vault,
+                  files: vFiles
+                };
+              });
+            }
+
+            if (normalizedSelect.includes('requests')) {
+              const reqRes = await (globalThis as any).fetch(`${apiBase}/tables/access_requests/rows`, { headers: requestHeaders });
+              const requests = reqRes.ok ? await reqRes.json() : [];
+              rows = rows.map((vault: any) => {
+                const vRequests = requests.filter((r: any) => r.vault_id === vault.id);
+                return {
+                  ...vault,
+                  requests: vRequests
+                };
+              });
+            }
+          }
+
+          if (orderCol) {
+            rows.sort((a: any, b: any) => {
+              const valA = a[orderCol!];
+              const valB = b[orderCol!];
+              if (valA === valB) return 0;
+              const factor = orderAsc ? 1 : -1;
+              return valA < valB ? -factor : factor;
+            });
+          }
+
+          if (isSingle) {
+            return { data: rows[0] || null, count: rows.length ? 1 : 0, error: null };
+          }
+          return { data: rows, count: rows.length, error: null };
+        }
+
+        if (action === 'INSERT') {
+          const rowsToInsert = Array.isArray(actionPayload) ? actionPayload : [actionPayload];
+          const insertedRows = [];
+          for (const r of rowsToInsert) {
+            const res = await (globalThis as any).fetch(`${apiBase}/tables/${table}/rows`, {
+              method: 'POST',
+              headers: requestHeaders,
+              body: JSON.stringify({ row: r })
+            });
+            if (!res.ok) {
+              const text = await res.text();
+              throw new Error(`Insert failed: ${text}`);
+            }
+            insertedRows.push(r);
+          }
+          const dataVal = Array.isArray(actionPayload) ? insertedRows : insertedRows[0];
+          return { data: dataVal, error: null };
+        }
+
+        if (action === 'UPDATE') {
+          // Perform select first to find rows matching filters
+          action = 'SELECT';
+          const selectRes = await run();
+          action = 'UPDATE';
+          if (selectRes.error) throw selectRes.error;
+          const rowsToUpdate = selectRes.data ? (Array.isArray(selectRes.data) ? selectRes.data : [selectRes.data]) : [];
+          
+          for (const r of rowsToUpdate) {
+            const res = await (globalThis as any).fetch(`${apiBase}/tables/${table}/rows`, {
+              method: 'PATCH',
+              headers: requestHeaders,
+              body: JSON.stringify({
+                match: { id: r.id },
+                update: actionPayload
+              })
+            });
+            if (!res.ok) {
+              const text = await res.text();
+              throw new Error(`Update failed: ${text}`);
+            }
+          }
+          return { data: rowsToUpdate, error: null };
+        }
+
+        if (action === 'DELETE') {
+          // Perform select first to find rows matching filters
+          action = 'SELECT';
+          const selectRes = await run();
+          action = 'DELETE';
+          if (selectRes.error) throw selectRes.error;
+          const rowsToDelete = selectRes.data ? (Array.isArray(selectRes.data) ? selectRes.data : [selectRes.data]) : [];
+          
+          for (const r of rowsToDelete) {
+            const res = await (globalThis as any).fetch(`${apiBase}/tables/${table}/rows`, {
+              method: 'DELETE',
+              headers: requestHeaders,
+              body: JSON.stringify({
+                match: { id: r.id }
+              })
+            });
+            if (!res.ok) {
+              const text = await res.text();
+              throw new Error(`Delete failed: ${text}`);
+            }
+          }
+          return { data: rowsToDelete, error: null };
+        }
+
+        if (action === 'UPSERT') {
+          const records = Array.isArray(actionPayload) ? actionPayload : [actionPayload];
+          for (const r of records) {
+            const checkRes = await (globalThis as any).fetch(`${apiBase}/tables/${table}/rows`, { headers: requestHeaders });
+            const rows = checkRes.ok ? await checkRes.json() : [];
+            const exists = rows.some((row: any) => row.id === r.id);
+            if (exists) {
+              await (globalThis as any).fetch(`${apiBase}/tables/${table}/rows`, {
+                method: 'PATCH',
+                headers: requestHeaders,
+                body: JSON.stringify({
+                  match: { id: r.id },
+                  update: r
+                })
+              });
+            } else {
+              await (globalThis as any).fetch(`${apiBase}/tables/${table}/rows`, {
+                method: 'POST',
+                headers: requestHeaders,
+                body: JSON.stringify({ row: r })
+              });
+            }
+          }
+          return { error: null };
+        }
+
+        return { data: null, error: new Error('Unknown action') };
+      } catch (err: any) {
+        return { data: null, count: null, error: err };
+      }
+    };
+
+    const chain: any = {
+      select: (fields = '*', options = {}) => {
+        selectFields = fields;
+        selectOptions = options;
+        return chain;
+      },
+      eq: (col: string, val: any) => {
+        filterEqs.push({ col, val });
+        return chain;
+      },
+      in: (col: string, list: any[]) => {
+        filterIns.push({ col, list });
+        return chain;
+      },
+      lt: (col: string, val: any) => {
+        filterLts.push({ col, val });
+        return chain;
+      },
+      gt: (col: string, val: any) => {
+        filterGts.push({ col, val });
+        return chain;
+      },
+      order: (col: string, options = { ascending: true }) => {
+        orderCol = col;
+        orderAsc = options.ascending;
+        return chain;
+      },
+      single: () => {
+        isSingle = true;
+        return run();
+      },
+      insert: (payload: any) => {
+        action = 'INSERT';
+        actionPayload = payload;
+        return chain;
+      },
+      update: (payload: any) => {
+        action = 'UPDATE';
+        actionPayload = payload;
+        return chain;
+      },
+      delete: () => {
+        action = 'DELETE';
+        return chain;
+      },
+      upsert: (payload: any) => {
+        action = 'UPSERT';
+        actionPayload = payload;
+        return chain;
+      },
+      then: (cb: any) => run().then(cb),
+      catch: (cb: any) => run().catch(cb)
+    };
+
+    return chain;
+  }
+
+  // Storage
+  storage = {
+    from: (bucket: string) => ({
+      remove: async (paths: string[]) => {
+        return { data: null, error: null };
+      }
+    })
+  };
+}
+
+const supabase = new MazewayClient(MAZEWAY_SERVICE_ROLE_KEY) as any;
+
+async function ensureTables() {
+  const apiKey = MAZEWAY_SERVICE_ROLE_KEY;
+  const apiBase = MAZEWAY_API_HOST;
+  const headers = {
+    'apikey': apiKey,
+    'Content-Type': 'application/json'
+  };
+
+  try {
+    const res = await (globalThis as any).fetch(`${apiBase}/tables`, { headers });
+    if (!res.ok) {
+      console.error('[Mazeway DB] Failed to list tables:', await res.text());
+      return;
+    }
+    const tables = await res.json();
+    const existingTableNames = new Set(tables.map((t: any) => t.name));
+
+    const schemas = [
+      {
+        name: 'profiles',
+        rls: 'Enabled',
+        columns: [
+          { name: 'id', type: 'uuid', isPrimaryKey: true },
+          { name: 'email', type: 'text' },
+          { name: 'full_name', type: 'text' },
+          { name: 'plan', type: 'text' },
+          { name: 'storage_used', type: 'bigint' },
+          { name: 'storage_limit', type: 'bigint' },
+          { name: 'subscription_expiry_date', type: 'timestamp' },
+          { name: 'updated_at', type: 'timestamp' }
+        ]
+      },
+      {
+        name: 'vaults',
+        rls: 'Enabled',
+        columns: [
+          { name: 'id', type: 'uuid', isPrimaryKey: true },
+          { name: 'user_id', type: 'uuid' },
+          { name: 'name', type: 'text' },
+          { name: 'created_at', type: 'timestamp' },
+          { name: 'views', type: 'integer' },
+          { name: 'active', type: 'boolean' },
+          { name: 'access_level', type: 'text' },
+          { name: 'expires_at', type: 'timestamp' },
+          { name: 'max_views', type: 'integer' },
+          { name: 'report_count', type: 'integer' },
+          { name: 'locked_until', type: 'timestamp' },
+          { name: 'password', type: 'text' },
+          { name: 'vault_type', type: 'text' },
+          { name: 'receiving_config', type: 'text' }
+        ]
+      },
+      {
+        name: 'files',
+        rls: 'Enabled',
+        columns: [
+          { name: 'id', type: 'uuid', isPrimaryKey: true },
+          { name: 'vault_id', type: 'uuid' },
+          { name: 'name', type: 'text' },
+          { name: 'size', type: 'bigint' },
+          { name: 'type', type: 'text' },
+          { name: 'mime_type', type: 'text' },
+          { name: 'url', type: 'text' },
+          { name: 'max_downloads', type: 'integer' },
+          { name: 'download_count', type: 'integer' },
+          { name: 'expires_at', type: 'timestamp' },
+          { name: 'delete_after_minutes', type: 'integer' },
+          { name: 'first_viewed_at', type: 'timestamp' },
+          { name: 'submission_id', type: 'uuid' }
+        ]
+      },
+      {
+        name: 'access_requests',
+        rls: 'Enabled',
+        columns: [
+          { name: 'id', type: 'uuid', isPrimaryKey: true },
+          { name: 'vault_id', type: 'uuid' },
+          { name: 'email', type: 'text' },
+          { name: 'status', type: 'text' },
+          { name: 'requested_at', type: 'timestamp' }
+        ]
+      },
+      {
+        name: 'invoices',
+        rls: 'Enabled',
+        columns: [
+          { name: 'id', type: 'text', isPrimaryKey: true },
+          { name: 'user_id', type: 'uuid' },
+          { name: 'date', type: 'text' },
+          { name: 'plan', type: 'text' },
+          { name: 'amount', type: 'integer' },
+          { name: 'expiry', type: 'text' },
+          { name: 'timestamp', type: 'bigint' }
+        ]
+      },
+      {
+        name: 'deleted_vault_logs',
+        rls: 'Enabled',
+        columns: [
+          { name: 'id', type: 'uuid', isPrimaryKey: true },
+          { name: 'user_id', type: 'uuid' },
+          { name: 'vault_name', type: 'text' },
+          { name: 'original_vault_id', type: 'uuid' },
+          { name: 'views', type: 'integer' },
+          { name: 'deletion_reason', type: 'text' },
+          { name: 'file_manifest', type: 'text' },
+          { name: 'created_at', type: 'timestamp' },
+          { name: 'deleted_at', type: 'timestamp' }
+        ]
+      },
+      {
+        name: 'reports',
+        rls: 'Enabled',
+        columns: [
+          { name: 'id', type: 'uuid', isPrimaryKey: true },
+          { name: 'vault_id', type: 'uuid' },
+          { name: 'file_ids', type: 'text' },
+          { name: 'reason_virus', type: 'boolean' },
+          { name: 'reason_content', type: 'boolean' },
+          { name: 'custom_message', type: 'text' },
+          { name: 'expires_at', type: 'timestamp' },
+          { name: 'created_at', type: 'timestamp' }
+        ]
+      },
+      {
+        name: 'submissions',
+        rls: 'Enabled',
+        columns: [
+          { name: 'id', type: 'uuid', isPrimaryKey: true },
+          { name: 'vault_id', type: 'uuid' },
+          { name: 'sender_data', type: 'text' },
+          { name: 'created_at', type: 'timestamp' }
+        ]
+      }
+    ];
+
+    for (const schema of schemas) {
+      if (!existingTableNames.has(schema.name)) {
+        console.log(`[Mazeway DB] Creating table: ${schema.name}...`);
+        const createRes = await (globalThis as any).fetch(`${apiBase}/tables`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(schema)
+        });
+        if (!createRes.ok) {
+          console.error(`[Mazeway DB] Failed to create table ${schema.name}:`, await createRes.text());
+        } else {
+          console.log(`[Mazeway DB] Table ${schema.name} created successfully.`);
+        }
+      } else {
+        console.log(`[Mazeway DB] Table ${schema.name} already exists.`);
+      }
+    }
+  } catch (error: any) {
+    console.error('[Mazeway DB] ensureTables error:', error.message);
+  }
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -124,11 +587,27 @@ const authenticateUser = async (req: any, res: Response, next: any) => {
     }
 
     // Fetch user plan (Issue 11)
-    const { data: profile } = await supabase
+    let { data: profile } = await supabase
       .from('profiles')
       .select('plan')
       .eq('id', user.id)
       .single();
+
+    if (!profile) {
+      // Create profile record on the fly in Mazeway DB!
+      const defaultProfile = {
+        id: user.id,
+        email: user.email,
+        full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+        plan: 'FREE',
+        storage_used: 0,
+        storage_limit: 1073741824,
+        subscription_expiry_date: null,
+        updated_at: new Date().toISOString()
+      };
+      await supabase.from('profiles').insert(defaultProfile);
+      profile = { plan: 'FREE' };
+    }
 
     req.user = user;
     req.userPlan = profile?.plan || 'FREE';
@@ -143,9 +622,9 @@ const authenticateUser = async (req: any, res: Response, next: any) => {
 const validateUploadLimit = (req: any, res: Response, next: any) => {
   const plan = req.userPlan || 'FREE';
   const limits: Record<string, number> = {
-    'FREE': 50 * 1024 * 1024,      // 50MB
-    'STARTER': 500 * 1024 * 1024,  // 500MB
-    'PRO': 1024 * 1024 * 1024      // 1GB
+    'FREE': 1024 * 1024 * 1024,         // 1GB
+    'STARTER': 10 * 1024 * 1024 * 1024, // 10GB
+    'PRO': 20 * 1024 * 1024 * 1024      // 20GB
   };
 
   const limit = limits[plan] || limits['FREE'];
@@ -1018,11 +1497,11 @@ adminRouter.get('/overview', async (req, res) => {
     if (pError) throw pError;
 
     const totalUsers = profiles.length;
-    const paidUsersCount = profiles.filter(p => p.plan !== 'FREE').length;
+    const paidUsersCount = profiles.filter((p: any) => p.plan !== 'FREE').length;
     const plans = {
-      free: profiles.filter(p => p.plan === 'FREE').length,
-      starter: profiles.filter(p => p.plan === 'STARTER').length,
-      pro: profiles.filter(p => p.plan === 'PRO').length
+      free: profiles.filter((p: any) => p.plan === 'FREE').length,
+      starter: profiles.filter((p: any) => p.plan === 'STARTER').length,
+      pro: profiles.filter((p: any) => p.plan === 'PRO').length
     };
 
     // 2. Fetch Revenue Data (from invoices)
@@ -1043,7 +1522,7 @@ adminRouter.get('/overview', async (req, res) => {
     const oneMonthMs = 30 * 24 * 60 * 60 * 1000;
 
     const now = Date.now();
-    invoices.forEach(inv => {
+    invoices.forEach((inv: any) => {
       const ageMs = now - inv.timestamp;
       
       // 1M calculation
@@ -1156,7 +1635,7 @@ adminRouter.get('/users', async (req, res) => {
     if (error) throw error;
 
     // Map to the format expected by the frontend
-    const mappedUsers = users.map(u => ({
+    const mappedUsers = users.map((u: any) => ({
       id: u.id,
       name: u.full_name || 'Unnamed User',
       email: u.email,
@@ -1366,7 +1845,7 @@ const processVaultCleanups = async () => {
 
         if (!filesError && files && files.length > 0) {
           const pathsToDelete = files
-            .map(f => {
+            .map((f: any) => {
               if (f.url && f.url.includes('/storage/v1/object/public/vault-files/')) {
                 const parts = f.url.split('/vault-files/');
                 return parts.length > 1 ? parts[1] : null;
@@ -1413,6 +1892,9 @@ setInterval(processVaultCleanups, 60 * 60 * 1000);
 
 // Vite Middleware
 async function startServer() {
+  // Ensure all necessary tables exist in Mazeway DB
+  await ensureTables();
+
   // 1. Explicitly serve SEO files FIRST with absolute paths
   // This prevents SPA fallback (index.html) from intercepting these requests
   app.get('/robots.txt', (req, res) => {
