@@ -1,0 +1,15 @@
+name: Keep Alive
+
+on:
+  schedule:
+    # Runs every 10 minutes (cron schedule in UTC)
+    - cron: '*/10 * * * *'
+  workflow_dispatch: # Allows manual trigger from the Actions tab
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Health Endpoint
+        run: |
+          curl -s https://qr-vault-2008.onrender.com/api/health

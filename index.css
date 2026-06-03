@@ -154,7 +154,17 @@
 }
 
 @keyframes fadeOut {
-  0% { opacity: 1; transform: scale(1); }
   100% { opacity: 0; transform: scale(0.9); }
+}
+
+/* Custom pointers for all buttons and interactive elements */
+button,
+[role="button"],
+s-button,
+a,
+input[type="submit"],
+input[type="button"],
+.cursor-pointer {
+  cursor: pointer !important;
 }
 

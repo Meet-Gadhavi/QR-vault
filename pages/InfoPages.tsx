@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mail, Clock, Shield, Lock, Globe, Zap, Users, HelpCircle, Send, User, MessageSquare, AlertCircle, ShieldCheck, Rocket, Construction, Terminal } from 'lucide-react';
+import { Mail, Clock, Shield, Lock, Globe, Zap, Users, HelpCircle, Send, User, MessageSquare, AlertCircle, ShieldCheck, Rocket, Construction, Terminal, X } from 'lucide-react';
 import { mockService } from '../services/mockService';
 import { useNotification } from '../contexts/NotificationContext';
 
@@ -497,37 +497,193 @@ export const Changelog: React.FC = () => (
   </InfoLayout>
 );
 
-export const Blogs: React.FC = () => (
-  <div className="min-h-[80vh] flex items-center justify-center px-4 pt-20 pb-32">
-    <div className="text-center space-y-8 animate-fade-in-up">
-      <div className="relative inline-block">
-        <div className="absolute inset-0 bg-primary-500/20 blur-3xl rounded-full animate-pulse" />
-        <div className="relative bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-white/10 shadow-2xl">
-          <Rocket className="w-16 h-16 text-primary-600 animate-bounce" />
-        </div>
-      </div>
-      
-      <div>
-        <h1 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white mb-4 tracking-tighter">
-          The QR Vault <br/><span className="text-primary-600">Blog</span>
-        </h1>
-        <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-full text-xs font-black uppercase tracking-widest border border-amber-100 dark:border-amber-900/30">
-          <Construction className="w-3.5 h-3.5" /> Coming Very Soon
-        </div>
-      </div>
+export const Blogs: React.FC = () => {
+  const [selectedBlog, setSelectedBlog] = React.useState<any>(null);
 
-      <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto leading-relaxed">
-        We're crafting high-quality articles on security, file sharing protocols, and digital workflows. Stay tuned for the first edition!
-      </p>
+  const blogPosts = [
+    {
+      id: 1,
+      title: "The Future of QR Codes in Modern File Sharing",
+      category: "Security",
+      readTime: "4 min read",
+      author: "Alex Rivers",
+      date: "May 28, 2026",
+      excerpt: "Explore how dynamic links and secure vaults are transforming the speed and safety of digital asset distribution.",
+      content: `QR codes have transitioned from simple inventory trackers to the primary gateway for contactless digital experiences. In file sharing, they solve the friction of typing complex URLs or exchanging email addresses just to transfer documents. By placing a secure file vault behind a single QR code, platforms like QR Vault are redefining workflow speeds.
 
-      <div className="pt-4">
-        <a href="/" className="inline-block bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-gray-200 dark:shadow-none">
-          Back to Home
-        </a>
+The magic lies in dynamic link architecture. When you print or share a QR code, the destination target is a stable link routing through a secure proxy. Behind this proxy, owners can upload, modify, or swap out files at any time without having to regenerate or reprint the QR code. This dynamic linking capability is now the gold standard in asset sharing, restaurant menus, and logistics.
+
+Security measures like password encryption, scan count caps, and auto-expiration have also made QR sharing safer than conventional email attachments. Users can now share sensitive corporate PDFs or private design files knowing the link will automatically self-destruct once the recipient scans it.`
+    },
+    {
+      id: 2,
+      title: "Decentralized vs. Centralized Storage: What's Safer?",
+      category: "Infrastructure",
+      readTime: "6 min read",
+      author: "Sarah Chen",
+      date: "May 15, 2026",
+      excerpt: "A technical deep dive into encryption protocols and privacy layers in cloud-based file sharing.",
+      content: `The debate between centralized cloud storage and decentralized architectures is more relevant than ever. Centralized systems, like AWS, Supabase, or Google Cloud, offer lightning-fast data retrieval speeds, instant indexing, and simple API access. However, they present a single point of failure if security protocols are misconfigured.
+
+Decentralized databases and custom drive integrations (such as mapping databases directly to your Google Drive) distribute this control. When data is stored directly in user-authorized spaces rather than a shared third-party bucket, users maintain 100% ownership. Access is regulated entirely by the owner's OAuth credentials.
+
+For high-security operations, a hybrid approach is ideal. Storing transactional database metadata in a secure REST API with Row Level Security (RLS) while letting clients link their own private cloud workspaces provides both maximum processing speeds and total digital sovereignty.`
+    },
+    {
+      id: 3,
+      title: "How Dynamic Link Swapping Keeps Prints Alive",
+      category: "Developer",
+      readTime: "5 min read",
+      author: "Marcus Vance",
+      date: "May 09, 2026",
+      excerpt: "Learn how to update destination payloads on pre-printed QR codes without needing a reprint.",
+      content: `Every physical print of a QR code incurs cost and friction. If a menu changes, a product is updated, or a document has a typo, reprinting hundreds of brochures or product labels is a nightmare. This is why static QR codes are obsolete for business use cases.
+
+Dynamic link swapping decouples the QR code's visual pattern from the target payload. The QR code points to a fixed URL (a redirect proxy), and the server maps this proxy URL to a database record containing the actual files. When the vault owner uploads new documents, the server updates this database mapping instantly.
+
+This technique has major applications in industrial labeling, menu management, and real estate marketing. You can print a QR sticker on a construction machine once, and update the manuals, safety sheets, and inspection checklists daily in the cloud without ever changing the physical sticker.`
+    },
+    {
+      id: 4,
+      title: "Setting Up Self-Destruct Timers for Sensitive Files",
+      category: "Security",
+      readTime: "3 min read",
+      author: "Elena Rostova",
+      date: "April 29, 2026",
+      excerpt: "Best security practices for distributing ephemeral documents and single-use digital assets.",
+      content: `Information leakage is a critical threat to intellectual property. Standard sharing links often stay active indefinitely, leaving files vulnerable to search engine crawlers, unauthorized forwards, or credential leaks. Ephemeral file sharing solves this vulnerability.
+
+A self-destruct mechanism enforces an automatic expiry policy. This can be time-based (e.g., delete 24 hours after upload) or scan-based (e.g., delete after 3 scans). Some systems even support dynamic view-based deletion, where a countdown timer starts the moment the recipient first views the file, wiping it completely after 5 minutes.
+
+Implementing these policies requires clean server-side cron jobs. While client-side timers look nice, true safety demands that the server sweeps and purges expired files and database records to guarantee that the data is unrecoverable.`
+    },
+    {
+      id: 5,
+      title: "Why Developer APIs Are the Backbone of Logistics QR",
+      category: "Developer",
+      readTime: "7 min read",
+      author: "Devon Brooks",
+      date: "April 18, 2026",
+      excerpt: "Automating qr vault creation for packaging, shipping labels, and dynamic identification badges.",
+      content: `In modern logistics, speed is everything. Packages move through warehouses, distribution centers, and trucks, requiring instant access to manifestos, customs invoices, and handling sheets. Static barcodes are limited in data capacity; this is where Developer APIs come in.
+
+With a simple REST API, logistics systems can automatically generate a secure file vault for every package, upload its packing slips, and generate a dynamic QR code image to print directly onto the shipping label. Couriers scan the QR code to instantly verify delivery manifests and update tracking history.
+
+Integrating database tables through programmatic APIs allows companies to scale this workflow to millions of packages daily, ensuring that handlers get the right documentation dynamically depending on their geo-location and clearance level.`
+    },
+    {
+      id: 6,
+      title: "Optimizing QR Personalization: Branding Without Scanning Loss",
+      category: "Design",
+      readTime: "4 min read",
+      author: "Chloe Mercer",
+      date: "April 02, 2026",
+      excerpt: "How to customize error correction levels to insert brand logos and vibrant palettes into QR code SVGs.",
+      content: `QR codes do not have to be boring black-and-white grids. Modern web apps allow full personalization, letting you customize gradients, corner shapes, and embed central brand logos. However, customizing QR codes requires understanding Reed-Solomon error correction.
+
+Error correction levels (L, M, Q, H) define how much of the QR code can be damaged or covered while remaining fully scannable. By using Level H (High), up to 30% of the QR code area can be obscured. This allows designers to overlay a brand logo in the center of the code without breaking its scannability.
+
+Additionally, using custom SVG rendering ensures that gradients and color palettes match your company's visual identity. It is vital to maintain high contrast between the background and foreground modules to guarantee quick scans across all device cameras and lighting conditions.`
+    }
+  ];
+
+  return (
+    <div className="min-h-screen bg-gray-50/50 dark:bg-[#0a0a0a] py-16 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center max-w-3xl mx-auto mb-16 animate-fade-in-up">
+          <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 dark:text-white mb-6 tracking-tight">
+            The QR Vault <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-primary-400">Intelligence Portal</span>
+          </h1>
+          <p className="text-xl text-gray-600 dark:text-gray-400 leading-relaxed">
+            Stay ahead with our latest technical guides, security reviews, and strategic updates on file-sharing protocols.
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 animate-fade-in-up-delay-1">
+          {blogPosts.map((blog) => (
+            <div 
+              key={blog.id} 
+              className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800/80 shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all duration-300 flex flex-col justify-between overflow-hidden group"
+            >
+              <div className="p-8">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest border border-primary-100 dark:border-primary-800">
+                    {blog.category}
+                  </span>
+                  <span className="text-xs text-gray-400 font-bold">{blog.readTime}</span>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors mb-3 line-clamp-2">
+                  {blog.title}
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-3 mb-6">
+                  {blog.excerpt}
+                </p>
+              </div>
+              <div className="px-8 pb-8 pt-4 border-t border-gray-50 dark:border-gray-800/60 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-gray-900 dark:text-white">{blog.author}</p>
+                  <p className="text-[10px] text-gray-400">{blog.date}</p>
+                </div>
+                <button 
+                  onClick={() => setSelectedBlog(blog)}
+                  className="text-xs font-black uppercase tracking-widest text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 transition-colors flex items-center gap-1 cursor-pointer"
+                >
+                  Read Article &rarr;
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Blog Detail Modal */}
+        {selectedBlog && (
+          <div className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-gray-900 rounded-[2rem] w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-100 dark:border-gray-800 p-8 custom-scrollbar relative animate-in fade-in zoom-in-95 duration-200">
+              <button 
+                onClick={() => setSelectedBlog(null)}
+                className="absolute top-6 right-6 p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors cursor-pointer"
+                aria-label="Close modal"
+              >
+                <X className="w-6 h-6 text-gray-500" />
+              </button>
+              
+              <div className="mb-6">
+                <span className="bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest border border-primary-100 dark:border-primary-800">
+                  {selectedBlog.category}
+                </span>
+                <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white mt-4 mb-3 tracking-tight">
+                  {selectedBlog.title}
+                </h2>
+                <div className="flex items-center gap-4 text-xs text-gray-400">
+                  <span className="font-bold text-gray-700 dark:text-gray-300">By {selectedBlog.author}</span>
+                  <span>&bull;</span>
+                  <span>{selectedBlog.date}</span>
+                  <span>&bull;</span>
+                  <span>{selectedBlog.readTime}</span>
+                </div>
+              </div>
+
+              <hr className="border-gray-100 dark:border-gray-800 my-6" />
+
+              <div className="prose dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 leading-relaxed space-y-6 whitespace-pre-line text-base">
+                {selectedBlog.content}
+              </div>
+
+              <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800 flex justify-end">
+                <button 
+                  onClick={() => setSelectedBlog(null)}
+                  className="bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-6 py-3 rounded-xl font-bold text-sm uppercase tracking-widest hover:scale-105 transition-all cursor-pointer"
+                >
+                  Close Article
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 export const API: React.FC = () => (
   <div className="min-h-[80vh] flex items-center justify-center px-4 pt-20 pb-32">
@@ -564,8 +720,8 @@ export const API: React.FC = () => (
       </div>
 
       <div className="pt-8">
-        <a href="/" className="inline-block bg-primary-600 text-white px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-primary-200">
-          Get Early Access
+        <a href="/" className="inline-block bg-gray-900 dark:bg-white text-white dark:text-gray-900 px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-gray-200 dark:shadow-none">
+          Back to Home
         </a>
       </div>
     </div>
