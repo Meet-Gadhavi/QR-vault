@@ -113,12 +113,13 @@ export const VaultyCursor: React.FC = () => {
       return;
     }
     
-    let i = 0;
+    let currentLength = 0;
     setDisplayedText('');
+    
     const timer = setInterval(() => {
-      setDisplayedText(prev => prev + comment.charAt(i));
-      i++;
-      if (i >= comment.length) {
+      currentLength++;
+      setDisplayedText(comment.substring(0, currentLength));
+      if (currentLength >= comment.length) {
         clearInterval(timer);
       }
     }, 25);
