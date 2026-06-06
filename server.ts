@@ -1152,6 +1152,171 @@ apiRouter.post('/db/ensure-tables', authenticateUser, async (_req: any, res: Res
   }
 });
 
+const DB_MUTATION_TABLES = new Set([
+  'profiles',
+  'vaults',
+  'files',
+  'access_requests',
+  'invoices',
+  'deleted_vault_logs',
+  'reports',
+  'submissions'
+]);
+
+const mazewayServiceHeaders = {
+  apikey: MAZEWAY_SERVICE_ROLE_KEY,
+  'Content-Type': 'application/json'
+};
+
+async function fetchMazewayRows(table: string) {
+  const response = await (globalThis as any).fetch(`${MAZEWAY_API_HOST}/tables/${table}/rows`, {
+    headers: mazewayServiceHeaders
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to read ${table}: ${await response.text()}`);
+  }
+
+  return response.json();
+}
+
+async function verifyMutationAccess(table: string, rows: any[], userId: string) {
+  if (rows.length === 0) return;
+
+  if (table === 'profiles') {
+    if (rows.some((row) => row.id !== userId)) throw new Error('Forbidden');
+    return;
+  }
+
+  if (table === 'vaults') {
+    if (rows.some((row) => row.user_id !== userId)) throw new Error('Forbidden');
+    return;
+  }
+
+  if (table === 'invoices' || table === 'deleted_vault_logs') {
+    if (rows.some((row) => row.user_id !== userId)) throw new Error('Forbidden');
+    return;
+  }
+
+  const vaultLinkedTables = new Set(['files', 'access_requests', 'reports', 'submissions']);
+  if (vaultLinkedTables.has(table)) {
+    const vaultIds = [...new Set(rows.map((row) => row.vault_id).filter(Boolean))];
+    if (vaultIds.length === 0) throw new Error('Forbidden');
+
+    const vaults = await fetchMazewayRows('vaults');
+    const ownedVaultIds = new Set(
+      vaults
+        .filter((vault: any) => vault.user_id === userId && vaultIds.includes(vault.id))
+        .map((vault: any) => vault.id)
+    );
+
+    if (vaultIds.some((vaultId) => !ownedVaultIds.has(vaultId))) throw new Error('Forbidden');
+  }
+}
+
+async function postMazewayRow(table: string, row: any) {
+  const response = await (globalThis as any).fetch(`${MAZEWAY_API_HOST}/tables/${table}/rows`, {
+    method: 'POST',
+    headers: mazewayServiceHeaders,
+    body: JSON.stringify({ row })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Insert failed: ${await response.text()}`);
+  }
+
+  return parseMazewayRowResponse(response, row);
+}
+
+async function patchMazewayRow(table: string, id: string, update: any) {
+  const response = await (globalThis as any).fetch(`${MAZEWAY_API_HOST}/tables/${table}/rows`, {
+    method: 'PATCH',
+    headers: mazewayServiceHeaders,
+    body: JSON.stringify({ match: { id }, update })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Update failed: ${await response.text()}`);
+  }
+}
+
+async function deleteMazewayRow(table: string, id: string) {
+  const response = await (globalThis as any).fetch(`${MAZEWAY_API_HOST}/tables/${table}/rows`, {
+    method: 'DELETE',
+    headers: mazewayServiceHeaders,
+    body: JSON.stringify({ match: { id } })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Delete failed: ${await response.text()}`);
+  }
+}
+
+apiRouter.post('/db/mutate', authenticateUser, async (req: any, res: Response) => {
+  try {
+    const { action, table, rows = [], ids = [], update } = req.body || {};
+    if (!DB_MUTATION_TABLES.has(table)) {
+      return res.status(400).json({ error: 'Unsupported table' });
+    }
+
+    if (!['INSERT', 'UPDATE', 'DELETE', 'UPSERT'].includes(action)) {
+      return res.status(400).json({ error: 'Unsupported mutation action' });
+    }
+
+    if (action === 'INSERT') {
+      const rowsToInsert = rows.map((row: any) => addGeneratedIdIfNeeded(table, row));
+      await verifyMutationAccess(table, rowsToInsert, req.user.id);
+      const inserted = [];
+
+      for (const row of rowsToInsert) {
+        inserted.push(await postMazewayRow(table, row));
+      }
+
+      return res.json({ data: inserted });
+    }
+
+    if (action === 'UPDATE') {
+      const existingRows = (await fetchMazewayRows(table)).filter((row: any) => ids.includes(row.id));
+      await verifyMutationAccess(table, existingRows, req.user.id);
+
+      for (const row of existingRows) {
+        await patchMazewayRow(table, row.id, update);
+      }
+
+      return res.json({ data: existingRows });
+    }
+
+    if (action === 'DELETE') {
+      const existingRows = (await fetchMazewayRows(table)).filter((row: any) => ids.includes(row.id));
+      await verifyMutationAccess(table, existingRows, req.user.id);
+
+      for (const row of existingRows) {
+        await deleteMazewayRow(table, row.id);
+      }
+
+      return res.json({ data: existingRows });
+    }
+
+    const records = rows.map((row: any) => addGeneratedIdIfNeeded(table, row));
+    await verifyMutationAccess(table, records, req.user.id);
+    const currentRows = await fetchMazewayRows(table);
+
+    for (const row of records) {
+      if (currentRows.some((existing: any) => existing.id === row.id)) {
+        await patchMazewayRow(table, row.id, row);
+      } else {
+        await postMazewayRow(table, row);
+      }
+    }
+
+    return res.json({ data: records });
+  } catch (error: any) {
+    const status = error.message === 'Forbidden' ? 403 : 500;
+    console.error('[Mazeway DB] Mutation failed:', error.message);
+    res.status(status).json({ error: error.message || 'Database mutation failed' });
+  }
+});
+
 // Authentication & Cancellation Routes (Issue 17)
 apiRouter.post('/auth/send-cancellation-code', authenticateUser, async (req: any, res: Response) => {
   try {

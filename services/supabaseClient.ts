@@ -36,6 +36,32 @@ async function ensureTablesViaServer() {
   return ensureTablesPromise;
 }
 
+async function getServerAuthHeaders() {
+  const { data: { session } } = await realSupabase.auth.getSession();
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+
+  if (session?.access_token) {
+    headers.Authorization = `Bearer ${session.access_token}`;
+  }
+
+  return headers;
+}
+
+async function mutateViaServer(action: 'INSERT' | 'UPDATE' | 'DELETE' | 'UPSERT', table: string, body: Record<string, any>) {
+  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  const response = await fetch(`${apiBase}/api/db/mutate`, {
+    method: 'POST',
+    headers: await getServerAuthHeaders(),
+    body: JSON.stringify({ action, table, ...body })
+  });
+
+  if (!response.ok) {
+    throw new Error(`${action[0]}${action.slice(1).toLowerCase()} failed: ${await response.text()}`);
+  }
+
+  return response.json();
+}
+
 async function parseMazewayRowResponse(response: Response, fallback: any) {
   const text = await response.text();
   if (!text) return fallback;
@@ -234,19 +260,8 @@ class MazewayClient {
         const runInsert = async (hasRepairedSchema = false): Promise<any> => {
           try {
             const rowsToInsert = (Array.isArray(payload) ? payload : [payload]).map((row) => addGeneratedIdIfNeeded(table, row));
-            const insertedRows = [];
-            for (const r of rowsToInsert) {
-              const res = await fetch(`${apiBase}/tables/${table}/rows`, {
-                method: 'POST',
-                headers: requestHeaders,
-                body: JSON.stringify({ row: r })
-              });
-              if (!res.ok) {
-                const text = await res.text();
-                throw new Error(`Insert failed: ${text}`);
-              }
-              insertedRows.push(await parseMazewayRowResponse(res, r));
-            }
+            const mutation = await mutateViaServer('INSERT', table, { rows: rowsToInsert });
+            const insertedRows = mutation.data || rowsToInsert;
             const dataVal = Array.isArray(payload) ? insertedRows : insertedRows[0];
             return { data: dataVal, error: null };
           } catch (err: any) {
@@ -281,19 +296,9 @@ class MazewayClient {
             const rowsToUpdate = selectRes.data ? (Array.isArray(selectRes.data) ? selectRes.data : [selectRes.data]) : [];
             
             for (const r of rowsToUpdate) {
-              const res = await fetch(`${apiBase}/tables/${table}/rows`, {
-                method: 'PATCH',
-                headers: requestHeaders,
-                body: JSON.stringify({
-                  match: { id: r.id },
-                  update: payload
-                })
-              });
-              if (!res.ok) {
-                const text = await res.text();
-                throw new Error(`Update failed: ${text}`);
-              }
+              if (!r.id) throw new Error('Update failed: row is missing id');
             }
+            await mutateViaServer('UPDATE', table, { ids: rowsToUpdate.map((row: any) => row.id), update: payload });
             return { data: rowsToUpdate, error: null };
           } catch (err: any) {
             if (!hasRepairedSchema && isMazewayTableMissingError(err)) {
@@ -317,18 +322,9 @@ class MazewayClient {
             const rowsToDelete = selectRes.data ? (Array.isArray(selectRes.data) ? selectRes.data : [selectRes.data]) : [];
             
             for (const r of rowsToDelete) {
-              const res = await fetch(`${apiBase}/tables/${table}/rows`, {
-                method: 'DELETE',
-                headers: requestHeaders,
-                body: JSON.stringify({
-                  match: { id: r.id }
-                })
-              });
-              if (!res.ok) {
-                const text = await res.text();
-                throw new Error(`Delete failed: ${text}`);
-              }
+              if (!r.id) throw new Error('Delete failed: row is missing id');
             }
+            await mutateViaServer('DELETE', table, { ids: rowsToDelete.map((row: any) => row.id) });
             return { data: rowsToDelete, error: null };
           } catch (err: any) {
             if (!hasRepairedSchema && isMazewayTableMissingError(err)) {
@@ -347,28 +343,8 @@ class MazewayClient {
       upsert: (payload: any) => {
         const runUpsert = async (hasRepairedSchema = false): Promise<any> => {
           try {
-            const records = Array.isArray(payload) ? payload : [payload];
-            for (const r of records) {
-              const checkRes = await fetch(`${apiBase}/tables/${table}/rows`, { headers: requestHeaders });
-              const rows = checkRes.ok ? await checkRes.json() : [];
-              const exists = rows.some((row: any) => row.id === r.id);
-              if (exists) {
-                await fetch(`${apiBase}/tables/${table}/rows`, {
-                  method: 'PATCH',
-                  headers: requestHeaders,
-                  body: JSON.stringify({
-                    match: { id: r.id },
-                    update: r
-                  })
-                });
-              } else {
-                await fetch(`${apiBase}/tables/${table}/rows`, {
-                  method: 'POST',
-                  headers: requestHeaders,
-                  body: JSON.stringify({ row: r })
-                });
-              }
-            }
+            const records = (Array.isArray(payload) ? payload : [payload]).map((row) => addGeneratedIdIfNeeded(table, row));
+            await mutateViaServer('UPSERT', table, { rows: records });
             return { error: null };
           } catch (err: any) {
             if (!hasRepairedSchema && isMazewayTableMissingError(err)) {
