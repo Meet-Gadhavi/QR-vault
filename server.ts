@@ -70,6 +70,7 @@ class MazewayClient {
     let orderCol: string | null = null;
     let orderAsc = true;
     let isSingle = false;
+    let limitCount: number | null = null;
     let selectOptions: any = {};
 
     const requestHeaders = {
@@ -168,6 +169,10 @@ class MazewayClient {
               const factor = orderAsc ? 1 : -1;
               return valA < valB ? -factor : factor;
             });
+          }
+
+          if (limitCount !== null) {
+            rows = rows.slice(0, limitCount);
           }
 
           if (isSingle) {
@@ -301,6 +306,10 @@ class MazewayClient {
       order: (col: string, options = { ascending: true }) => {
         orderCol = col;
         orderAsc = options.ascending;
+        return chain;
+      },
+      limit: (count: number) => {
+        limitCount = count;
         return chain;
       },
       single: () => {

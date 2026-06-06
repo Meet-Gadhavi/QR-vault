@@ -178,6 +178,7 @@ export const Dashboard: React.FC = () => {
   const [links, setLinks] = useState<string[]>([]);
   const [tempLink, setTempLink] = useState('');
   const [expiryHours, setExpiryHours] = useState<number | 'never' | 'custom'>(24);
+  const [customExpiryHours, setCustomExpiryHours] = useState<string>('');
   const [maxViews, setMaxViews] = useState<number | 'custom' | null>(null);
   const [customMaxViews, setCustomMaxViews] = useState<string>('');
 
@@ -500,10 +501,17 @@ export const Dashboard: React.FC = () => {
     // In edit mode, try to infer expiryHours if possible or just set it
     if (vault.expiresAt) {
       const diff = new Date(vault.expiresAt).getTime() - new Date(vault.createdAt).getTime();
-      const hours = Math.round(diff / (1000 * 60 * 60));
-      setExpiryHours(hours as any);
+      const hours = Math.max(1, Math.round(diff / (1000 * 60 * 60)));
+      if (hours === 24 || hours === 48 || hours === 72) {
+        setExpiryHours(hours);
+        setCustomExpiryHours('');
+      } else {
+        setExpiryHours('custom');
+        setCustomExpiryHours(hours.toString());
+      }
     } else {
       setExpiryHours('never');
+      setCustomExpiryHours('');
     }
 
     if (vault.maxViews) {
@@ -610,7 +618,12 @@ export const Dashboard: React.FC = () => {
     let expiresAt: string | undefined = undefined;
     if (expiryHours !== 'never') {
       const now = new Date();
-      now.setHours(now.getHours() + Number(expiryHours));
+      if (expiryHours === 'custom') {
+        const hours = parseInt(customExpiryHours) || 24;
+        now.setHours(now.getHours() + hours);
+      } else {
+        now.setHours(now.getHours() + Number(expiryHours));
+      }
       expiresAt = now.toISOString();
     }
 
@@ -1847,6 +1860,8 @@ export const Dashboard: React.FC = () => {
                                 <input
                                   type="number"
                                   placeholder="HOURS..."
+                                  value={customExpiryHours}
+                                  onChange={(e) => setCustomExpiryHours(e.target.value)}
                                   className="w-full px-6 py-5 bg-white dark:bg-black border border-primary-500/30 rounded-2xl font-black text-xs text-primary-600 dark:text-primary-400 outline-none shadow-inner text-center focus:ring-4 focus:ring-primary-500/10"
                                 />
                               </div>

@@ -30,6 +30,7 @@ class MazewayClient {
     let orderCol: string | null = null;
     let orderAsc = true;
     let isSingle = false;
+    let limitCount: number | null = null;
 
     const requestHeaders = {
       'apikey': apiKey,
@@ -121,6 +122,10 @@ class MazewayClient {
           });
         }
 
+        if (limitCount !== null) {
+          rows = rows.slice(0, limitCount);
+        }
+
         if (isSingle) {
           return { data: rows[0] || null, error: null };
         }
@@ -154,6 +159,10 @@ class MazewayClient {
       order: (col: string, options = { ascending: true }) => {
         orderCol = col;
         orderAsc = options.ascending;
+        return chain;
+      },
+      limit: (count: number) => {
+        limitCount = count;
         return chain;
       },
       single: () => {
