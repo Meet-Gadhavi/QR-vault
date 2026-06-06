@@ -27,6 +27,7 @@ const upload = multer({
 });
 import { createClient } from '@supabase/supabase-js';
 import fs from 'fs';
+import { ensureMazewayTables } from './services/mazewaySchema';
 
 dotenv.config();
 
@@ -43,6 +44,33 @@ const realSupabase = createClient(supabaseUrl, supabaseKey);
 
 const MAZEWAY_API_HOST = 'https://mazeway-db.onrender.com/api/v1';
 const MAZEWAY_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJncm91cCI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDUwNDc0MX0.mazeway_db_service_role_VqW8ha4NGIQiJo7MYI0i8uwrwJoNyYWDVHjLUQ86pLd7l9BVNCJ10DufE9mxw4Lo';
+
+async function parseMazewayRowResponse(response: any, fallback: any) {
+  const text = await response.text();
+  if (!text) return fallback;
+
+  try {
+    const payload = JSON.parse(text);
+    return payload?.row || payload?.data || payload;
+  } catch {
+    return fallback;
+  }
+}
+
+const TABLES_WITH_UUID_IDS = new Set([
+  'profiles',
+  'vaults',
+  'files',
+  'access_requests',
+  'deleted_vault_logs',
+  'reports',
+  'submissions'
+]);
+
+function addGeneratedIdIfNeeded(table: string, row: any) {
+  if (!TABLES_WITH_UUID_IDS.has(table) || row?.id) return row;
+  return { ...row, id: crypto.randomUUID() };
+}
 
 // Custom client to redirect all DB queries to Mazeway DB
 class MazewayClient {
@@ -182,7 +210,7 @@ class MazewayClient {
         }
 
         if (action === 'INSERT') {
-          const rowsToInsert = Array.isArray(actionPayload) ? actionPayload : [actionPayload];
+          const rowsToInsert = (Array.isArray(actionPayload) ? actionPayload : [actionPayload]).map((row: any) => addGeneratedIdIfNeeded(table, row));
           const insertedRows = [];
           for (const r of rowsToInsert) {
             const res = await (globalThis as any).fetch(`${apiBase}/tables/${table}/rows`, {
@@ -194,7 +222,7 @@ class MazewayClient {
               const text = await res.text();
               throw new Error(`Insert failed: ${text}`);
             }
-            insertedRows.push(r);
+            insertedRows.push(await parseMazewayRowResponse(res, r));
           }
           const dataVal = Array.isArray(actionPayload) ? insertedRows : insertedRows[0];
           return { data: dataVal, error: null };
@@ -355,157 +383,12 @@ class MazewayClient {
 const supabase = new MazewayClient(MAZEWAY_SERVICE_ROLE_KEY) as any;
 
 async function ensureTables() {
-  const apiKey = MAZEWAY_SERVICE_ROLE_KEY;
-  const apiBase = MAZEWAY_API_HOST;
-  const headers = {
-    'apikey': apiKey,
-    'Content-Type': 'application/json'
-  };
-
   try {
-    const res = await (globalThis as any).fetch(`${apiBase}/tables`, { headers });
-    if (!res.ok) {
-      console.error('[Mazeway DB] Failed to list tables:', await res.text());
-      return;
-    }
-    const tables = await res.json();
-    const existingTableNames = new Set(tables.map((t: any) => t.name));
-
-    const schemas = [
-      {
-        name: 'profiles',
-        rls: 'Enabled',
-        columns: [
-          { name: 'id', type: 'uuid', isPrimaryKey: true },
-          { name: 'email', type: 'text' },
-          { name: 'full_name', type: 'text' },
-          { name: 'plan', type: 'text' },
-          { name: 'storage_used', type: 'bigint' },
-          { name: 'storage_limit', type: 'bigint' },
-          { name: 'subscription_expiry_date', type: 'timestamp' },
-          { name: 'updated_at', type: 'timestamp' }
-        ]
-      },
-      {
-        name: 'vaults',
-        rls: 'Enabled',
-        columns: [
-          { name: 'id', type: 'uuid', isPrimaryKey: true },
-          { name: 'user_id', type: 'uuid' },
-          { name: 'name', type: 'text' },
-          { name: 'created_at', type: 'timestamp' },
-          { name: 'views', type: 'integer' },
-          { name: 'active', type: 'boolean' },
-          { name: 'access_level', type: 'text' },
-          { name: 'expires_at', type: 'timestamp' },
-          { name: 'max_views', type: 'integer' },
-          { name: 'report_count', type: 'integer' },
-          { name: 'locked_until', type: 'timestamp' },
-          { name: 'password', type: 'text' },
-          { name: 'vault_type', type: 'text' },
-          { name: 'receiving_config', type: 'text' }
-        ]
-      },
-      {
-        name: 'files',
-        rls: 'Enabled',
-        columns: [
-          { name: 'id', type: 'uuid', isPrimaryKey: true },
-          { name: 'vault_id', type: 'uuid' },
-          { name: 'name', type: 'text' },
-          { name: 'size', type: 'bigint' },
-          { name: 'type', type: 'text' },
-          { name: 'mime_type', type: 'text' },
-          { name: 'url', type: 'text' },
-          { name: 'max_downloads', type: 'integer' },
-          { name: 'download_count', type: 'integer' },
-          { name: 'expires_at', type: 'timestamp' },
-          { name: 'delete_after_minutes', type: 'integer' },
-          { name: 'first_viewed_at', type: 'timestamp' },
-          { name: 'submission_id', type: 'uuid' }
-        ]
-      },
-      {
-        name: 'access_requests',
-        rls: 'Enabled',
-        columns: [
-          { name: 'id', type: 'uuid', isPrimaryKey: true },
-          { name: 'vault_id', type: 'uuid' },
-          { name: 'email', type: 'text' },
-          { name: 'status', type: 'text' },
-          { name: 'requested_at', type: 'timestamp' }
-        ]
-      },
-      {
-        name: 'invoices',
-        rls: 'Enabled',
-        columns: [
-          { name: 'id', type: 'text', isPrimaryKey: true },
-          { name: 'user_id', type: 'uuid' },
-          { name: 'date', type: 'text' },
-          { name: 'plan', type: 'text' },
-          { name: 'amount', type: 'integer' },
-          { name: 'expiry', type: 'text' },
-          { name: 'timestamp', type: 'bigint' }
-        ]
-      },
-      {
-        name: 'deleted_vault_logs',
-        rls: 'Enabled',
-        columns: [
-          { name: 'id', type: 'uuid', isPrimaryKey: true },
-          { name: 'user_id', type: 'uuid' },
-          { name: 'vault_name', type: 'text' },
-          { name: 'original_vault_id', type: 'uuid' },
-          { name: 'views', type: 'integer' },
-          { name: 'deletion_reason', type: 'text' },
-          { name: 'file_manifest', type: 'text' },
-          { name: 'created_at', type: 'timestamp' },
-          { name: 'deleted_at', type: 'timestamp' }
-        ]
-      },
-      {
-        name: 'reports',
-        rls: 'Enabled',
-        columns: [
-          { name: 'id', type: 'uuid', isPrimaryKey: true },
-          { name: 'vault_id', type: 'uuid' },
-          { name: 'file_ids', type: 'text' },
-          { name: 'reason_virus', type: 'boolean' },
-          { name: 'reason_content', type: 'boolean' },
-          { name: 'custom_message', type: 'text' },
-          { name: 'expires_at', type: 'timestamp' },
-          { name: 'created_at', type: 'timestamp' }
-        ]
-      },
-      {
-        name: 'submissions',
-        rls: 'Enabled',
-        columns: [
-          { name: 'id', type: 'uuid', isPrimaryKey: true },
-          { name: 'vault_id', type: 'uuid' },
-          { name: 'sender_data', type: 'text' },
-          { name: 'created_at', type: 'timestamp' }
-        ]
-      }
-    ];
-
-    for (const schema of schemas) {
-      if (!existingTableNames.has(schema.name)) {
-        console.log(`[Mazeway DB] Creating table: ${schema.name}...`);
-        const createRes = await (globalThis as any).fetch(`${apiBase}/tables`, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(schema)
-        });
-        if (!createRes.ok) {
-          console.error(`[Mazeway DB] Failed to create table ${schema.name}:`, await createRes.text());
-        } else {
-          console.log(`[Mazeway DB] Table ${schema.name} created successfully.`);
-        }
-      } else {
-        console.log(`[Mazeway DB] Table ${schema.name} already exists.`);
-      }
+    const created = await ensureMazewayTables(MAZEWAY_API_HOST, MAZEWAY_SERVICE_ROLE_KEY, (globalThis as any).fetch);
+    if (created.length > 0) {
+      console.log(`[Mazeway DB] Created missing tables: ${created.join(', ')}`);
+    } else {
+      console.log('[Mazeway DB] All required tables already exist.');
     }
   } catch (error: any) {
     console.error('[Mazeway DB] ensureTables error:', error.message);
@@ -1259,6 +1142,16 @@ apiRouter.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+apiRouter.post('/db/ensure-tables', authenticateUser, async (_req: any, res: Response) => {
+  try {
+    const created = await ensureMazewayTables(MAZEWAY_API_HOST, MAZEWAY_SERVICE_ROLE_KEY, (globalThis as any).fetch);
+    res.json({ ok: true, created });
+  } catch (error: any) {
+    console.error('[Mazeway DB] Repair endpoint failed:', error.message);
+    res.status(500).json({ error: error.message || 'Failed to ensure database tables' });
+  }
+});
+
 // Authentication & Cancellation Routes (Issue 17)
 apiRouter.post('/auth/send-cancellation-code', authenticateUser, async (req: any, res: Response) => {
   try {
@@ -1895,14 +1788,19 @@ const processVaultCleanups = async () => {
   }
 };
 
-// Initial run and then every hour
-processVaultCleanups();
-setInterval(processVaultCleanups, 60 * 60 * 1000);
+let cleanupTimer: NodeJS.Timeout | null = null;
+
+function startVaultCleanupJob() {
+  if (cleanupTimer) return;
+  processVaultCleanups();
+  cleanupTimer = setInterval(processVaultCleanups, 60 * 60 * 1000);
+}
 
 // Vite Middleware
 async function startServer() {
   // Ensure all necessary tables exist in Mazeway DB
   await ensureTables();
+  startVaultCleanupJob();
 
   // 1. Explicitly serve SEO files FIRST with absolute paths
   // This prevents SPA fallback (index.html) from intercepting these requests

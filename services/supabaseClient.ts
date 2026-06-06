@@ -1,10 +1,67 @@
 import { createClient } from '@supabase/supabase-js';
+import { isMazewayTableMissingError } from './mazewaySchema';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://bftzcoofkitmjxfvqdei.supabase.co';
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Real client for Auth only
 const realSupabase = createClient(supabaseUrl, supabaseKey);
+
+let ensureTablesPromise: Promise<void> | null = null;
+
+async function ensureTablesViaServer() {
+  if (!ensureTablesPromise) {
+    ensureTablesPromise = (async () => {
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const { data: { session } } = await realSupabase.auth.getSession();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+
+      if (session?.access_token) {
+        headers.Authorization = `Bearer ${session.access_token}`;
+      }
+
+      const response = await fetch(`${apiBase}/api/db/ensure-tables`, {
+        method: 'POST',
+        headers
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to ensure Mazeway DB tables: ${await response.text()}`);
+      }
+    })().finally(() => {
+      ensureTablesPromise = null;
+    });
+  }
+
+  return ensureTablesPromise;
+}
+
+async function parseMazewayRowResponse(response: Response, fallback: any) {
+  const text = await response.text();
+  if (!text) return fallback;
+
+  try {
+    const payload = JSON.parse(text);
+    return payload?.row || payload?.data || payload;
+  } catch {
+    return fallback;
+  }
+}
+
+const TABLES_WITH_UUID_IDS = new Set([
+  'profiles',
+  'vaults',
+  'files',
+  'access_requests',
+  'deleted_vault_logs',
+  'reports',
+  'submissions'
+]);
+
+function addGeneratedIdIfNeeded(table: string, row: any) {
+  if (!TABLES_WITH_UUID_IDS.has(table) || row?.id) return row;
+  return { ...row, id: crypto.randomUUID() };
+}
 
 // Custom client to redirect all DB queries and RPC calls to Mazeway DB
 class MazewayClient {
@@ -37,7 +94,7 @@ class MazewayClient {
       'Content-Type': 'application/json'
     };
 
-    const runSelect = async () => {
+    const runSelect = async (hasRepairedSchema = false): Promise<any> => {
       try {
         const res = await fetch(`${apiBase}/tables/${table}/rows`, {
           headers: requestHeaders
@@ -131,6 +188,10 @@ class MazewayClient {
         }
         return { data: rows, error: null };
       } catch (err: any) {
+        if (!hasRepairedSchema && isMazewayTableMissingError(err)) {
+          await ensureTablesViaServer();
+          return runSelect(true);
+        }
         return { data: null, error: err };
       }
     };
@@ -170,9 +231,9 @@ class MazewayClient {
         return runSelect();
       },
       insert: (payload: any) => {
-        const runInsert = async () => {
+        const runInsert = async (hasRepairedSchema = false): Promise<any> => {
           try {
-            const rowsToInsert = Array.isArray(payload) ? payload : [payload];
+            const rowsToInsert = (Array.isArray(payload) ? payload : [payload]).map((row) => addGeneratedIdIfNeeded(table, row));
             const insertedRows = [];
             for (const r of rowsToInsert) {
               const res = await fetch(`${apiBase}/tables/${table}/rows`, {
@@ -184,11 +245,15 @@ class MazewayClient {
                 const text = await res.text();
                 throw new Error(`Insert failed: ${text}`);
               }
-              insertedRows.push(r);
+              insertedRows.push(await parseMazewayRowResponse(res, r));
             }
             const dataVal = Array.isArray(payload) ? insertedRows : insertedRows[0];
             return { data: dataVal, error: null };
           } catch (err: any) {
+            if (!hasRepairedSchema && isMazewayTableMissingError(err)) {
+              await ensureTablesViaServer();
+              return runInsert(true);
+            }
             return { data: null, error: err };
           }
         };
@@ -209,7 +274,7 @@ class MazewayClient {
         };
       },
       update: (payload: any) => {
-        const runUpdate = async () => {
+        const runUpdate = async (hasRepairedSchema = false): Promise<any> => {
           try {
             const selectRes = await runSelect();
             if (selectRes.error) throw selectRes.error;
@@ -231,6 +296,10 @@ class MazewayClient {
             }
             return { data: rowsToUpdate, error: null };
           } catch (err: any) {
+            if (!hasRepairedSchema && isMazewayTableMissingError(err)) {
+              await ensureTablesViaServer();
+              return runUpdate(true);
+            }
             return { data: null, error: err };
           }
         };
@@ -241,7 +310,7 @@ class MazewayClient {
         };
       },
       delete: () => {
-        const runDelete = async () => {
+        const runDelete = async (hasRepairedSchema = false): Promise<any> => {
           try {
             const selectRes = await runSelect();
             if (selectRes.error) throw selectRes.error;
@@ -262,6 +331,10 @@ class MazewayClient {
             }
             return { data: rowsToDelete, error: null };
           } catch (err: any) {
+            if (!hasRepairedSchema && isMazewayTableMissingError(err)) {
+              await ensureTablesViaServer();
+              return runDelete(true);
+            }
             return { data: null, error: err };
           }
         };
@@ -272,7 +345,7 @@ class MazewayClient {
         };
       },
       upsert: (payload: any) => {
-        const runUpsert = async () => {
+        const runUpsert = async (hasRepairedSchema = false): Promise<any> => {
           try {
             const records = Array.isArray(payload) ? payload : [payload];
             for (const r of records) {
@@ -298,6 +371,10 @@ class MazewayClient {
             }
             return { error: null };
           } catch (err: any) {
+            if (!hasRepairedSchema && isMazewayTableMissingError(err)) {
+              await ensureTablesViaServer();
+              return runUpsert(true);
+            }
             return { error: err };
           }
         };
